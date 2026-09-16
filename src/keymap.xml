@@ -36,6 +36,19 @@
 		<key id="KEY_RED" mapto="red" flags="m" />
 		<key id="KEY_GREEN" mapto="green" flags="b" />
         <key id="KEY_MENU" mapto="menu" flags="m" />
+		<!-- Direct-jump shortcuts for the Carousel skin's vertical sidebar
+		     (item N gets digit N) - harmless on default/BlueMod too, since
+		     nothing there reads them without the corresponding skin
+		     template showing the digit in the first place. -->
+		<key id="KEY_1" mapto="shortcut1" flags="m" />
+		<key id="KEY_2" mapto="shortcut2" flags="m" />
+		<key id="KEY_3" mapto="shortcut3" flags="m" />
+		<key id="KEY_4" mapto="shortcut4" flags="m" />
+		<key id="KEY_5" mapto="shortcut5" flags="m" />
+		<key id="KEY_6" mapto="shortcut6" flags="m" />
+		<key id="KEY_7" mapto="shortcut7" flags="m" />
+		<key id="KEY_8" mapto="shortcut8" flags="m" />
+		<key id="KEY_9" mapto="shortcut9" flags="m" />
 	</map>
 
     <map context="DP_PluginCloser">
@@ -44,7 +57,23 @@
 		</device>
         <key id="KEY_STOP" mapto="stop" flags="m" />
     </map>
-	
+
+    <!-- second trigger for the native Help screen, for remotes whose HELP
+         button does not reach the box as KEY_HELP. None of these are used
+         anywhere else in this plugin, and their one native meaning (open
+         the recordings list) only applies inside the live-TV InfoBar - a
+         handful of candidates rather than just KEY_LIST, since the
+         "recordings list" icon (three lines + R) maps to a different
+         physical keycode across remote models. Only the one the remote
+         actually sends will ever fire; the rest just sit unused. -->
+    <map context="DP_HelpShortcut">
+        <key id="KEY_LIST" mapto="helpAlt" flags="m" />
+        <key id="KEY_PVR" mapto="helpAlt" flags="m" />
+        <key id="KEY_ARCHIVE" mapto="helpAlt" flags="m" />
+        <key id="KEY_MEDIA" mapto="helpAlt" flags="m" />
+        <key id="KEY_FILE" mapto="helpAlt" flags="m" />
+    </map>
+
 	<map context="DPS_Settings">
 		<key id="KEY_CHANNELUP" mapto="bouquet_up" flags="m" />
 		<key id="KEY_CHANNELDOWN" mapto="bouquet_down" flags="m" />
@@ -55,7 +84,6 @@
 			<key id="KEY_RED" mapto="red" flags="b" />
 			<key id="KEY_RED" mapto="red_long" flags="l" />
 			<key id="KEY_YELLOW" mapto="yellow" flags="b" />
-			<key id="KEY_YELLOW" mapto="yellow_long" flags="l" />
 			<key id="KEY_GREEN" mapto="green" flags="b" />
 			<key id="KEY_GREEN" mapto="green_long" flags="l" />
 			<key id="KEY_BLUE" mapto="blue" flags="b" />
@@ -80,10 +108,10 @@
 		<key id="KEY_LEFT" mapto="left" flags="b" />
 		<key id="KEY_RIGHT" mapto="right" flags="b" />
 		<key id="KEY_INFO" mapto="info" flags="m" />
+		<key id="KEY_EPG" mapto="epgInfo" flags="m" />
 		<key id="KEY_RED" mapto="red" flags="b" />
 		<key id="KEY_RED" mapto="red_long" flags="l" />
 		<key id="KEY_YELLOW" mapto="yellow" flags="b" />
-		<key id="KEY_YELLOW" mapto="yellow_long" flags="l" />
 		<key id="KEY_GREEN" mapto="green" flags="b" />
 		<key id="KEY_GREEN" mapto="green_long" flags="l" />
 		<key id="KEY_BLUE" mapto="blue" flags="b" />
@@ -131,6 +159,7 @@
 			<key id="KEY_ESC" mapto="cancel" flags="m" />
 			<key id="KEY_F5" mapto="info" flags="m" />
 			<key id="KEY_F6" mapto="menu" flags="m" />
+			<key id="KEY_F9" mapto="favorite" flags="m" />
 		</device>
 		<key id="KEY_BLUE" mapto="seekManual" flags="m" />
 		<key id="KEY_RED" mapto="seekManual" flags="m" />
@@ -142,6 +171,21 @@
         <key id="KEY_EXIT" mapto="exitFunction" flags="m" />
         <key id="KEY_ESC" mapto="cancel" flags="m" />
         <key id="KEY_STOP" mapto="stop" flags="m" />
+        <key id="KEY_INFO" mapto="info" flags="m" />
+        <key id="KEY_EPG" mapto="info" flags="m" />
+        <key id="KEY_INFO" mapto="favorite" flags="l" />
+        <key id="KEY_EPG" mapto="favorite" flags="l" />
+        <key id="KEY_FAVORITES" mapto="favorite" flags="m" />
+        <key id="KEY_LEFT" mapto="left" flags="m" />
+        <key id="KEY_RIGHT" mapto="right" flags="m" />
+        <key id="KEY_UP" mapto="up" flags="m" />
+        <key id="KEY_DOWN" mapto="down" flags="m" />
+        <key id="KEY_1" mapto="1" flags="m" />
+        <key id="KEY_2" mapto="2" flags="m" />
+        <key id="KEY_3" mapto="3" flags="m" />
+        <key id="KEY_4" mapto="4" flags="m" />
+        <key id="KEY_5" mapto="5" flags="m" />
+        <key id="KEY_0" mapto="0" flags="m" />
 
 	</map>
 

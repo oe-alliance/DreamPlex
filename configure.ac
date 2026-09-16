@@ -1,4 +1,4 @@
-AC_INIT([enigma2-plugin-extentions-dreamplex],[2.0])
+AC_INIT([enigma2-plugin-extensions-dreamplex],[3.1.1])
 AM_INIT_AUTOMAKE([dist-bzip2 foreign no-define tar-pax])
 AC_CONFIG_HEADERS([enigma2-plugins-config.h])
 
@@ -27,6 +27,8 @@ Makefile
 meta/Makefile
 po/Makefile
 src/Makefile
+src/plex/Makefile
+src/jellyfin/Makefile
 src/skins/Makefile
 src/skins/default/Makefile
 src/skins/default/buttons/Makefile
@@ -46,6 +48,16 @@ src/skins/BlueMod_FHD/Makefile
 src/skins/BlueMod_FHD/icons/Makefile
 src/skins/BlueMod_FHD/images/Makefile
 src/skins/BlueMod_FHD/picons/Makefile
+src/skins/Carousel/Makefile
+src/skins/Carousel/buttons/Makefile
+src/skins/Carousel/icons/Makefile
+src/skins/Carousel/images/Makefile
+src/skins/Carousel/picons/Makefile
+src/skins/Carousel_FHD/Makefile
+src/skins/Carousel_FHD/buttons/Makefile
+src/skins/Carousel_FHD/icons/Makefile
+src/skins/Carousel_FHD/images/Makefile
+src/skins/Carousel_FHD/picons/Makefile
 src/fonts/Makefile
 ])
 AC_OUTPUT

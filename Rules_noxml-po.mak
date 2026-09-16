@@ -5,7 +5,10 @@ LANGMO = $(LANGS:=.mo)
 LANGPO = $(LANGS:=.po)
 
 # the TRANSLATORS: allows putting translation comments before the to-be-translated line.
-$(PLUGIN)-py.pot: $(srcdir)/../src/*.py
+# The plex/ and jellyfin/ subpackages have to be listed explicitly: the *.py
+# glob is not recursive, and without them the strings of the two server
+# implementations would not reach the catalogue and stay untranslatable.
+$(PLUGIN)-py.pot: $(srcdir)/../src/*.py $(srcdir)/../src/plex/*.py $(srcdir)/../src/jellyfin/*.py
 	$(XGETTEXT) --no-wrap -L Python --from-code=UTF-8 -kpgettext:1c,2 --add-comments="TRANSLATORS:" -d $(PLUGIN) -s -o $@ $^
 
 $(PLUGIN).pot: $(PLUGIN)-py.pot

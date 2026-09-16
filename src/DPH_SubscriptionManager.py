@@ -28,13 +28,13 @@ import re
 import threading
 try:
 	from http.client import HTTPConnection, HTTPSConnection
-except:
+except Exception:
 	from httplib import HTTPConnection, HTTPSConnection
 
 import traceback
-import string
 
-from .__common__ import printl2 as printl, getUUID, timeToMillis, getPlexHeaders, getXMLHeader
+from .__common__ import printl2 as printl, getUUID, timeToMillis, getServerHeaders, getXMLHeader
+from .DPH_Singleton import Singleton
 
 #===========================================================================
 #
@@ -101,7 +101,7 @@ class SubscriptionManager:
 				self.playerStateFromEnigma2 = e2params["state"]
 				self.durationFromEnigma2 = e2params["duration"]
 				self.lastkey = e2params["lastKey"]
-		except:
+		except Exception:
 			pass
 
 	#===========================================================================
@@ -215,7 +215,7 @@ class SubscriptionManager:
 			info['duration'] = timeToMillis(props['totaltime'])
 			info['state'] = ("paused", "playing")[int(props['speed'])]
 			info['shuffle'] = ("0", "1")[props.get('shuffled', False)]
-		except:
+		except Exception:
 			info['time'] = 0
 			info['duration'] = 0
 			info['state'] = "stopped"
@@ -293,10 +293,16 @@ class Subscriber:
 			self.navlocationsent = True
 		msg = re.sub(r"INSERTCOMMANDID", str(self.commandID), msg)
 		printl("sending xml to subscriber %s: %s" % (self.tostr(), msg), self, "D")
-		requests.post(self.host, self.port, "/:/timeline", msg, getPlexHeaders(), self.protocol)
-		# if not requests.post(self.host, self.port, "/:/timeline", msg, getPlexHeaders(), self.protocol):
-		# 	printl("removing subcriber ...", self, "D")
-		# 	subMgr.removeSubscriber(self.uuid)
+		# Push headers for whichever backend is actually active, via the
+		# same getServerHeaders(serverType) AbstractServerSettingsFactory
+		# already routes DPH_RemoteHandler's own responses through - this
+		# used to always send Plex's headers (getPlexHeaders()), regardless
+		# of which server was configured.
+		try:
+			serverType = Singleton().getMediaLibrary().getServerConfig().getType()
+		except Exception:
+			serverType = None
+		requests.post(self.host, self.port, "/:/timeline", msg, getServerHeaders(serverType), self.protocol)
 
 #===========================================================================
 #
@@ -305,7 +311,7 @@ class Subscriber:
 
 class RequestMgr:
 	def __init__(self):
-		self.conns = {}
+		self.conns: dict[str, HTTPConnection] = {}
 
 	#===========================================================================
 	#
@@ -356,7 +362,7 @@ class RequestMgr:
 				print("data: " + str(data.read()))
 			else:
 				return data.read() or True
-		except:
+		except Exception:
 			print("Unable to connect to %s\nReason:" % host)
 			traceback.print_exc()
 			self.conns.pop(protocol + host + str(port), None)
@@ -372,7 +378,7 @@ class RequestMgr:
 		pairs = []
 		for key in params:
 			pairs.append(str(key) + '=' + str(params[key]))
-		newpath += string.join(pairs, '&')
+		newpath += '&'.join(pairs)
 		return self.get(host, port, newpath, header, protocol)
 
 	#===========================================================================
@@ -389,11 +395,11 @@ class RequestMgr:
 				return False
 			else:
 				return data.read() or True
-		except:
+		except Exception:
 			print("Unable to connect to %s\nReason: %s" % (host, traceback.print_exc()))
 			self.conns.pop(protocol + host + str(port), None)
 			conn.close()
 			return False
 
 
-requests = RequestMgr()
+requests: RequestMgr = RequestMgr()

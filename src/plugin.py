@@ -24,21 +24,35 @@ You should have received a copy of the GNU General Public License
 #===============================================================================
 # IMPORT
 #===============================================================================
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from Plugins.Plugin import PluginDescriptor
 from Screens.Standby import inStandby
+from . import Singleton, SettingsStorage
+from .DPH_RemoteListener import HttpDaemon
 
 try:
 	from Components.Network import iNetworkInfo
-except:
+except Exception:
 	from Components.Network import iNetwork
-
-from Components.config import config, configfile
 
 from .DP_Player import DP_Player
 from enigma import eTimer
 
-from .__init__ import prepareEnvironment, startEnvironment, _ # _ is translation
-from .__common__ import getUUID, saveLiveTv, getLiveTv, getBoxResolution
+from . import prepareEnvironment, startEnvironment, initSettingsStorage, _ # _ is translation
+from .__common__ import getUUID, saveLiveTv, getLiveTv, getBoxResolution, getVersion
+
+# StartEnigma is enigma2's own startup script, run as __main__ at boot - it is
+# never left behind in sys.modules under the name "StartEnigma", and its
+# module body unconditionally calls e2reactor.install(). A plain
+# "from StartEnigma import Session" here therefore re-imports and re-executes
+# that whole script, hitting the already-installed reactor and crashing with
+# ReactorAlreadyInstalledError, which enigma2's plugin loader reports as
+# "Extensions/DreamPlex (reactor already installed)". Session is only used
+# below as a type annotation, so it is deferred to TYPE_CHECKING instead.
+if TYPE_CHECKING:
+	from StartEnigma import Session
 
 #===============================================================================
 # GLOBALS
@@ -47,13 +61,11 @@ from .__common__ import getUUID, saveLiveTv, getLiveTv, getBoxResolution
 
 class GlobalVars:
 	def __init__(self):
-		self.lastKey = None
-		self.global_session = None
-		self.HttpDeamonThread = None
-		self.HttpDeamonThreadConn = None
-		self.HttpDeamonStarted = False
-		self.notifyWatcher = None
-		self.notifyWatcherConn = None
+		self.lastKey: int | None = None
+		self.global_session: Session | None = None
+		self.HttpDaemonThread: HttpDaemon | None = None
+		self.HttpDaemonStarted: bool = False
+		self.notifyWatcher: eTimer = None
 
 
 globalvars = GlobalVars()
@@ -76,7 +88,7 @@ def main(session, **kwargs):
 def DPS_MainMenu(*args, **kwargs):
 	from . import DP_MainMenu
 
- 	# this loads the skin
+	# this loads the skin
 	startEnvironment()
 
 	return DP_MainMenu.DPS_MainMenu(*args, **kwargs)
@@ -100,44 +112,43 @@ def menu_dreamplex(menuid, **kwargs):
 
 def Autostart(reason, session=None, **kwargs):
 
+	settings: SettingsStorage = Singleton().getSettingsInstance()
+
 	if reason == 0:
 		prepareEnvironment()
 		getUUID()
 
 	else:
-		config.plugins.dreamplex.entriescount.save()
-		config.plugins.dreamplex.Entries.save()
-		config.plugins.dreamplex.save()
-		configfile.save()
+		settings.writeToFile()
 
-		if config.plugins.dreamplex.remoteAgent.value and globalvars.HttpDeamonStarted:
-			globalvars.HttpDeamonThread.stopRemoteDeamon()
+		if settings.remoteAgent.getValue() and globalvars.HttpDaemonStarted:
+			globalvars.HttpDaemonThread.stopRemoteDaemon()
 
 #===========================================================================
 #
 #===========================================================================
 
 
-def startRemoteDeamon():
-	from .DPH_RemoteListener import HttpDeamon
+def startRemoteDaemon():
+	from .DPH_RemoteListener import HttpDaemon
 
-	globalvars.HttpDeamonThread = HttpDeamon()
+	globalvars.HttpDaemonThread = HttpDaemon()
 
-	globalvars.HttpDeamonThread.PlayerDataPump.recv_msg.get().append(gotThreadMsg)
+	globalvars.HttpDaemonThread.PlayerDataPump.recv_msg.get().append(gotThreadMsg)
 
-	globalvars.HttpDeamonThread.prepareDeamon() # we just prepare. we are starting only on networkStart with HttpDeamonThread.setSession
-	globalvars.HttpDeamonStarted = globalvars.HttpDeamonThread.getDeamonState()[1]
+	globalvars.HttpDaemonThread.prepareDaemon() # we just prepare. we are starting only on networkStart with HttpDaemonThread.setSession
+	globalvars.HttpDaemonStarted = globalvars.HttpDaemonThread.getDaemonState()[1]
 
-	if globalvars.HttpDeamonStarted:
-		globalvars.HttpDeamonThread.setSession(globalvars.global_session)
+	if globalvars.HttpDaemonStarted:
+		globalvars.HttpDaemonThread.setSession(globalvars.global_session)
 
 #===========================================================================
 #
 #===========================================================================
 
 
-def getHttpDeamonInformation():
-	return globalvars.HttpDeamonThread.getDeamonState()
+def getHttpDaemonInformation():
+	return globalvars.HttpDaemonThread.getDaemonState()
 
 
 #===========================================================================
@@ -148,7 +159,7 @@ def getHttpDeamonInformation():
 
 
 def gotThreadMsg(msg):
-	_msg = globalvars.HttpDeamonThread.PlayerData.pop()
+	_msg = globalvars.HttpDaemonThread.PlayerData.pop()
 
 	data = _msg[0]
 	print("data ==>")
@@ -211,20 +222,20 @@ def gotThreadMsg(msg):
 			uuid = data["uuid"]
 			commandID = data["commandID"]
 
-			globalvars.HttpDeamonThread.addSubscriber(protocol, host, port, uuid, commandID)
+			globalvars.HttpDaemonThread.addSubscriber(protocol, host, port, uuid, commandID)
 			startNotifier()
 
 		elif command == "removeSubscriber":
 			print("remove subscriber")
 			uuid = data["uuid"]
 
-			globalvars.HttpDeamonThread.removeSubscriber(uuid)
+			globalvars.HttpDaemonThread.removeSubscriber(uuid)
 			updateNotifier()
 
 		elif command == "updateCommandId":
 			uuid = data["uuid"]
 			commandID = data["commandID"]
-			globalvars.HttpDeamonThread.updateCommandID(uuid, commandID)
+			globalvars.HttpDaemonThread.updateCommandID(uuid, commandID)
 
 		elif command == "idle":
 			pass
@@ -310,10 +321,10 @@ def updateNotifier():
 
 def notifySubscribers():
 	players = getPlayer()
-	print("subscribers: " + str(globalvars.HttpDeamonThread.getSubscribersList()))
+	print("subscribers: " + str(globalvars.HttpDaemonThread.getSubscribersList()))
 
 	if players:
-		globalvars.HttpDeamonThread.notifySubscribers(players)
+		globalvars.HttpDaemonThread.notifySubscribers(players)
 
 #===========================================================================
 #
@@ -326,7 +337,7 @@ def getPlayer():
 	try:
 		ret = {}
 		ret = globalvars.global_session.current_dialog.getPlayer()
-	except:
+	except Exception:
 		pass
 
 	return ret
@@ -341,11 +352,50 @@ def sessionStart(reason, **kwargs):
 	if "session" in kwargs:
 		globalvars.global_session = kwargs["session"]
 
-		if config.plugins.dreamplex.remoteAgent.value:
-			startRemoteDeamon()
+		if Singleton().getSettingsInstance().remoteAgent.getValue():
+			startRemoteDaemon()
 
 		# load skin data here as well
 		startEnvironment()
+
+		_offerRestartAfterUpdate(kwargs["session"])
+
+#===========================================================================
+# An installed/updated .ipk only replaces the files on disk - Python keeps
+# running the already-imported (old) modules until enigma2's GUI process
+# itself restarts, so a plugin update has no visible effect until the user
+# thinks to do that manually. Detect the version bump here (once per GUI
+# session, since sessionStart only fires once) and offer to do it for them.
+#===========================================================================
+
+
+def _offerRestartAfterUpdate(session):
+	settings: SettingsStorage = Singleton().getSettingsInstance()
+	currentVersion = getVersion()
+	lastSeenVersion = settings.lastSeenVersion.getValue()
+
+	settings.lastSeenVersion.setValue(currentVersion)
+	settings.writeToFile()
+
+	# Empty lastSeenVersion means a fresh install, not an update - nothing to
+	# restart into, so nothing to ask about.
+	if lastSeenVersion and lastSeenVersion != currentVersion:
+		from Screens.MessageBox import MessageBox
+
+		session.openWithCallback(_onRestartAnswer, MessageBox,
+			_("DreamPlex was updated to version %s.\nRestart the GUI now to apply it?") % currentVersion,
+			MessageBox.TYPE_YESNO, timeout=20, default=True)
+
+#===========================================================================
+#
+#===========================================================================
+
+
+def _onRestartAnswer(confirmed):
+	if confirmed and globalvars.global_session is not None:
+		from Screens.Standby import TryQuitMainloop
+
+		globalvars.global_session.open(TryQuitMainloop, 3)
 
 #===============================================================================
 # plugins
@@ -358,6 +408,15 @@ def Plugins(**kwargs):
 	myList = []
 	boxResolution = getBoxResolution()
 
+	# enigma2 calls Plugins() to build the menu/descriptor list before it ever
+	# runs the WHERE_AUTOSTART descriptor below, so Autostart()'s
+	# prepareEnvironment() (which creates the settings singleton) has not run
+	# yet. showInMainMenu below needs a live settings instance, so create one
+	# here if it doesn't exist; Autostart() will still (re)run
+	# prepareEnvironment() normally once enigma2 actually starts up.
+	if Singleton().getSettingsInstance() is None:
+		initSettingsStorage()
+
 	if boxResolution == "FHD":
 		myList.append(PluginDescriptor(name="DreamPlex", description="plex client for enigma2", where=[PluginDescriptor.WHERE_PLUGINMENU], icon="pluginLogoHD.png", fnc=main))
 	else:
@@ -365,7 +424,7 @@ def Plugins(**kwargs):
 	myList.append(PluginDescriptor(where=PluginDescriptor.WHERE_AUTOSTART, fnc=Autostart))
 	myList.append(PluginDescriptor(where=PluginDescriptor.WHERE_SESSIONSTART, fnc=sessionStart))
 
-	if config.plugins.dreamplex.showInMainMenu.value:
+	if Singleton().getSettingsInstance().showInMainMenu.getValue():
 		myList.append(PluginDescriptor(name="DreamPlex", description=_("plex client for enigma2"), where=[PluginDescriptor.WHERE_MENU], fnc=menu_dreamplex))
 
 	return myList

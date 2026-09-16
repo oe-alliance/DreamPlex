@@ -2,5 +2,15 @@
 echo -e '\n'
 echo Removing DreamPlex from the system ...
 rm -r /usr/lib/enigma2/python/Plugins/Extensions/DreamPlex > /dev/null 2>&1
-rm -r /hdd/dreamplex > /dev/null 2>&1
+
+# opkg calls postrm with "upgrade <new-version>" for the old package's half
+# of an update/reinstall, and with no argument (or "remove"/"purge") for an
+# actual uninstall - same convention as dpkg. Wiping /hdd/dreamplex (settings,
+# cache, presets, media) is only correct for a real uninstall: on "upgrade"
+# the new package's preinst/postinst are about to run right after this, so
+# nuking it here would throw away the user's server list and settings on
+# every ordinary update or "opkg install --force-reinstall" test cycle.
+if [ "$1" != "upgrade" ]; then
+	rm -r /hdd/dreamplex > /dev/null 2>&1
+fi
 exit 0

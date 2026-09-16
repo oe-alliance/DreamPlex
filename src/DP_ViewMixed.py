@@ -29,7 +29,7 @@ from Components.config import config
 from .DP_View import DP_View
 
 from .__common__ import printl2 as printl, encodeThat
-from .__init__ import _  # _ is translation
+from . import _  # _ is translation
 
 #===============================================================================
 #
@@ -145,10 +145,40 @@ class DPS_ViewMixed(DP_View):
 
 			self.hideMediaFunctions()
 
+		elif self.details.get("type") in ("Folder", "Directory"):
+			# a row inside a mixed listing that is itself a folder to
+			# descend into - e.g. a Collection/Playlist row within the
+			# "Collections"/"Playlists" top-level entries (see
+			# JellyfinLibrary._collectionsAndPlaylistsEntries()), or a
+			# sub-folder of one. No movie-specific metadata (mediaDataArr
+			# etc.) is guaranteed to be present, so this stays as minimal as
+			# the "season" branch above rather than the "movie" one.
+			self.changeBackdrop = True
+			self.changePoster = True
+
+			if "ratingKey" in self.details:
+				self.pname = self.details["ratingKey"]
+				self.bname = self.details["ratingKey"]
+			else:
+				self.pname = "temp"
+				self.bname = "temp"
+
+			self["title"].setText(encodeThat(self.details.get("title", " ")))
+			self["tag"].setText(encodeThat(self.details.get("tagline", " ")))
+			self["shortDescription"].setText(encodeThat(self.details.get("summary", " ")))
+			self["cast"].setText(encodeThat(self.details.get("cast", " ")))
+			self["writer"].setText(encodeThat(self.details.get("writer", " ")))
+			self["director"].setText(encodeThat(self.details.get("director", " ")))
+			self["studio"].setText(encodeThat(self.details.get("studio", " ")))
+			self["genre"].setText(encodeThat(self.details.get("genre", " - ")))
+			self["year"].setText(str(self.details.get("year", " - ")))
+
+			self.hideMediaFunctions()
+
 		else:
 			raise Exception
 
-		self.toggleVisibitlyForType(self.details.get("type"))
+		self.toggleVisibilityForType(self.details.get("type"))
 
 		# now gather information for pictures
 		self.getPictureInformationToLoad()
@@ -158,16 +188,24 @@ class DPS_ViewMixed(DP_View):
 	#===========================================================================
 	#
 	#===========================================================================
-	def toggleVisibitlyForType(self, myType):
+	def toggleVisibilityForType(self, myType):
 		printl("", self, "S")
 
 		content = "writer", "cast", "studio", "genre", "year", "director", "subtitles", "audio", "duration"
 
+		# One skin missing a widget for a single tag (e.g. no "subtitles"/
+		# "subtitlesLabel" pair declared for this view) used to raise here
+		# and abort the loop for every tag still to come - same defensive
+		# pattern setToDirectoryMode() already uses for its own per-element
+		# loop, just missing here.
 		for tag in content:
-			if myType == "season":
-				self.toggleElementVisibilityWithLabel(tag, "hide")
-			else:
-				self.toggleElementVisibilityWithLabel(tag)
+			try:
+				if myType in ("season", "Folder", "Directory"):
+					self.toggleElementVisibilityWithLabel(tag, "hide")
+				else:
+					self.toggleElementVisibilityWithLabel(tag)
+			except Exception as ex:
+				printl("could not toggle visibility for " + str(tag) + ": " + str(ex), self, "W")
 
 		printl("", self, "C")
 

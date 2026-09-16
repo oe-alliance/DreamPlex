@@ -24,7 +24,11 @@ You should have received a copy of the GNU General Public License
 #=================================
 #IMPORT
 #=================================
+from __future__ import annotations
+from typing import Any
 import time
+
+from enigma import eTimer
 
 from Components.ActionMap import ActionMap
 from Components.ConfigList import ConfigListScreen
@@ -32,18 +36,20 @@ from Components.Sources.StaticText import StaticText
 from Components.Sources.List import List
 from Components.Label import Label
 from Components.Pixmap import Pixmap
-from Components.config import config, getConfigListEntry, configfile
+from Components.config import ConfigElement, ConfigSelection, ConfigIP, ConfigInteger, ConfigText, getConfigListEntry
 from Components.Input import Input
 
 from Screens.MessageBox import MessageBox
 from Screens.ChoiceBox import ChoiceBox
 from Screens.InputBox import InputBox
 from Screens.Screen import Screen
+from .DP_HelperScreens import DPS_TextInputBox
+from . import ServerSettings, ServerSettingsData, AbstractServerSettings, EMPTY_SERVER_CONF
+from .DP_SettingsStorage import SettingsStorage, BaseSettings, T, AuthorizationMode, AuthorizationResult, USER_SWITCH_NONE
 
-from .__common__ import printl2 as printl
-from .__init__ import initServerEntryConfig, _  # _ is translation
+from .__common__ import printl2 as printl, DiscoveredServer, EntryServer
+from . import _  # _ is translation
 
-from .DP_PlexLibrary import PlexLibrary
 from .DP_Mappings import DPS_Mappings
 from .DP_Users import DPS_Users
 from .DP_Syncer import DPS_Syncer
@@ -54,6 +60,25 @@ from .DPH_Singleton import Singleton
 #===============================================================================
 #
 #===============================================================================
+
+def _copyServerFields(source: AbstractServerSettings, dest: AbstractServerSettings) -> None:
+	# Identity/authentication material a "clone this server for another
+	# user" action must NOT carry over - each backend declares its own
+	# private field names via getCloneExcludeFields() (see PlexSettings/
+	# JellyfinSettings) rather than this function knowing them by server
+	# type. Everything else (connection, playback, subtitle/audio prefs,
+	# ...) is copied as-is: the whole point of cloning is to skip
+	# re-entering all of that for a second login on the same physical server.
+	exclude = source.getCloneExcludeFields()
+	for attrName, attrValue in vars(source).items():
+		if attrName in exclude or not isinstance(attrValue, BaseSettings):
+			continue
+		destAttr = getattr(dest, attrName, None)
+		if isinstance(destAttr, BaseSettings):
+			try:
+				destAttr.setValue(attrValue.getValue())
+			except Exception as ex:
+				printl("could not clone field " + attrName + ": " + str(ex), "DP_Server", "W")
 
 
 class DPS_Server(Screen, DPH_PlexScreen):
@@ -68,7 +93,7 @@ class DPS_Server(Screen, DPH_PlexScreen):
 
 		self["Title"] = Label(_("System Server"))
 
-		self["entryList"] = List(self.builEntryList(), True)
+		self["entryList"] = List(self.buildEntryList(), True)
 		self["header"] = Label()
 		self["columnHeader"] = Label()
 
@@ -84,24 +109,39 @@ class DPS_Server(Screen, DPH_PlexScreen):
 		self["btn_blueText"] = Label()
 		self["btn_blue"] = Pixmap()
 
+		# MENU has no colored icon on most remotes, so unlike the four
+		# btn_*/btn_*Text pairs above this is text-only, placed on its own row
+		# in the skin rather than squeezed into the colored-button bar.
+		self["btn_menuText"] = Label()
+
 		self["actions"] = ActionMap(["WizardActions", "MenuActions", "ShortcutActions"],
-			{
-			 "ok": self.keyOk,
-			 "back": self.keyClose,
-			 "red": self.keyRed,
-			 "yellow": self.keyYellow,
-			 "green": self.keyGreen,
-			 "blue": self.keyBlue,
-			 }, -1)
+									{
+										"ok": self.keyOk,
+										"back": self.keyClose,
+										"red": self.keyRed,
+										"yellow": self.keyYellow,
+										"green": self.keyGreen,
+										"blue": self.keyBlue,
+										"menu": self.keyMenu,
+									}, -1)
 		self.what = what
+		# Parameters for the custom Jellyfin discovery
+		from .DPH_JellyfinDiscovery import JELLYFIN_HTTP_PORT
+		self._jd_params = { 'base': None, 'start': 1, 'end': 254, 'timeout': 0.5, 'port': JELLYFIN_HTTP_PORT }
+
+		# State of the asynchronous discovery (see _startDiscovery)
+		self._discoveryClient = None
+		self._discoveryTimer = None
+		self._discoveryDeadline = 0.0
 
 		self.onLayoutFinish.append(self.finishLayout)
+		self.onClose.append(self._stopDiscovery)
 
 		printl("", self, "C")
 
-	#===========================================================================
+	# ===========================================================================
 	#
-	#===========================================================================
+	# ===========================================================================
 	def finishLayout(self):
 		printl("", self, "S")
 
@@ -119,31 +159,30 @@ class DPS_Server(Screen, DPH_PlexScreen):
 		self["btn_greenText"].setText(_("Add"))
 		self["btn_yellowText"].setText(_("Sync Media"))
 		self["btn_blueText"].setText(_("Discover"))
+		self["btn_menuText"].setText(_("MENU: Clone for another user"))
 
 		printl("", self, "C")
 
 	#===========================================================================
 	#
 	#===========================================================================
-	def builEntryList(self):
+	def buildEntryList(self) -> list[tuple]:
 		printl("", self, "S")
 
-		self.myEntryList = []
+		# The skin's "entryList" widget is rendered by TemplatedMultiContent
+		# (text = 0/1/2/3), which the native eListboxPythonMultiContent reads
+		# with direct tuple access - a plain indexable object (e.g. the
+		# EntryServer dataclass) is not enough, it renders as an empty list
+		# on a real box with no error. The EntryServer is kept as the 5th
+		# element for keyOk/keyRed/keyYellow/deleteConfirm, which need
+		# entry.settings.
+		self.myEntryList: list[tuple] = []
+		settings: SettingsStorage = Singleton().getSettingsInstance()
 
-		for serverConfig in config.plugins.dreamplex.Entries:
+		for serverConfig in settings.serverConfigs:
+			entry: EntryServer = serverConfig.toEntryServer()
 
-			name = serverConfig.name.value
-
-			if serverConfig.connectionType.value == "2":
-				text1 = serverConfig.myplexUrl.value
-				text2 = serverConfig.myplexUsername.value
-			else:
-				text1 = "%d.%d.%d.%d" % tuple(serverConfig.ip.value)
-				text2 = "%d" % serverConfig.port.value
-
-			active = str(serverConfig.state.value)
-
-			self.myEntryList.append((name, text1, text2, active, serverConfig))
+			self.myEntryList.append((entry.name, entry.serverHost, entry.serverPort, entry.active, entry))
 
 		printl("", self, "C")
 		return self.myEntryList
@@ -154,7 +193,7 @@ class DPS_Server(Screen, DPH_PlexScreen):
 	def updateList(self):
 		printl("", self, "S")
 
-		self["entryList"].setList(self.builEntryList())
+		self["entryList"].setList(self.buildEntryList())
 
 		printl("", self, "C")
 
@@ -185,7 +224,8 @@ class DPS_Server(Screen, DPH_PlexScreen):
 		printl("", self, "S")
 
 		try:
-			sel = self["entryList"].getCurrent()[4]
+			entry: EntryServer = self["entryList"].getCurrent()[4]
+			sel = entry.settings
 
 		except Exception as ex:
 			printl("Exception: " + str(ex), self, "W")
@@ -199,13 +239,54 @@ class DPS_Server(Screen, DPH_PlexScreen):
 		printl("", self, "C")
 
 	#===========================================================================
+	# MENU key on a server entry: clone its settings (everything but
+	# username/password/token) into a new server entry, so a second login on
+	# the same server does not need the connection/playback/subtitle prefs
+	# re-entered from scratch. Available for any real, configured server
+	# (i.e. anything other than the EMPTY_SERVER_CONF placeholder row).
+	#===========================================================================
+	def keyMenu(self):
+		printl("", self, "S")
+
+		try:
+			entry: EntryServer = self["entryList"].getCurrent()[4]
+			sel = entry.settings
+		except Exception as ex:
+			printl("Exception: " + str(ex), self, "W")
+			sel = None
+
+		if sel is None or sel.getType() == EMPTY_SERVER_CONF:
+			printl("", self, "C")
+			return
+
+		self._pendingCloneSource = sel
+		self.session.openWithCallback(self._onCloneConfirm, MessageBox,
+			_("Clone this server's settings into a new server entry?\nYou will be asked for a username/password for the new one."), MessageBox.TYPE_YESNO)
+
+		printl("", self, "C")
+
+	def _onCloneConfirm(self, answer):
+		printl("", self, "S")
+
+		sel = getattr(self, "_pendingCloneSource", None)
+		self._pendingCloneSource = None
+
+		if not answer or sel is None:
+			printl("", self, "C")
+			return
+
+		self.session.openWithCallback(self.updateList, DPS_ServerConfig, None, None, sel)
+
+		printl("", self, "C")
+
+	#===========================================================================
 	#
 	#===========================================================================
 	def useSelectedServerData(self, choice):
 		printl("", self, "S")
 
 		if choice is not None:
-			serverData = choice[1]
+			serverData: DiscoveredServer = choice[1]
 			self.session.openWithCallback(self.updateList, DPS_ServerConfig, None, serverData)
 
 		printl("", self, "C")
@@ -217,7 +298,7 @@ class DPS_Server(Screen, DPH_PlexScreen):
 		printl("", self, "S")
 
 		try:
-			sel = self["entryList"].getCurrent()[4]
+			sel: EntryServer = self["entryList"].getCurrent()[4]
 
 		except Exception as ex:
 			printl("Exception: " + str(ex), self, "W")
@@ -238,7 +319,8 @@ class DPS_Server(Screen, DPH_PlexScreen):
 		printl("", self, "S")
 
 		try:
-			serverConfig = self["entryList"].getCurrent()[4]
+			entry: EntryServer = self["entryList"].getCurrent()[4]
+			serverConfig = entry.settings
 
 		except Exception as ex:
 			printl("Exception: " + str(ex), self, "W")
@@ -258,44 +340,199 @@ class DPS_Server(Screen, DPH_PlexScreen):
 	def keyBlue(self):
 		printl("", self, "S")
 
-		client = PlexGdm()
-		client.setClientDetails()
-
-		client.start_discovery()
-		while not client.discovery_complete:
-			print("Waiting for results")
-			time.sleep(1)
-
-		client.stop_discovery()
-		serverList = client.getServerList()
-		printl("serverList: " + str(serverList), self, "D")
-
-		menu = []
-		for server in serverList:
-			printl("server: " + str(server), self, "D")
-			menu.append((str(server.get("serverName")) + " (" + str(server.get("server")) + ":" + str(server.get("port")) + ")", server,))
-
-		printl("menu: " + str(menu), self, "D")
-		self.session.openWithCallback(self.useSelectedServerData, ChoiceBox, title=_("Select server"), list=menu)
+		# Ask which discovery to run
+		choices = [
+			(_("Discover Plex"), "plex"),
+			(_("Discover Jellyfin"), "jellyfin"),
+		]
+		self.session.openWithCallback(self._onDiscoveryChoice, ChoiceBox, title=_("Select discovery"), list=choices)
 
 		printl("", self, "C")
 
+	def _onDiscoveryChoice(self, choice):
+		if not choice:
+			return
+		label, kind = choice
+		if kind == "plex":
+			self._runPlexDiscovery()
+		else:
+			self._runJellyfinDiscovery()
+
 	#===========================================================================
+	# Asynchronous discovery
 	#
+	# Both PlexGdm and JellyfinDiscovery run the scan in a worker thread and
+	# expose discovery_complete / getServerList(). Here we follow their
+	# progress with an eTimer: waiting in a time.sleep() loop would block the
+	# enigma2 main loop, freezing the whole box for the entire duration of the
+	# scan.
 	#===========================================================================
+	DISCOVERY_POLL_INTERVAL = 200   # ms between one check and the next
+	DISCOVERY_TIMEOUT = 120         # seconds after which we give up
+
+	def _startDiscovery(self, client):
+		printl("", self, "S")
+
+		self._stopDiscovery()
+
+		self._discoveryClient = client
+		self._discoveryDeadline = time.time() + self.DISCOVERY_TIMEOUT
+
+		client.start_discovery()
+
+		self._discoveryTimer = eTimer()
+		self._discoveryTimer.callback.append(self._pollDiscovery)
+		self._discoveryTimer.start(self.DISCOVERY_POLL_INTERVAL, False)
+
+		printl("", self, "C")
+
+	def _pollDiscovery(self):
+		client = self._discoveryClient
+		if client is None:
+			return
+
+		if not client.discovery_complete and time.time() < self._discoveryDeadline:
+			return
+
+		timedOut = not client.discovery_complete
+		if timedOut:
+			printl("discovery timed out", self, "W")
+
+		serverList: list[DiscoveredServer] = client.getServerList()
+		self._stopDiscovery()
+		self._showDiscoveryResults(serverList)
+
+	def _stopDiscovery(self):
+		if self._discoveryTimer is not None:
+			self._discoveryTimer.stop()
+			self._discoveryTimer = None
+
+		if self._discoveryClient is not None:
+			client, self._discoveryClient = self._discoveryClient, None
+			try:
+				client.stop_discovery()
+			except Exception as ex:
+				printl("exception: " + str(ex), self, "W")
+
+	def _runPlexDiscovery(self):
+		client = PlexGdm()
+		client.setClientDetails()
+		self._startDiscovery(client)
+
+	def _runJellyfinDiscovery(self):
+		from .DPH_JellyfinDiscovery import JellyfinDiscovery, JELLYFIN_HTTP_PORT
+		# Ask whether to run a quick or a custom scan
+		choices = [
+			(_("Quick scan (/24)"), "quick"),
+			(_("Custom scan…"), "custom"),
+		]
+		def _after_choice(choice):
+			if not choice:
+				return
+			label, kind = choice
+			if kind == "custom":
+				# Start the parameter wizard
+				self._jd_params = { 'base': None, 'start': 1, 'end': 254, 'timeout': 0.5, 'port': JELLYFIN_HTTP_PORT }
+				self._askJDBase()
+			else:
+				self._startDiscovery(JellyfinDiscovery(timeout=0.3))
+		self.session.openWithCallback(_after_choice, ChoiceBox, title=_("Jellyfin discovery"), list=choices)
+
+	# Custom Jellyfin discovery wizard
+	def _confirmAbortJDWizard(self, retry):
+		# ESC on a DPS_TextInputBox closes it with value=None (cancel()),
+		# indistinguishable from confirming an empty field - without this,
+		# every step's "if value: ..." just silently kept its default and
+		# moved on to the next question instead of stopping, so ESC never
+		# actually interrupted the wizard.
+		def _onAnswer(reallyAbort):
+			if not reallyAbort:
+				retry()
+		self.session.openWithCallback(_onAnswer, MessageBox, _("Interrupt the Jellyfin server search?"), MessageBox.TYPE_YESNO)
+
+	def _askJDBase(self, value=None):
+		if value is not None:
+			self._jd_params['base'] = value
+		title = _("Enter subnet base (e.g. 192.168.1)")
+		self.session.openWithCallback(self._askJDStart, DPS_TextInputBox, title=title, type=Input.TEXT)
+
+	def _askJDStart(self, base):
+		if base is None:
+			self._confirmAbortJDWizard(self._askJDBase)
+			return
+		if base:
+			self._jd_params['base'] = base
+		title = _("Start host (1-254)")
+		self.session.openWithCallback(self._askJDEnd, DPS_TextInputBox, title=title, type=Input.TEXT)
+
+	def _askJDEnd(self, start):
+		if start is None:
+			self._confirmAbortJDWizard(self._askJDStart)
+			return
+		if start and start.isdigit():
+			self._jd_params['start'] = int(start)
+		title = _("End host (1-254)")
+		self.session.openWithCallback(self._askJDTimeout, DPS_TextInputBox, title=title, type=Input.TEXT)
+
+	def _askJDTimeout(self, end):
+		if end is None:
+			self._confirmAbortJDWizard(self._askJDEnd)
+			return
+		if end and end.isdigit():
+			self._jd_params['end'] = int(end)
+		title = _("Timeout seconds (e.g. 0.5)")
+		self.session.openWithCallback(self._askJDPort, DPS_TextInputBox, title=title, type=Input.TEXT)
+
+	def _askJDPort(self, timeout):
+		if timeout is None:
+			self._confirmAbortJDWizard(self._askJDTimeout)
+			return
+		try:
+			if timeout:
+				self._jd_params['timeout'] = float(timeout)
+		except Exception:
+			pass
+		from .DPH_JellyfinDiscovery import JELLYFIN_HTTP_PORT
+		title = _("Jellyfin port (default %d)") % JELLYFIN_HTTP_PORT
+		self.session.openWithCallback(self._runJDScan, DPS_TextInputBox, title=title, type=Input.TEXT, text=str(self._jd_params.get('port', JELLYFIN_HTTP_PORT)))
+
+	def _runJDScan(self, port):
+		if port is None:
+			self._confirmAbortJDWizard(self._askJDPort)
+			return
+		from .DPH_JellyfinDiscovery import JellyfinDiscovery
+		port = str(port).strip() if port else ""
+		if port.isdigit():
+			self._jd_params['port'] = int(port)
+		jd = JellyfinDiscovery(timeout=self._jd_params.get('timeout', 0.5))
+		jd.set_params(subnet_base=self._jd_params.get('base'), start=self._jd_params.get('start', 1), end=self._jd_params.get('end', 254), timeout=self._jd_params.get('timeout', 0.5), port=self._jd_params.get('port'))
+		self._startDiscovery(jd)
+
+	def _showDiscoveryResults(self, serverList: list):
+		printl("serverList: " + str(serverList), self, "D")
+		menu = []
+		for server in serverList or []:
+			printl("server: " + str(server), self, "D")
+			menu.append((str(server.serverName) + " (" + str(server.server) + ":" + str(server.port) + ")", server,))
+		if not menu:
+			self.session.open(MessageBox, _("No servers discovered"), MessageBox.TYPE_INFO)
+			return
+		self.session.openWithCallback(self.useSelectedServerData, ChoiceBox, title=_("Select server"), list=menu)
+
+	# ===========================================================================
+	#
+	# ===========================================================================
 	def deleteConfirm(self, result):
 		printl("", self, "S")
 
 		if not result:
 			return
 
-		sel = self["entryList"].getCurrent()[4]
-		config.plugins.dreamplex.entriescount.value -= 1
-		config.plugins.dreamplex.entriescount.save()
-		config.plugins.dreamplex.Entries.remove(sel)
-		config.plugins.dreamplex.Entries.save()
-		config.plugins.dreamplex.save()
-		configfile.save()
+		entry: EntryServer = self["entryList"].getCurrent()[4]
+		sel = entry.settings
+		settings: SettingsStorage = Singleton().getSettingsInstance()
+		settings.serverConfigs.remove(sel)
+		settings.writeToFile()
 		self.updateList()
 
 		printl("", self, "C")
@@ -311,7 +548,7 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 	useHomeUsers = False
 	authenticated = False
 
-	def __init__(self, session, entry, data=None):
+	def __init__(self, session, entry: EntryServer, data: DiscoveredServer = None, cloneFrom: AbstractServerSettings = None):
 		printl("", self, "S")
 
 		Screen.__init__(self, session)
@@ -319,16 +556,16 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		self.guiElements = getGuiElements()
 
 		self["actions"] = ActionMap(["DPS_ServerConfig", "ColorActions"],
-		{
-			"green": self.keySave,
-			"cancel": self.keyCancel,
-		    "exit": self.keyCancel,
-			"yellow": self.keyYellow,
-			"blue": self.keyBlue,
-			"red": self.keyRed,
-			"left": self.keyLeft,
-			"right": self.keyRight,
-		}, -2)
+									{
+										"green": self.keySave,
+										"cancel": self.keyCancel,
+										"exit": self.keyCancel,
+										"yellow": self.keyYellow,
+										"blue": self.keyBlue,
+										"red": self.keyRed,
+										"left": self.keyLeft,
+										"right": self.keyRight,
+									}, -2)
 
 		self["help"] = StaticText()
 
@@ -346,20 +583,39 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		self["btn_blueText"] = Label()
 		self["btn_blue"] = Pixmap()
 
+		self._settings = Singleton().getSettingsInstance()
+
 		if entry is None:
 			self.newmode = 1
-			self.current = initServerEntryConfig()
 			if data is not None:
-				ipBlocks = data.get("server").split(".")
-				self.current.name.value = data.get("serverName")
-				self.current.ip.value = [int(ipBlocks[0]), int(ipBlocks[1]), int(ipBlocks[2]), int(ipBlocks[3])]
-				self.current.port.value = int(data.get("port"))
+				sdata: ServerSettingsData = ServerSettings[data.type]
+				self.current = sdata.factoryClass().createEmptyServerSettings(self._settings, data)
+			elif cloneFrom is not None:
+				sdata: ServerSettingsData = ServerSettings[cloneFrom.getType()]
+				self.current = sdata.factoryClass().createServerSettings(self._settings)
+				_copyServerFields(cloneFrom, self.current)
+				try:
+					self.current.id().setValue(self._settings.getUniqueId())
+				except Exception:
+					pass
+				try:
+					self.current.name().setValue(cloneFrom.name().getValue() + " " + _("(clone)"))
+				except Exception:
+					pass
+			else:
+				self.current = EmptyServerSettings(self._settings)
+				self.current.onTypeChanged(self.serverTypeChanged)
+
+			# Without this, the new server's Element is never attached to the
+			# document and the object never lands in the live list: saving
+			# would silently write nothing, and cancelling would crash below
+			# in keyCancel(), which already expects to find it there.
+			self._settings.registerNewServer(self.current)
 
 		else:
 			self.newmode = 0
-			self.current = entry
-			self.currentId = self.current.id.value
-			printl("currentId: " + str(self.currentId), self, "D")
+			self.current = entry.settings
+			printl("currentId: " + str(self.current.getIndex()), self, "D")
 
 		self.cfglist = []
 		ConfigListScreen.__init__(self, self.cfglist, session)
@@ -369,6 +625,15 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		self.onLayoutFinish.append(self.finishLayout)
 
 		self.onShown.append(self.checkForPinUsage)
+
+		# Safety net: registerNewServer() above already wired a brand-new/
+		# cloned entry into the live server list before the user ever saw a
+		# save/cancel choice. keyCancel() cleans it up on an explicit Cancel/
+		# Exit, but any other way this screen closes (a stray key, a crash in
+		# a callback) would otherwise leave it behind permanently. saveNow()
+		# is the only place self._saved is set True.
+		self._saved = False
+		self.onClose.append(self._discardIfUnsaved)
 
 		printl("", self, "C")
 
@@ -395,7 +660,7 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		self.onShown = []
 
 		if not self.authenticated:
-			if self.current.protectSettings.value:
+			if self.current.pinRequired():
 				self.session.openWithCallback(self.askForPin, InputBox, title=_("Please enter the pincode!"), type=Input.PIN)
 			else:
 				self.authenticated = True
@@ -414,7 +679,7 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		if enteredPin is None:
 			pass
 		else:
-			if int(enteredPin) == int(self.current.settingsPin.value):
+			if self.current.checkPin(enteredPin):
 				#self.session.open(MessageBox,"The pin was correct!", MessageBox.TYPE_INFO)
 				self.authenticated = True
 				self.createSetup()
@@ -427,134 +692,41 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 	#===========================================================================
 	#
 	#===========================================================================
+	def serverTypeChanged(self, configElement=None):
+		self.createSetup()
+
+	#===========================================================================
+	#
+	#===========================================================================
 	def createSetup(self):
 		printl("", self, "S")
 
-		separator = "".ljust(250, "_")
+		# EmptyServerSettings is only a placeholder shown while the user picks
+		# a "Server Type" in the manual "Add server" flow. Once a real type is
+		# chosen, swap it for an actual PlexSettings/JellyfinSettings instance
+		# so the rest of the fields (and registerServer()) work as expected.
+		if isinstance(self.current, EmptyServerSettings):
+			selectedType = self.current.getSelectedType()
+			if selectedType != EMPTY_SERVER_CONF:
+				oldCurrent = self.current
+				sdata: ServerSettingsData = ServerSettings[selectedType]
+				self.current = sdata.factoryClass().createServerSettings(self._settings)
+				self._settings.serverConfigs.remove(oldCurrent)
+				self._settings.registerNewServer(self.current)
 
 		self.cfglist = []
-		##
-		self.cfglist.append(getConfigListEntry(_("General Settings ") + separator, config.plugins.dreamplex.about, _("-")))
-		##
-		self.cfglist.append(getConfigListEntry(_(" > State"), self.current.state, _("Toggle state to on/off to show this server in lost or not.")))
-		self.cfglist.append(getConfigListEntry(_(" > Autostart"), self.current.autostart, _("Enter this server automatically on startup.")))
-		self.cfglist.append(getConfigListEntry(_(" > Name"), self.current.name, _("Simply a name for better overview")))
-		self.cfglist.append(getConfigListEntry(_(" > Trailer"), self.current.loadExtraData, _("Enable trailer function. Only works with PlexPass or YYTrailer plugin.")))
 
-		##
-		self.cfglist.append(getConfigListEntry(_("Connection Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-		##
-		self.cfglist.append(getConfigListEntry(_(" > Connection Type"), self.current.connectionType, _("Select your type how the box is reachable.")))
-
-		if self.current.connectionType.value == "0" or self.current.connectionType.value == "1":  # IP or DNS
-			self.cfglist.append(getConfigListEntry(_(" > Local Authentication"), self.current.localAuth, _("Use this if you secured your plex server in the settings.")))
-			if self.current.connectionType.value == "0":
-				self.addIpSettings()
-			else:
-				self.cfglist.append(getConfigListEntry(_(" >> DNS"), self.current.dns, _(" ")))
-				self.cfglist.append(getConfigListEntry(_(" >> Port"), self.current.port, _(" ")))
-			if self.current.localAuth.value:
-				self.addMyPlexSettings()
-
-		elif self.current.connectionType.value == "2":  # plex.tv
-			self.addMyPlexSettings()
-
-		##
-		self.cfglist.append(getConfigListEntry(_("Playback Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-		##
-
-		self.cfglist.append(getConfigListEntry(_(" > Playback Type"), self.current.playbackType, _(" ")))
-		if self.current.playbackType.value == "0":
-			self.useMappings = False
-
-		elif self.current.playbackType.value == "1":
-			self.useMappings = False
-			self.cfglist.append(getConfigListEntry(_(" >> Use universal Transcoder"), self.current.universalTranscoder, _("You need gstreamer_fragmented installed for this feature! Please check in System ... ")))
-			if not self.current.universalTranscoder.value:
-				self.cfglist.append(getConfigListEntry(_(" >> Transcoding quality"), self.current.quality, _("You need gstreamer_fragmented installed for this feature! Please check in System ... ")))
-				self.cfglist.append(getConfigListEntry(_(" >> Segmentsize in seconds"), self.current.segments, _("You need gstreamer_fragmented installed for this feature! Please check in System ... ")))
-			else:
-				self.cfglist.append(getConfigListEntry(_(" >> Transcoding quality"), self.current.uniQuality, _("You need gstreamer_fragmented installed for this feature! Please check in System ... ")))
-
-		elif self.current.playbackType.value == "2":
-			self.useMappings = True
-			self.cfglist.append(getConfigListEntry(_("> Search and use forced subtitles"), self.current.useForcedSubtitles, _("Monitor playback to activate subtitles automatically if needed. You have to enable subtitles with 'Text'-Buttion first.")))
-
-		elif self.current.playbackType.value == "3":
-			self.useMappings = False
-			#self.cfglist.append(getConfigListEntry(_(">> Username"), self.current.smbUser))
-			#self.cfglist.append(getConfigListEntry(_(">> Password"), self.current.smbPassword))
-			#self.cfglist.append(getConfigListEntry(_(">> Server override IP"), self.current.nasOverrideIp))
-			#self.cfglist.append(getConfigListEntry(_(">> Servers root"), self.current.nasRoot))
-
-		if self.current.playbackType.value == "2":
-			##
-			self.cfglist.append(getConfigListEntry(_("Subtitle Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-			##
-			self.cfglist.append(getConfigListEntry(_(" >> Enable Subtitle renaming in direct local mode"), self.current.srtRenamingForDirectLocal, _("Renames filename.eng.srt automatically to filename.srt so e2 is able to read them.")))
-			if self.current.srtRenamingForDirectLocal.value:
-				self.cfglist.append(getConfigListEntry(_(" >> Target subtitle language"), self.current.subtitlesLanguage, _("Search string that should be removed from srt file.")))
-
-		##
-		self.cfglist.append(getConfigListEntry(_("Wake On Lan Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-		##
-		self.cfglist.append(getConfigListEntry(_(" > Use Wake on Lan (WoL)"), self.current.wol, _(" ")))
-
-		if self.current.wol.value:
-			self.cfglist.append(getConfigListEntry(_(" >> Mac address (Size: 12 alphanumeric no seperator) only for WoL"), self.current.wol_mac, _(" ")))
-			self.cfglist.append(getConfigListEntry(_(" >> Wait for server delay (max 180 seconds) only for WoL"), self.current.wol_delay, _(" ")))
-
-		##
-		self.cfglist.append(getConfigListEntry(_("Sync Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-		##
-		self.cfglist.append(getConfigListEntry(_(" > Sync Movies Medias"), self.current.syncMovies, _("Sync this content.")))
-		self.cfglist.append(getConfigListEntry(_(" > Sync Shows Medias"), self.current.syncShows, _("Sync this content.")))
-		self.cfglist.append(getConfigListEntry(_(" > Sync Music Medias"), self.current.syncMusic, _("Sync this content.")))
+		hints: dict[str, Any] = self.current.setupServer(self.cfglist)
+		self.useMappings = hints["useMappings"]
+		self.useHomeUsers = hints["useHomeUsers"]
 
 		self["config"].list = self.cfglist
 		self["config"].l.setList(self.cfglist)
-
-		if self.current.myplexHomeUsers.value:
-			self.useHomeUsers = True
-		else:
-			self.useHomeUsers = False
 
 		self.setKeyNames()
 
 		printl("", self, "C")
 
-	#===========================================================================
-	#
-	#===========================================================================
-	def addIpSettings(self):
-		printl("", self, "S")
-
-		self.cfglist.append(getConfigListEntry(_(" >> IP"), self.current.ip, _(" ")))
-		self.cfglist.append(getConfigListEntry(_(" >> Port"), self.current.port, _(" ")))
-
-		printl("", self, "C")
-
-	#===========================================================================
-	#
-	#===========================================================================
-	def addMyPlexSettings(self):
-		printl("", self, "S")
-
-		self.cfglist.append(getConfigListEntry(_(" >> plex.tv URL"), self.current.myplexUrl, ''))
-		self.cfglist.append(getConfigListEntry(_(" >> plex.tv Username"), self.current.myplexUsername, ''))
-		self.cfglist.append(getConfigListEntry(_(" >> plex.tv Password"), self.current.myplexPassword, ''))
-
-		self.cfglist.append(getConfigListEntry(_(" >> plex.tv Home Users"), self.current.myplexHomeUsers, _("Use Home Users?")))
-		if self.current.myplexHomeUsers.value:
-			self.cfglist.append(getConfigListEntry(_(" >> Use Settings Protection"), self.current.protectSettings, _("Ask for pin?")))
-			if self.current.protectSettings.value:
-				self.cfglist.append(getConfigListEntry(_(" >> Settings Pincode"), self.current.settingsPin, _("Pincode for changing settings")))
-
-			self.cfglist.append(getConfigListEntry(_(" >> plex.tv Pin Protection"), self.current.myplexPinProtect, _("Use Pinprotection for switch back to plex.tv user?")))
-			if self.current.myplexPinProtect.value:
-				self.cfglist.append(getConfigListEntry(_(" >> plex.tv Pincode"), self.current.myplexPin, _("Pincode for switching back from any home user.")))
-
-		printl("", self, "C")
 
 	#===========================================================================
 	#
@@ -580,7 +752,7 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 			self["btn_yellowText"].setText(_("Mappings"))
 			self["btn_yellowText"].show()
 			self["btn_yellow"].show()
-		elif self.current.localAuth.value:
+		elif self.current.requireAuthentication():
 			self["btn_yellowText"].setText(_("get local auth Token"))
 			self["btn_yellowText"].show()
 			self["btn_yellow"].show()
@@ -588,7 +760,7 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 			self["btn_yellowText"].hide()
 			self["btn_yellow"].hide()
 
-		if (self.current.localAuth.value or self.current.connectionType.value == "2") and self.newmode == 0:
+		if (self.current.requireAuthentication()) and self.newmode == 0:
 			if self.useHomeUsers:
 				self["btn_redText"].setText(_("Home Users"))
 				self["btn_redText"].show()
@@ -597,7 +769,7 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 				self["btn_redText"].hide()
 				self["btn_red"].hide()
 
-			self["btn_blueText"].setText(_("(re)create plex.tv Token"))
+			self["btn_blueText"].setText(_("(re)create remote Token"))
 
 			self["btn_blueText"].show()
 			self["btn_blue"].show()
@@ -637,44 +809,25 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 	def keySave(self):
 		printl("", self, "S")
 
-		if self.newmode == 1:
-			config.plugins.dreamplex.entriescount.value += 1
-			config.plugins.dreamplex.entriescount.save()
-
-		#if self.current.machineIdentifier.value == "":
-		from .DP_PlexLibrary import PlexLibrary
-		self.plexInstance = Singleton().getPlexInstance(PlexLibrary(self.session, self.current))
-
-		machineIdentifiers = ""
-
-		if self.current.connectionType.value == "2":
-			xmlResponse = self.plexInstance.getSharedServerForPlexUser()
-			machineIdentifier = xmlResponse.get("machineIdentifier")
-			if machineIdentifier is not None:
-				machineIdentifiers += machineIdentifier
-
-			servers = xmlResponse.findall("Server")
-			for server in servers:
-				machineIdentifier = server.get("machineIdentifier")
-				if machineIdentifier is not None:
-					machineIdentifiers += ", " + machineIdentifier
-
-		else:
-			http = self.plexInstance.http
-			url = "%s://%s:%s" % (http, str(self.plexInstance.g_host), str(self.plexInstance.serverConfig_port))
-			xmlResponse = self.plexInstance.getXmlTreeFromUrl(url)
-			machineIdentifier = xmlResponse.get("machineIdentifier")
-
-			if machineIdentifier is not None:
-				machineIdentifiers += xmlResponse.get("machineIdentifier")
-
-		self.current.machineIdentifier.value = machineIdentifiers
-		printl("machineIdentifier: " + str(self.current.machineIdentifier.value), self, "D")
-
-		if self.current.connectionType.value == "2" or self.current.localAuth.value:
-			self.keyBlue()
-		else:
+		if not self.current.isActive():
+			# A disabled server needs neither a reachability check nor a
+			# fresh token - nothing uses it until it is turned back on, and
+			# skipping the network round-trip means simply flipping "State"
+			# to No does not fail (or silently renew a token) on a server
+			# that is unreachable right now for unrelated reasons.
 			self.saveNow()
+			printl("", self, "C")
+			return
+
+		if self.current.registerServer(self.session):
+			if self.current.requireAuthentication():
+				self.keyBlue()
+			else:
+				self.saveNow()
+		elif isinstance(self.current, EmptyServerSettings):
+			self.session.open(MessageBox, _("Please select a server type before saving."), MessageBox.TYPE_INFO)
+		else:
+			self.session.open(MessageBox, _("Could not reach the server.\nPlease check host, port and network connectivity."), MessageBox.TYPE_INFO)
 
 		printl("", self, "C")
 
@@ -684,10 +837,8 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 	def saveNow(self, retval=None):
 		printl("", self, "S")
 
-		config.plugins.dreamplex.entriescount.save()
-		config.plugins.dreamplex.Entries.save()
-		config.plugins.dreamplex.save()
-		configfile.save()
+		self._saved = True
+		self._settings.writeToFile()
 
 		self.close()
 
@@ -699,11 +850,25 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 	def keyCancel(self):
 		printl("", self, "S")
 
-		if self.newmode == 1:
-			config.plugins.dreamplex.Entries.remove(self.current)
+		self._discardIfUnsaved()
+
 		ConfigListScreen.cancelConfirm(self, True)
 
 		printl("", self, "C")
+
+	#===========================================================================
+	# Removes a new/cloned server that was registered (registerNewServer(),
+	# in __init__) but never actually saved - called both from keyCancel()
+	# and unconditionally from onClose, so any way this screen closes without
+	# saving leaves the server list exactly as it was before it was opened.
+	#===========================================================================
+	def _discardIfUnsaved(self):
+		if self.newmode != 1 or self._saved:
+			return
+		settings: SettingsStorage = Singleton().getSettingsInstance()
+		if self.current in settings.serverConfigs:
+			settings.serverConfigs.remove(self.current)
+			settings.writeToFile()
 
 	#===========================================================================
 	#
@@ -712,25 +877,18 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		printl("", self, "S")
 
 		if self.useMappings:
-			serverID = self.currentId
-			self.plexInstance = Singleton().getPlexInstance(PlexLibrary(self.session, self.current))
-			serverpaths = self.plexInstance.getServerSectionPaths()
-			self.session.open(DPS_Mappings, serverID, serverpaths)
-
-		elif self.current.localAuth.value:
-			# now that we know the server we establish global plexInstance
-			self.plexInstance = Singleton().getPlexInstance(PlexLibrary(self.session, self.current))
-
-			ipInConfig = "%d.%d.%d.%d" % tuple(self.current.ip.value)
-			token = self.plexInstance.getPlexUserTokenForLocalServerAuthentication(ipInConfig)
-
-			if token:
-				self.current.myplexLocalToken.value = token
-				self.current.myplexLocalToken.save()
-				self.session.open(MessageBox, (_("Local Token:") + "\n%s \n" + _("for the user:") + "\n%s") % (token, self.current.myplexTokenUsername.value), MessageBox.TYPE_INFO)
+			if self.current.supportServerMapping():
+				self.session.open(DPS_Mappings, self.current)
 			else:
-				response = self.plexInstance.getLastResponse()
-				self.session.open(MessageBox, (_("Error:") + "\n%s \n" + _("for the user:") + "\n%s") % (response, self.current.myplexTokenUsername.value), MessageBox.TYPE_INFO)
+				self.session.open(MessageBox, (_("Error:") + "\n%s \n" + _("unsupported mapping:")) % (_("Unsupported mapping for this server")), MessageBox.TYPE_INFO)
+
+		elif self.current.requireAuthentication():
+			success, info = self.current.buildAuthorization(self.session, mode=AuthorizationMode.LOCAL)
+
+			if success:
+				self.session.open(MessageBox, (_("Local Token:") + "\n%s \n" + _("for the user:") + "\n%s") % (info[AuthorizationResult.CREDENTIALS], info[AuthorizationResult.PRINCIPAL]), MessageBox.TYPE_INFO)
+			else:
+				self.session.open(MessageBox, (_("Error:") + "\n%s \n" + _("for the user:") + "\n%s") % (info[AuthorizationResult.ERROR], info[AuthorizationResult.PRINCIPAL]), MessageBox.TYPE_INFO)
 
 		printl("", self, "C")
 
@@ -740,16 +898,43 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 	def keyBlue(self):
 		printl("", self, "S")
 
-		# now that we know the server we establish global plexInstance
-		self.plexInstance = Singleton().getPlexInstance(PlexLibrary(self.session, self.current))
+		success, info = self.current.buildAuthorization(self.session, mode=AuthorizationMode.REMOTE)
 
-		token = self.plexInstance.getNewMyPlexToken()
-
-		if token:
-			self.session.openWithCallback(self.saveNow, MessageBox, (_("plex.tv Token:") + "\n%s \n" + _("for the user:") + "\n%s \n" + _("with the id:") + "\n%s") % (token, self.current.myplexTokenUsername.value, self.current.myplexId.value), MessageBox.TYPE_INFO)
+		if success:
+			# TYPE_INFO here used to save unconditionally on ANY dismissal -
+			# OK or Cancel/Exit both just closed the box and fired the same
+			# saveNow() callback, since it never looked at the retval. A user
+			# who pressed Cancel/Exit expecting to abort the whole "add
+			# server" flow got a silently saved, semi-configured server
+			# anyway. TYPE_YESNO plus an explicit confirmed-only branch below
+			# fixes that: only "Yes" saves, anything else leaves the entry
+			# alone in the config screen (new/cloned entries still get
+			# cleaned up on an explicit Cancel/Exit from there, same as
+			# before - see _discardIfUnsaved()).
+			self.session.openWithCallback(self._onRemoteAuthConfirmed, MessageBox, (_("Remote Token:") + "\n%s \n" + _("for the user:") + "\n%s \n" + _("with the id:") + "\n%s\n\n" + _("Save this server?")) %
+										  (info[AuthorizationResult.CREDENTIALS], info[AuthorizationResult.PRINCIPAL], info[AuthorizationResult.ID]), MessageBox.TYPE_YESNO, default=True)
 		else:
-			response = self.plexInstance.getLastResponse()
-			self.session.openWithCallback(self.saveNow, MessageBox, (_("Error:") + "\n%s \n" + _("for the user:") + "\n%s") % (response, self.current.myplexTokenUsername.value), MessageBox.TYPE_INFO)
+			# Do NOT save on a failed authentication: keySave() got here
+			# automatically after the reachability check passed, but wrong/
+			# missing credentials mean this entry is not actually usable yet.
+			# Dismissing the error just returns to the config screen - the
+			# entry (new or cloned) is only written to disk on a successful
+			# auth, or discarded on an explicit Cancel/Exit (newmode == 1).
+			self.session.open(MessageBox, (_("Error:") + "\n%s \n" + _("for the user:") + "\n%s") %
+							  (info[AuthorizationResult.ERROR], info[AuthorizationResult.PRINCIPAL]), MessageBox.TYPE_INFO)
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def _onRemoteAuthConfirmed(self, confirmed):
+		printl("", self, "S")
+
+		if confirmed:
+			self.saveNow()
+		# else: leave the config screen open with nothing saved - the user
+		# can still change fields and retry, or Cancel/Exit as usual.
 
 		printl("", self, "C")
 
@@ -760,10 +945,125 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		printl("", self, "S")
 
 		if self.useHomeUsers:
-			serverID = self.currentId
-			plexInstance = Singleton().getPlexInstance(PlexLibrary(self.session, self.current))
-			self.session.open(DPS_Users, serverID, plexInstance)
+			self.session.open(DPS_Users, self.current)
 
-		#self.session.open(MessageBox,(_("plex.tv Token:") + "\n%s \n" + _("plex.tv Localtoken:") + "\n%s \n"+ _("for the user:") + "\n%s") % (self.current.myplexToken.value, self.current.myplexLocalToken.value, self.current.myplexTokenUsername.value), MessageBox.TYPE_INFO)
+		# self.session.open(MessageBox,(_("plex.tv Token:") + "\n%s \n" + _("plex.tv Localtoken:") + "\n%s \n"+ _("for the user:") + "\n%s") % (self.current.myplexToken.value, self.current.myplexLocalToken.value, self.current.myplexTokenUsername.value), MessageBox.TYPE_INFO)
 
 		printl("", self, "C")
+
+class EmptyServerSettings(AbstractServerSettings[None]):
+
+	def __init__(self, owner: SettingsStorage):
+		super().__init__(owner)
+		serverTypeChoices = [(key, data.name) for key, data in ServerSettings.items()]
+		self._serverType = ConfigSelection(choices=serverTypeChoices, default=EMPTY_SERVER_CONF)
+
+		# Placeholder connection fields, only to satisfy AbstractServerSettings'
+		# interface (ip()/port()/dns()/connectionType() are abstract there,
+		# since their choices/defaults genuinely differ per real backend) -
+		# this instance is swapped for a real PlexSettings/JellyfinSettings as
+		# soon as a type is picked (see createSetup()), so these values are
+		# never actually shown or used for a real connection.
+		self._connectionType = BaseSettings[str, ConfigSelection]("connectionType", ConfigSelection(default="0", choices=[("0", _("IP")), ("1", _("DNS"))]), owner)
+		self._ip = BaseSettings[str, ConfigIP]("ip", ConfigIP(default=[0, 0, 0, 0]), owner)
+		self._dns = BaseSettings[str, ConfigText]("dns", ConfigText(default="", visible_width=50, fixed_size=False), owner)
+		self._port = BaseSettings[int, ConfigInteger]("port", ConfigInteger(default=0, limits=(0, 65555)), owner)
+
+	def connectionType(self) -> 'BaseSettings[str, ConfigSelection]':
+		return self._connectionType
+
+	def ip(self) -> 'BaseSettings[str, ConfigIP]':
+		return self._ip
+
+	def dns(self) -> 'BaseSettings[str, ConfigText]':
+		return self._dns
+
+	def port(self) -> 'BaseSettings[int, ConfigInteger]':
+		return self._port
+
+	def isReachable(self) -> bool:
+		# Not a real server - "Add server" hasn't picked a type yet.
+		return False
+
+	def getSelectedType(self) -> str:
+		return self._serverType.getValue()
+
+	def onTypeChanged(self, callback) -> None:
+		# keyLeft/keyRight already rebuild the config list after every value
+		# change, but the "Server Type" field has multiple choices and is
+		# normally changed via the OK-button ChoiceBox menu, which sets the
+		# value directly without going through keyLeft/keyRight - so that
+		# path never triggered a rebuild. Hooking the notifier covers both.
+		self._serverType.addNotifier(callback, initial_call=False, immediate_feedback=True)
+
+	def getIndex(self) -> int | None:
+		return -1
+
+	def requireAuthentication(self) -> bool:
+		return False
+
+	def registerServer(self, session) -> bool:
+		return False
+
+	def buildAuthorization(self, session, mode: AuthorizationMode) -> tuple[bool, dict[AuthorizationResult, str]]:
+		return False, {}
+
+	def supportServerMapping(self) -> bool:
+		return False
+
+	def listSupportedServerMappings(self, session) -> list[str] | None:
+		return None
+
+	def getName(self) -> str | None:
+		return _("No Server")
+
+	def getType(self) -> str:
+		return EMPTY_SERVER_CONF
+
+	def toEntryServer(self) -> EntryServer | None:
+		return None
+
+	def isActive(self) -> bool:
+		return False
+
+	def isAutostart(self) -> bool:
+		return False
+
+	def supportUsers(self) -> bool:
+		return False
+
+	def authenticateUser(self, session, principal: str, credential: str) -> tuple[bool, dict[AuthorizationResult, str]]:
+		return (False, {AuthorizationResult.ERROR: _("No Server")})
+
+	def pinRequired(self) -> bool:
+		return False
+
+	def checkPin(self, pin: str) -> bool:
+		return True
+
+	def setupServer(self, config: list[ConfigElement]) -> dict[str, Any]:
+		config.append(getConfigListEntry(_(" > Server Type"), self._serverType, _("Select the type of server to add.")))
+		res: dict[str, Any] = {
+			"useMappings": False,
+			"useHomeUsers": False
+		}
+		return res
+
+	def getUserSwitchMode(self) -> str:
+		return USER_SWITCH_NONE
+
+	def getCurrentUserDisplayName(self) -> str | None:
+		return None
+
+	def getCurrentUserAccessToken(self) -> str | None:
+		return None
+
+	def getCloneExcludeFields(self) -> set[str]:
+		return set()
+
+	def _writeValue(self, value: T) -> None:
+		pass
+
+	def _readValue(self) -> T:
+		pass
+

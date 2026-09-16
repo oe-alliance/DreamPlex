@@ -34,7 +34,7 @@ from Screens.Screen import Screen
 
 from .__common__ import printl2 as printl, revokeCacheFiles
 
-from .__init__ import _  # _ is translation
+from . import _  # _ is translation
 
 #===============================================================================
 #

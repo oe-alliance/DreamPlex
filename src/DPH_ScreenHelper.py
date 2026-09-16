@@ -34,6 +34,7 @@ from Components.Label import MultiColorLabel
 from Components.config import NumericalTextInput
 
 from Screens.Screen import Screen
+from Screens.HelpMenu import HelpableScreen
 
 from skin import parseColor
 from six import PY2
@@ -42,6 +43,7 @@ from .DPH_Singleton import Singleton
 from .DP_ViewFactory import translateValues
 
 from .__common__ import printl2 as printl, addNewScreen, closePlugin, getSkinResolution, getSkinHighlightedColor, getSkinNormalColor
+from . import _  # _ is translation
 
 #===============================================================================
 #
@@ -58,7 +60,7 @@ class DPH_ScreenHelper(object):
 	def __init__(self, forceMiniTv=False):
 		printl("", self, "S")
 
-		self.stopLiveTvOnStartup = config.plugins.dreamplex.stopLiveTvOnStartup.value
+		self.stopLiveTvOnStartup = Singleton().getSettingsInstance().stopLiveTvOnStartup.getValue()
 
 		# we use this e.g in DP_View to use miniTv for backdrops via libiframe
 		self.forceMiniTv = forceMiniTv
@@ -160,22 +162,22 @@ class DPH_PlexScreen(object):
 		try:
 			self["btn_red"].instance.setPixmapFromFile(self.guiElements["key_red"])
 
-		except:
+		except Exception:
 			pass
 
 		try:
 			self["btn_green"].instance.setPixmapFromFile(self.guiElements["key_green"])
-		except:
+		except Exception:
 			pass
 
 		try:
 			self["btn_yellow"].instance.setPixmapFromFile(self.guiElements["key_yellow"])
-		except:
+		except Exception:
 			pass
 
 		try:
 			self["btn_blue"].instance.setPixmapFromFile(self.guiElements["key_blue"])
-		except:
+		except Exception:
 			pass
 
 #===============================================================================
@@ -218,7 +220,7 @@ class DPH_MultiColorFunctions(object):
 		# we put this into try because if there is no function registered it will come a gs
 		try:
 			return self.colorFunctionContainer[color][level][1]
-		except:
+		except Exception:
 			return False
 
 		printl("", self, "C")
@@ -234,16 +236,23 @@ class DPH_MultiColorFunctions(object):
 			functionList = self.colorFunctionContainer[color][level]
 
 			if functionList is not None:
-				# if it is not already visible we change this now
-				if self["btn_" + color + "Text"].getVisible() == 0:
-					self["btn_" + color + "Text"].show()
-					self["btn_" + color].show()
-
+				# Unconditional show(), not gated on getVisible() - DP_View's
+				# own refresh() also shows/hides btn_yellow independently
+				# (hideRefreshFunction/showRefreshFunction, based on whether
+				# the selected row is a real OS folder) whenever the level is
+				# "2". getVisible() could still report the pre-hide value for
+				# a moment after that runs, before the GUI actually repaints -
+				# the old guard then wrongly believed the button was already
+				# visible and skipped re-showing it, which is what made the
+				# yellow "refresh Library" button randomly seem to vanish
+				# while switching levels back and forth on a page with a
+				# folder row selected.
+				self["btn_" + color + "Text"].show()
+				self["btn_" + color].show()
 				self["btn_" + color + "Text"].setText(self.colorFunctionContainer[color][level][0])
 			else:
-				if self["btn_" + color + "Text"].getVisible() == 1:
-					self["btn_" + color + "Text"].hide()
-					self["btn_" + color].hide()
+				self["btn_" + color + "Text"].hide()
+				self["btn_" + color].hide()
 
 		printl("", self, "C")
 
@@ -286,7 +295,7 @@ class DPH_MultiColorFunctions(object):
 #===============================================================================
 
 
-class DPH_Screen(Screen):
+class DPH_Screen(Screen, HelpableScreen):
 
 	#===============================================================================
 	#
@@ -295,10 +304,30 @@ class DPH_Screen(Screen):
 		printl("", self, "S")
 
 		Screen.__init__(self, session)
+		# DPS_MainMenu/DPS_ServerMenu/DP_View (the three screens built on
+		# DPH_Screen) already populate self.helpList with real descriptions
+		# via their own HelpableActionMap entries (Screen.__init__ always
+		# creates that list - see Screens.Screen - so it was never empty),
+		# but nothing ever actually opened the Help screen on them: none of
+		# the three mixed in HelpableScreen, the class that binds the native
+		# HELP key to showHelp(). DP_Player/DPS_Settings already did this
+		# themselves; this closes the same gap here, for all three at once.
+		HelpableScreen.__init__(self)
 
 		self["globalActions"] = HelpableActionMap(self, "DP_PluginCloser",
 			{
-			    "stop": (self.closePlugin, ""),
+			    "stop": (self.closePlugin, _("Close DreamPlex")),
+			}, -2)
+
+		# Second trigger for the same Help screen, on LIST - some remotes'
+		# native HELP button does not reach the box as KEY_HELP; LIST is a
+		# safe pick: unused anywhere in this plugin, and its one native
+		# meaning (open the recordings list, "InfobarActions" context) only
+		# exists inside the live-TV InfoBar, which is not active while a
+		# DreamPlex screen is on screen.
+		self["helpShortcut"] = HelpableActionMap(self, "DP_HelpShortcut",
+			{
+			    "helpAlt": (self.showHelp, _("Show help")),
 			}, -2)
 
 		self.onLayoutFinish.append(self.addNewScreen)
@@ -335,7 +364,7 @@ class DPH_Filter(NumericalTextInput):
 	#===============================================================================
 	#
 	#===============================================================================
-	def __init__(self):
+	def __init__(self, digitHelp=None):
 		printl("", self, "S")
 
 		NumericalTextInput.__init__(self)
@@ -343,18 +372,28 @@ class DPH_Filter(NumericalTextInput):
 		self["number_key_popup"] = Label()
 		self["number_key_popup"].hide()
 
+		# digitHelp: optional {key: description} override for the Help
+		# legend, e.g. DP_View's "1".."4" (which switch what the color
+		# buttons do, not T9 search input there - see its own onKey1..4).
+		# Enigma2's HelpableActionMap freezes these descriptions into the
+		# screen's helpList at construction time (Screens.HelpMenu reads
+		# them from there, not from this map live), so unlike the on-screen
+		# color-button labels there is no cheap way to make this text
+		# track the *current* level - it can only carry one fixed
+		# description per key, chosen to make sense across all of them.
+		digitHelp = digitHelp or {}
 		self["filterActions"] = HelpableActionMap(self, "DP_FilterMenuActions",
 			{
-			"1": (self.onKey1, ""),
-			"2": (self.onKey2, ""),
-			"3": (self.onKey3, ""),
-			"4": (self.onKey4, ""),
-			"5": (self.onKey5, ""),
-			"6": (self.onKey6, ""),
-			"7": (self.onKey7, ""),
-			"8": (self.onKey8, ""),
-			"9": (self.onKey9, ""),
-			"0": (self.onKey0, ""),
+			"1": (self.onKey1, digitHelp.get("1", "")),
+			"2": (self.onKey2, digitHelp.get("2", "")),
+			"3": (self.onKey3, digitHelp.get("3", "")),
+			"4": (self.onKey4, digitHelp.get("4", "")),
+			"5": (self.onKey5, digitHelp.get("5", "")),
+			"6": (self.onKey6, digitHelp.get("6", "")),
+			"7": (self.onKey7, digitHelp.get("7", "")),
+			"8": (self.onKey8, digitHelp.get("8", "")),
+			"9": (self.onKey9, digitHelp.get("9", "")),
+			"0": (self.onKey0, digitHelp.get("0", "")),
 			}, -2)
 
 		# for number key input

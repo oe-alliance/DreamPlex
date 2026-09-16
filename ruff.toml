@@ -1,0 +1,42 @@
+# Static analysis configuration for DreamPlex.
+#
+# The compatibility floor is Python 3.8: it covers OpenPLi 9.x (3.9), the Vu+
+# images (3.11), the upstream CI (3.10/3.11) and the more recent images
+# (3.13/3.14). The modern annotation syntax (PEP 585/604) stays usable thanks
+# to "from __future__ import annotations".
+target-version = "py38"
+
+line-length = 200
+indent-width = 4
+
+exclude = [
+    ".venv",
+    "autom4te.cache",
+    "doc",
+]
+
+[lint]
+select = [
+    "F",    # pyflakes: undefined names, unused imports and variables
+    "E9",   # syntax / IndentationError / TabError
+    "B",    # flake8-bugbear: common pitfalls
+    "FA",   # flake8-future-annotations: annotation portability
+    "PLE",  # pylint: definite errors
+]
+
+ignore = [
+    "E501",  # line length: legacy code, not a defect
+    "B008",  # call as default: used deliberately with the enigma2 API
+]
+
+[lint.per-file-ignores]
+# The enigma2 modules (enigma, Screens, Components, skin, Tools) cannot be
+# resolved outside the box: no analyser is able to check them.
+"src/DPH_PlexGdm.py" = ["B007"]
+
+[format]
+# The project uses tabs, without exceptions. The formatter is NOT applied: its
+# default is space indentation, and reformatting would produce a mass diff
+# making the upstream review impossible.
+indent-style = "tab"
+quote-style = "preserve"

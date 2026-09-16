@@ -21,22 +21,22 @@
 	<!-- Buttons -->
 	<screen name="TemplateButtonRed" flags="wfNoBorder">
 		<widget name="btn_red"  zPosition="6" position="100,687" size="12,17" alphatest="blend"/>
-		<widget name="btn_redText" position="120,677" zPosition="9" size="231,37" font="OpenSans;14" halign="left" valign="center" foregroundColor="ButtonText" backgroundColor="#000000" transparent="1"/>
+		<widget name="btn_redText" position="120,677" zPosition="9" size="245,37" font="OpenSans;12" halign="left" valign="center" foregroundColor="ButtonText" backgroundColor="#000000" transparent="1"/>
 	</screen>
 
 	<screen name="TemplateButtonGreen" flags="wfNoBorder">
 		<widget name="btn_green" zPosition="6" position="380,687" size="12,17" alphatest="blend"/>
-		<widget name="btn_greenText" position="400,677" zPosition="9" size="231,37" font="OpenSans;14" halign="left" valign="center" foregroundColor="ButtonText" backgroundColor="#000000" transparent="1"/>
+		<widget name="btn_greenText" position="400,677" zPosition="9" size="245,37" font="OpenSans;12" halign="left" valign="center" foregroundColor="ButtonText" backgroundColor="#000000" transparent="1"/>
 	</screen>
 
 	<screen name="TemplateButtonYellow" flags="wfNoBorder">
 		<widget name="btn_yellow"  zPosition="6" position="640,687" size="12,17" alphatest="blend"/>
-		<widget name="btn_yellowText" position="660,677" zPosition="9" size="231,37" font="OpenSans;14" halign="left" valign="center" foregroundColor="ButtonText" backgroundColor="#000000" transparent="1"/>
+		<widget name="btn_yellowText" position="660,677" zPosition="9" size="245,37" font="OpenSans;12" halign="left" valign="center" foregroundColor="ButtonText" backgroundColor="#000000" transparent="1"/>
 	</screen>
 
 	<screen name="TemplateButtonBlue" flags="wfNoBorder">
 		<widget name="btn_blue"  zPosition="6" position="890,687" size="12,17" alphatest="blend"/>
-		<widget name="btn_blueText" position="910,677" zPosition="9" size="231,37" font="OpenSans;14" halign="left" valign="center" foregroundColor="ButtonText" backgroundColor="#000000" transparent="1"/>
+		<widget name="btn_blueText" position="910,677" zPosition="9" size="245,37" font="OpenSans;12" halign="left" valign="center" foregroundColor="ButtonText" backgroundColor="#000000" transparent="1"/>
 	</screen>
 
 
@@ -156,6 +156,9 @@
 
 		<!-- header -->
 		<widget name="header" zPosition="3" position="40,80" size="1220,20" foregroundColor="#ffffff" backgroundColor="#212121" transparent="1"  font="OpenSans;18"/>
+
+		<!-- MENU key hint (clone), right-aligned on the header row - "header"'s own text is short enough not to collide -->
+		<widget name="btn_menuText" zPosition="4" position="700,80" size="560,20" halign="right" valign="center" foregroundColor="#ffffff" backgroundColor="#212121" transparent="1" font="OpenSans;12"/>
 
 		<!-- column header -->
 		<widget name="columnHeader" zPosition="4" position="40,120" size="1220,20" foregroundColor="#ffffff" backgroundColor="#212121" transparent="1"  font="OpenSans;18"/>
@@ -291,6 +294,12 @@
 
 		<widget name="text_HomeUserLabel" position="40,390" zPosition="15" size="231,37" font="OpenSans;16" halign="left" valign="center" foregroundColor="#5C5C5C" backgroundColor="#000000" transparent="1"/>
 		<widget name="text_HomeUser" position="160,390" zPosition="15" size="231,37" font="OpenSans;16" halign="left" valign="center" foregroundColor="#5C5C5C" backgroundColor="#000000" transparent="1"/>
+		<!-- switch user / sync-cache buttons: previously not shown at all in
+		     this skin, so both silently did nothing visible when pressed -->
+		<widget name="btn_green" zPosition="15" position="420,395" size="12,17" alphatest="blend"/>
+		<widget name="btn_greenText" position="440,390" zPosition="15" size="231,37" font="OpenSans;16" halign="left" valign="center" foregroundColor="#5C5C5C" backgroundColor="#000000" transparent="1"/>
+		<widget name="btn_red" zPosition="15" position="700,395" size="12,17" alphatest="blend"/>
+		<widget name="btn_redText" position="720,390" zPosition="15" size="231,37" font="OpenSans;16" halign="left" valign="center" foregroundColor="#5C5C5C" backgroundColor="#000000" transparent="1"/>
 
 	</screen>
 
@@ -306,6 +315,14 @@
 		<ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/images/frame-fs8.png" position="0,0" zPosition="11" size="1280,720" alphatest="blend" transparent="1"/>
 		<widget name="miniTv" position="25,86" size="555,321" zPosition="10" backgroundColor="#ff111111"/>
 
+	</screen>
+
+	<!-- DPS_TextInputBox: same as DPS_InputBox but without the mini-tv, for
+	     plain text prompts (Jellyfin discovery wizard, username/password)
+	     that have no video/search context to preview -->
+	<screen name="DPS_TextInputBox" position="190,290" size="900,140" title=" " backgroundColor="#1a1a1a" flags="wfNoBorder">
+		<widget name="text" zPosition="10" position="20,12" transparent="1" size="860,70" font="OpenSans; 18" backgroundColor="#1a1a1a" foregroundColor="#ffffff" halign="left"/>
+		<widget name="input" zPosition="10" position="20,90" transparent="1" size="860,35" font="OpenSans; 20" backgroundColor="#000000" foregroundColor="#ffffff" halign="left"/>
 	</screen>
 	
 	<!-- DPS_ViewList -->
@@ -657,6 +674,16 @@
 		<widget source="session.CurrentService" render="Label" position="48,48" size="48,16" font="Regular;16" foregroundColor="#FFFF00" halign="right">
 		<convert type="ServicePosition">Remaining,Negate,ShowHours,ShowNoSeconds</convert>
 		</widget>
+	</screen>
+
+
+	<screen name="DPS_NextEpisode" position="790,50" size="480,190" flags="wfNoBorder" backgroundColor="transparent" zPosition="100">
+		<eLabel position="0,0" zPosition="-1" size="480,190" backgroundColor="#40000000" transparent="0" />
+		<widget name="carouselPoster" position="12,12" size="96,136" alphatest="blend" transparent="1" zPosition="1" />
+		<widget name="nextEpisodeText" position="120,12" size="348,30" font="OpenSans; 22" halign="left" valign="center" transparent="1" foregroundColor="#FF8C00" backgroundColor="#40000000" noWrap="1" />
+		<widget name="nextEpisodeTitle" position="120,44" size="348,26" font="OpenSans; 17" halign="left" valign="center" transparent="1" foregroundColor="#ffffff" backgroundColor="#40000000" noWrap="1" />
+		<widget name="carouselSummary" position="120,72" size="348,76" font="OpenSans; 14" halign="left" valign="top" transparent="1" foregroundColor="#cccccc" backgroundColor="#40000000" />
+		<widget name="nextEpisodeHint" position="12,152" size="456,26" font="OpenSans; 14" halign="left" valign="center" transparent="1" foregroundColor="#cccccc" backgroundColor="#40000000" noWrap="1" />
 	</screen>
 
 </skin>

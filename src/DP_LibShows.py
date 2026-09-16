@@ -44,6 +44,8 @@ class DP_LibShows(DP_LibMain):
 		self.initalEntryData = initalEntryData
 		printl("initalEntryData: " + str(self.initalEntryData), self, "D")
 
+		self.currentViewMode = ""
+
 		libraryName = "shows"
 		DP_LibMain.__init__(self, session, libraryName)
 

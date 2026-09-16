@@ -1,11 +1,16 @@
 Package: DreamPlex
-Version: 2.3.0
-Description: Plex Client for Enigma2
+Version: 3.1.1
+Description: Plex and Jellyfin client for Enigma2
+ Optional packages, each needed by one feature only and handled by the plugin
+ when missing: gstreamer1.0-plugins-bad-fragmented for transcoded playback,
+ python3-pillow and mjpegtools to render the backdrop videos.
 Section: extra
 Priority: optional
 Maintainer: DonDavici <dondavici@gmail.com>, jbleyel
 Architecture: all
-OE: dreamplex_2.3.0_all
+OE: dreamplex_3.1.1_all
 Homepage: https://github.com/oe-alliance/DreamPlex
-Depends: python-textutils, python-pyopenssl, curl, gstreamer1.0-plugins-bad-fragmented, mjpegtools, python-imaging, openssl
+Depends: python3-six
+Replaces: enigma2-plugin-extensions-dreamplex, enigma2-plugin-extensions-dreamplex-src
+Conflicts: enigma2-plugin-extensions-dreamplex, enigma2-plugin-extensions-dreamplex-src
 Source:  https://github.com/oe-alliance/DreamPlex

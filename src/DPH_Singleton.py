@@ -21,6 +21,20 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+# Imported for the annotations only. Doing it at runtime would create a cycle
+# (__init__ -> DPH_Singleton -> DP_SettingsStorage -> __init__), which is why
+# these names used to be pulled in through a "DreamPlex.src" package that does
+# not exist once the plugin is installed. With the annotations lazy, no import
+# is needed at run time at all.
+if TYPE_CHECKING:
+	from .DP_MediaLibrary import DP_MediaLibrary
+	from .DP_SettingsStorage import SettingsStorage
+
+
 #===============================================================================
 # IMPORT
 #===============================================================================
@@ -35,25 +49,24 @@ class Singleton(object):
 	"""
 	singlton config object
 	"""
-	__we_are_one = {}
-	__plexInstance = ""
+	__we_are_one: dict = {}
+	__mediaLibraryInstance: DP_MediaLibrary = None
 	__logFileInstance = ""
 	__skinParamsInstance = ""
+	__settingsInstance: SettingsStorage = None
 
 	def __init__(self):
 		#implement the borg patter (we are one)
 		self.__dict__ = self.__we_are_one
 
-	def getPlexInstance(self, value=None):
+	def getMediaLibrary(self, value: DP_MediaLibrary = None) -> DP_MediaLibrary:
 		"""with value you can set the singleton content"""
 		if value:
-			#printl("generating Plex instance ...", self, "D")
-			self.__plexInstance = value
+			self.__mediaLibraryInstance = value
 		else:
-			#printl("reusing Plex instance ...", self, "D")
 			pass
 
-		return self.__plexInstance
+		return self.__mediaLibraryInstance
 
 	def getLogFileInstance(self, value=None):
 		"""with value you can set the singleton content"""
@@ -76,3 +89,11 @@ class Singleton(object):
 			pass
 
 		return self.__skinParamsInstance
+
+	def getSettingsInstance(self, value:SettingsStorage=None) -> SettingsStorage:
+		if value:
+			self.__settingsInstance = value
+		else:
+			pass
+
+		return self.__settingsInstance

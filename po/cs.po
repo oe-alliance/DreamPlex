@@ -1,7 +1,9 @@
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: DreamPlex\n"
-"POT-Creation-Date: 2013-12-30 19:04+0100\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-20 14:04+0200\n"
 "PO-Revision-Date: 2013-12-30 19:05+0100\n"
 "Last-Translator: petrkl12 <petrkl12@gmail.com>\n"
 "Language-Team: petrkl12@gmail.com <petrkl12@gmail.com>\n"
@@ -10,151 +12,1699 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 1.5.7\n"
-"X-Poedit-KeywordsList: _;gettext;gettext_noop\n"
 "X-Poedit-Basepath: .\n"
-"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: _;gettext;gettext_noop\n"
 "X-Poedit-SearchPath-0: e:\\Development\\GitHub\\DreamPlex\\src\n"
+"X-Poedit-SourceCharset: UTF-8\n"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_About.py:53
-#: e:\Development\GitHub\DreamPlex\src/DP_Help.py:50
-msgid "Close"
-msgstr "Zavřít"
+msgid ""
+"\n"
+"\n"
+"Cancelled!"
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_About.py:72
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:666
+msgid ""
+"\n"
+"\n"
+"Fetching complete library data. This could take a while ..."
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"Files found: "
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"Finished"
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"No Files found. Nothing to do!"
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"Starting to search for picture files with 1280x720 in its name ..."
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"Starting to search for picture files with 1920x1080 in its name ..."
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"We are done!"
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"starting ..."
+msgstr ""
+
+#, python-format
+msgid ""
+"\n"
+"%s"
+msgstr ""
+
+msgid " "
+msgstr " "
+
+msgid " > API Key (optional)"
+msgstr ""
+
+msgid " > Autostart"
+msgstr " > Autostart"
+
+msgid " > Connection Type"
+msgstr " > Typ připojení"
+
+msgid " > Local Authentication"
+msgstr ""
+
+msgid " > Name"
+msgstr " > Jméno"
+
+msgid " > Password"
+msgstr ""
+
+msgid " > Playback Type"
+msgstr " > Typ přehrávání"
+
+msgid " > Server Type"
+msgstr " > Typ serveru"
+
+msgid " > State"
+msgstr " > Stav"
+
+msgid " > Sync Movies Medias"
+msgstr ""
+
+msgid " > Sync Music Medias"
+msgstr ""
+
+msgid " > Sync Shows Medias"
+msgstr ""
+
+msgid " > Trailer"
+msgstr ""
+
+msgid " > Use Wake on Lan (WoL)"
+msgstr " > Použít Vzdálené spouštění pořítače (WoL)"
+
+msgid " > Username"
+msgstr ""
+
+msgid " >> Audio language (optional)"
+msgstr ""
+
+msgid " >> Custom Max Bitrate (0 = auto)"
+msgstr ""
+
+msgid " >> DNS"
+msgstr " >> DNS"
+
+msgid " >> Enable Subtitle renaming in direct local mode"
+msgstr ""
+
+msgid " >> IP"
+msgstr " >> IP"
+
+msgid " >> Mac address (Size: 12 alphanumeric no seperator) only for WoL"
+msgstr " >> Mac adresa (Velikost: 12 alfanumerických znaků bez oddělovačů) jen pro WoL"
+
+msgid " >> Port"
+msgstr " >> Port"
+
+msgid " >> Segmentsize in seconds"
+msgstr " >> Velikost segmentu v sekundách"
+
+msgid " >> Settings Pincode"
+msgstr ""
+
+msgid " >> Subtitle method"
+msgstr ""
+
+msgid " >> Subtitles language (e.g. it,en)"
+msgstr ""
+
+msgid " >> Target subtitle language"
+msgstr ""
+
+msgid " >> Transcoding quality"
+msgstr " >> Kvalita transkodování"
+
+msgid " >> Use Settings Protection"
+msgstr ""
+
+msgid " >> Use forced subtitles"
+msgstr ""
+
+msgid " >> Use universal Transcoder"
+msgstr " >> Použít univerzální Transkodér"
+
+msgid " >> Wait for server delay (max 180 seconds) only for WoL"
+msgstr " >> Doba čekání na probuzení (max. 180 sekund) jen pro WoL"
+
+msgid " >> plex.tv Home Users"
+msgstr ""
+
+msgid " >> plex.tv Password"
+msgstr " >> plex.tv Heslo"
+
+msgid " >> plex.tv Pin Protection"
+msgstr ""
+
+msgid " >> plex.tv Pincode"
+msgstr ""
+
+msgid " >> plex.tv URL"
+msgstr " >> plex.tv URL"
+
+msgid " >> plex.tv Username"
+msgstr " >> plex.tv Uživatelské jméno"
+
+msgid ""
+" This file was partially played.\n"
+"\n"
+" Do you want to resume?"
+msgstr ""
+" Tento soubor byl již částečně přehrán.\n"
+"\n"
+" Chcete pokračovat?"
+
+#, python-format
+msgid "%d min"
+msgstr "%d min"
+
+msgid "(PIN protected)"
+msgstr "(chráněno PINem)"
+
+msgid "(YELLOW = delete left, GREEN = delete right)"
+msgstr "(ŽLUTÁ = smazat vlevo, ZELENÁ = smazat vpravo)"
+
+msgid "(clone)"
+msgstr "(klon)"
+
+msgid "(re)create remote Token"
+msgstr "(znovu) vytvořit vzdálený token"
+
+msgid "-"
+msgstr "-"
+
+msgid "... failed"
+msgstr ""
+
+msgid "... success"
+msgstr ""
+
+msgid "/"
+msgstr ""
+
+msgid "/hdd/dreamplex/cache"
+msgstr ""
+
+msgid "/hdd/dreamplex/config"
+msgstr ""
+
+msgid "/hdd/dreamplex/medias"
+msgstr ""
+
+msgid "/tmp"
+msgstr ""
+
+msgid "1-5: select stars   RED: clear   OK: confirm   EXIT: cancel"
+msgstr "1-5: vyberte hvězdičky   ČERVENÉ: vymazat   OK: potvrdit   EXIT: zrušit"
+
+msgid "1.5Mbps, 480p"
+msgstr "1.5Mbps, 480p"
+
+msgid "1.5Mbps, 480p, 30fps"
+msgstr ""
+
+msgid "1024x768, 2mbps"
+msgstr "1024x768, 2mbps"
+
+msgid "10Mbps, 1080p"
+msgstr "10Mbps, 1080p"
+
+msgid "10Mbps, 1080p, 30fps"
+msgstr ""
+
+msgid "1280x720, 3mbps"
+msgstr "1280x720, 3mbps"
+
+msgid "1280x720, 4mbps"
+msgstr "1280x720, 4mbps"
+
+msgid "12Mbps, 1080p"
+msgstr "12Mbps, 1080p"
+
+msgid "12Mbps, 1080p, 30fps"
+msgstr ""
+
+msgid "1920x1080, 10mbps"
+msgstr "1920x1080, 10mbps"
+
+msgid "1920x1080, 12mbps"
+msgstr "1920x1080, 12mbps"
+
+msgid "1920x1080, 20mbps"
+msgstr "1920x1080, 20mbps"
+
+msgid "1920x1080, 8mbps"
+msgstr "1920x1080, 8mbps"
+
+msgid "1: mark   0/RED: unmark   OK: confirm   EXIT: cancel"
+msgstr "1: označit   0/ČERVENÁ: zrušit   OK: potvrdit   EXIT: zrušit"
+
+msgid "208kbps, 160p, 15fps"
+msgstr "208kbps, 160p, 15fps"
+
+msgid "20Mbps, 1080p"
+msgstr "20Mbps, 1080p"
+
+msgid "20Mbps, 1080p, 30fps"
+msgstr ""
+
+msgid "2Mbps, 720p"
+msgstr "2Mbps, 720p"
+
+msgid "2Mbps, 720p, 30fps"
+msgstr ""
+
+msgid "320kbps, 240p"
+msgstr "320kbps, 240p"
+
+msgid "320kbps, 240p, 15fps"
+msgstr ""
+
+msgid "3Mbps, 720p"
+msgstr "3Mbps, 720p"
+
+msgid "420x240, 320kbps"
+msgstr "420x240, 320kbps"
+
+msgid "4Mbps, 720p"
+msgstr "4Mbps, 720p"
+
+msgid "4Mbps, 720p, 30fps"
+msgstr ""
+
+msgid "576x320, 720 kbps"
+msgstr "576x320, 720 kbps"
+
+msgid "64kbps, 128p, 3fps"
+msgstr "64kbps, 128p, 3fps"
+
+msgid "720kbps, 320p"
+msgstr "720kbps, 320p"
+
+msgid "720kbps, 320p, 30fps"
+msgstr ""
+
+msgid "720x480, 1,5mbps"
+msgstr "720x480, 1,5mbps"
+
+msgid "8Mbps, 1080p"
+msgstr "8Mbps, 1080p"
+
+msgid "8Mbps, 1080p, 30fps"
+msgstr ""
+
+msgid "96kbps, 128p, 12fps"
+msgstr "96kbps, 128p, 12fps"
+
+msgid "<unknown>"
+msgstr ""
+
+msgid "> Activate Remote Player"
+msgstr ""
+
+msgid "> Boxname"
+msgstr ""
+
+msgid "> Cache Folder Path"
+msgstr "> Složka pro cache"
+
+msgid "> Config Folder Path"
+msgstr "> Složka pro konfiguraci"
+
+msgid "> Debug Mode"
+msgstr "> Debug mód"
+
+msgid "> Default View for Movies"
+msgstr ""
+
+msgid "> Default View for Music"
+msgstr ""
+
+msgid "> Default View for Shows"
+msgstr ""
+
+msgid "> Detail type for additional data"
+msgstr "> Detailní typ pro dodatečné informace"
+
+msgid "> Exit function in Player"
+msgstr ""
+
+msgid "> Log Folder Path"
+msgstr "> Složka pro logy"
+
+msgid "> Main menu hero rotation (seconds, 0=off)"
+msgstr ""
+
+msgid "> Max hero suggestions to request"
+msgstr ""
+
+msgid "> Media Folder Path"
+msgstr "> Složka pro média"
+
+msgid "> Offer next episode"
+msgstr ""
+
+msgid "> Player Temp Path"
+msgstr "> Složka pro přehrávač"
+
+msgid "> Remote Player Port"
+msgstr ""
+
+msgid "> Search and use forced subtitles"
+msgstr ""
+
+msgid "> Show Backdrops as Videos"
+msgstr ""
+
+msgid "> Show Filter for Section"
+msgstr "> Zobrazit filter pro sekci"
+
+msgid "> Show Player Poster on external LCD"
+msgstr ""
+
+msgid "> Show Plugin in Main Menu"
+msgstr "> Zobrazit plugin v hlavním menu"
+
+msgid "> Show Seen/Unseen count in TvShows"
+msgstr "> Zobrazit počet zhlédnutých/nezhlédnutých dílů u TV seriálů"
+
+msgid "> Show additional data for plex.tv sections"
+msgstr "> Zobrazit dodatečné informace pro plex.tv sekce"
+
+msgid "> Show liveTv in Views instead of backdrops"
+msgstr ""
+
+msgid "> Start with Filtermode"
+msgstr ""
+
+msgid "> Stop Live TV on startup"
+msgstr "> Zastavit TV vysílání při spuštění"
+
+msgid "> Summerize Sections"
+msgstr "> Shrnovat informace k dané sekci"
+
+msgid "> Summerize Servers"
+msgstr ""
+
+msgid "> Use Cache for Sections"
+msgstr "> Použít cache pro sekce"
+
+msgid "> Use Picture Cache"
+msgstr "> Použít cache pro obrázky"
+
+msgid "> Use fastScroll as default"
+msgstr "> Použít Rychlé Rolování jako default"
+
+msgid "> Used Skin"
+msgstr "> Použitý skin"
+
+msgid "> Write debugfile"
+msgstr ""
+
+msgid ">> Autoplay the suggested movie"
+msgstr "Automaticky přehrát navrhovaný film"
+
+msgid ">> Countdown before playing next"
+msgstr ""
+
+msgid ">> Play Themes in TV Shows"
+msgstr ">> Přehrát  témata u TV seriálů"
+
+msgid ">> Refresh suggestions after this many rotations"
+msgstr ""
+
+msgid ">> Show it this many seconds before the end"
+msgstr ""
+
+msgid "A friendly name for this server."
+msgstr ""
+
+msgid "Abort"
+msgstr ""
+
 msgid "About"
 msgstr "O aplikaci"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_Help.py:69
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:636
-msgid "Help"
-msgstr "Pomoc"
+msgid "Accept / play now"
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:125
-#: e:\Development\GitHub\DreamPlex\src/plugin.py:26
+msgid "Activate to be able to use with any app with remote function for Plex."
+msgstr ""
+
+msgid "Add"
+msgstr "Přidat"
+
+msgid "Add Entry"
+msgstr "Přidat záznam"
+
+msgid "Add User"
+msgstr ""
+
+msgid "Add user"
+msgstr ""
+
+msgid "Adding new mapping was not completed"
+msgstr "Přidání nového mapování nebylo dokončeno"
+
+msgid "Adding new user was not completed"
+msgstr ""
+
+msgid "Affects MaxStreamingBitrate for playback."
+msgstr ""
+
+msgid "Albums"
+msgstr ""
+
+msgid "All"
+msgstr "Všechny"
+
+msgid "All (A-Z)"
+msgstr ""
+
+msgid "All (Z-A)"
+msgstr ""
+
+msgid "All Filmy"
+msgstr "Všechny filmy"
+
+msgid "All Movies"
+msgstr "Všechny filmy"
+
+msgid "All Shows"
+msgstr "Všechny seriály"
+
+msgid "All episodes"
+msgstr "Všechny epizody"
+
+msgid "Are you sure?"
+msgstr "Určitě?"
+
+msgid "Artists"
+msgstr ""
+
+msgid "Ask for pin?"
+msgstr ""
+
+msgid "Aspect Ratio:"
+msgstr ""
+
+msgid "Audio Channels:"
+msgstr ""
+
+msgid "Audio Codec:"
+msgstr ""
+
+msgid ""
+"Audio Functions\n"
+"\n"
+"Please take note that switching the language here will take only effect if you enable transcoding!"
+msgstr ""
+
+msgid "Audio preference saved. Will apply on next playback."
+msgstr ""
+
+msgid "Audio track menu"
+msgstr ""
+
+msgid "Audio:"
+msgstr "Audio:"
+
+msgid "Authentication "
+msgstr ""
+
+msgid "Back to live TV"
+msgstr ""
+
+msgid "Backdrops"
+msgstr ""
+
+msgid "Background"
+msgstr ""
+
+msgid "Bitrate:"
+msgstr ""
+
+msgid "Browse"
+msgstr ""
+
+msgid "Browse Movies, TV Shows and Music on this server."
+msgstr ""
+
+msgid "By Collection"
+msgstr "Podle sbírky"
+
+msgid "By Content Rating"
+msgstr "Podle hodnocení obsahu"
+
+msgid "By Country"
+msgstr "Podle země"
+
+msgid "By Decade"
+msgstr "Podle desetiletí"
+
+msgid "By Director"
+msgstr "Podle režiséra"
+
+msgid "By Duration…"
+msgstr ""
+
+msgid "By First Letter"
+msgstr "Podle prvního písmene"
+
+msgid "By Folder"
+msgstr "Podle složky"
+
+msgid "By Genre"
+msgstr "Podle žánru"
+
+msgid "By Genre…"
+msgstr ""
+
+msgid "By Rating"
+msgstr "Podle hodnocení"
+
+msgid "By Rating…"
+msgstr ""
+
+msgid "By Resolution"
+msgstr "Podle rozlišení"
+
+msgid "By Starring Actor"
+msgstr "Podle herce v hlavní roli"
+
+msgid "By Year"
+msgstr "Podle roku"
+
+msgid "By Year…"
+msgstr ""
+
+msgid "Cache files successfully deleted."
+msgstr ""
+
+msgid "Calculate and show them for tv shows."
+msgstr ""
+
+msgid "Cancel"
+msgstr "Zrušit"
+
+msgid "Cancel rating / dismiss suggestion"
+msgstr ""
+
+msgid "Cast:"
+msgstr ""
+
+#, python-format
+msgid "Cast: %s"
+msgstr "Obsazení: %s"
+
+msgid "Catalog"
+msgstr ""
+
+msgid "Catalog Download"
+msgstr ""
+
+msgid "Change PIN"
+msgstr "Změnit PIN"
+
+msgid "Change the port to your needs."
+msgstr ""
+
+msgid "Channels"
+msgstr "Kanály"
+
+msgid "Choose a pincode for this profile"
+msgstr "Zvolte PIN pro tento profil"
+
+msgid "Choose how to deliver subtitles (External/Embed)."
+msgstr ""
+
+msgid ""
+"Clone this server's settings into a new server entry?\n"
+"You will be asked for a username/password for the new one."
+msgstr ""
+"Klonovat nastavení tohoto serveru do nové položky?\n"
+"Budete požádáni o uživatelské jméno/heslo pro nového uživatele."
+
+msgid "Close DreamPlex"
+msgstr ""
+
+msgid "Collections"
+msgstr "Kolekce"
+
+msgid "Color buttons: filter mode"
+msgstr ""
+
+msgid "Color buttons: playback mode / resume / watched / quality"
+msgstr ""
+
+msgid "Color buttons: server settings / general settings / delete / path mapping"
+msgstr ""
+
+msgid "Color buttons: view / fast scroll / refresh library / details"
+msgstr ""
+
+msgid "Configure the plugin: servers, skin, cache and more."
+msgstr ""
+
+msgid "Confirm rating / accept suggested title"
+msgstr ""
+
+msgid "Confirmed User from Plex was configured!"
+msgstr ""
+
+msgid "Connection Settings "
+msgstr ""
+
+msgid "Continue watching"
+msgstr ""
+
+msgid ""
+"Could not reach the server.\n"
+"Please check host, port and network connectivity."
+msgstr ""
+"Server se nepodařilo kontaktovat.\n"
+"Zkontrolujte hostitele, port a připojení k síti."
+
+msgid "Current User:"
+msgstr ""
+
+msgid "Custom scan…"
+msgstr ""
+
+msgid "DNS"
+msgstr "DNS"
+
+msgid "Delete"
+msgstr "Smazat"
+
+msgid "Delete Entry"
+msgstr "Smazat záznam"
+
+msgid "Delete User"
+msgstr ""
+
+msgid "Deleting aborted!"
+msgstr "Mazání zrušeno!"
+
+msgid "Direct Local"
+msgstr "Přímé přehrávání (Direct Local)"
+
+msgid "Director:"
+msgstr ""
+
+#, python-format
+msgid "Director: %s"
+msgstr "Režie: %s"
+
+msgid "Discover"
+msgstr "Vyhledat"
+
+msgid "Discover Jellyfin"
+msgstr ""
+
+msgid "Discover Plex"
+msgstr ""
+
+msgid "Dismiss"
+msgstr ""
+
+msgid "Download posters and info (not videos)"
+msgstr ""
+
 msgid "DreamPlex"
 msgstr "DreamPlex"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:147
+#, python-format
 msgid ""
-"Plexserver seems to be offline. Start with Wake on Lan settings? \n"
+"DreamPlex was updated to version %s.\n"
+"Restart the GUI now to apply it?"
+msgstr ""
+"DreamPlex byl aktualizován na verzi %s.\n"
+"Restartovat nyní GUI, aby se změny projevily?"
+
+msgid "DreamPlex: Mediasync finished!\n"
+msgstr ""
+
+msgid "DreamPlex: Rendering finished!\n"
+msgstr ""
+
+msgid "EXIT: close"
+msgstr "EXIT: zavřít"
+
+msgid "Edit User"
+msgstr ""
+
+msgid "Embed"
+msgstr ""
+
+msgid "Enable only if needed. Slows down rapidly."
+msgstr ""
+
+msgid "Enable trailer function. Only works with PlexPass or YYTrailer plugin."
+msgstr ""
+
+msgid "End host (1-254)"
+msgstr ""
+
+#, python-format
+msgid "Enter %s"
+msgstr ""
+
+msgid "Enter Jellyfin password"
+msgstr ""
+
+msgid "Enter Jellyfin username"
+msgstr ""
+
+msgid "Enter genre(s), comma separated"
+msgstr ""
+
+msgid "Enter search text"
+msgstr ""
+
+msgid "Enter subnet base (e.g. 192.168.1)"
+msgstr ""
+
+msgid "Enter the current pincode"
+msgstr "Zadejte aktuální PIN"
+
+msgid "Enter the current pincode to remove it"
+msgstr "Zadejte aktuální PIN pro jeho odstranění"
+
+msgid "Enter the name of your box, e.g. Livingroom."
+msgstr ""
+
+msgid "Enter the new pincode"
+msgstr "Zadejte nový PIN"
+
+msgid "Enter the pin here:"
+msgstr ""
+
+msgid "Enter the username here:"
+msgstr ""
+
+msgid "Enter this server automatically on startup."
+msgstr "Zadat tento server automaticky při startu."
+
+msgid "Enter year(s), comma separated"
+msgstr ""
+
+msgid "Enter your remote path segment here:"
+msgstr "Zadejte vaši vzdálenou cestu pro segment:"
+
+#, python-format
+msgid ""
+"Error!\n"
+"Error-message:%s"
+msgstr ""
+
+#, python-format
+msgid ""
+"Error!\n"
+"Error-message:%s\n"
+"Press Exit to close."
+msgstr ""
+
+msgid "Error:"
+msgstr ""
+
+msgid "Error: "
+msgstr ""
+
+msgid "Exit player"
+msgstr ""
+
+msgid "External"
+msgstr ""
+
+msgid "Favorite"
+msgstr "Oblíbené"
+
+msgid "File:"
+msgstr ""
+
+msgid "Framerate:"
+msgstr ""
+
+msgid "Functions List:"
+msgstr ""
+
+msgid "General Settings"
+msgstr "Hlavní nastavení"
+
+msgid "General Settings "
+msgstr ""
+
+msgid "Genre:"
+msgstr "Žánr:"
+
+msgid "Go back"
+msgstr ""
+
+msgid "Home Users"
+msgstr ""
+
+msgid "How long before the end of the episode the offer appears."
+msgstr ""
+
+msgid "How many times the banner cycles through its current list of suggestions before asking the server for a new one."
+msgstr ""
+
+msgid "I will now try to play the file via transcode."
+msgstr "Nyní zkusím přehrát daný soubor přes transkódování."
+
+msgid "IP"
+msgstr "IP"
+
+msgid "If off (default), the related-title suggestion for a movie waits for OK and never starts itself."
+msgstr "Pokud je vypnuto (výchozí), nabídka souvisejícího titulu pro film čeká na OK a nikdy nespustí sama."
+
+msgid "If present, it will be used instead of username/password."
+msgstr ""
+
+msgid "If server summerize is off you can here add additional information for better overview."
+msgstr ""
+
+msgid "If you are using plex.tv"
+msgstr "Pokud používáte plex.tv"
+
+msgid "If you change the skin you have to restart at least the GUI!"
+msgstr "Jestliže změníte skin, musíte provést minimálně restart GUI!"
+
+msgid "If you do nothing, the next episode starts after this many seconds."
+msgstr ""
+
+msgid "Info"
+msgstr ""
+
+msgid "Info:"
+msgstr ""
+
+msgid "Information and credits for the plugin."
+msgstr ""
+
+msgid "Initiate Library refresh"
+msgstr "Iniciovat aktualizaci knihovny"
+
+msgid "Interrupt the Jellyfin server search?"
+msgstr "Přerušit vyhledávání serverů Jellyfin?"
+
+msgid "Invalid Location"
+msgstr "Neplatné umístění"
+
+msgid "Invalid credentials"
+msgstr ""
+
+msgid "Jellyfin discovery"
+msgstr ""
+
+#, python-format
+msgid "Jellyfin port (default %d)"
+msgstr "Port Jellyfin (výchozí %d)"
+
+msgid "Jump to menu item 1"
+msgstr ""
+
+msgid "Jump to menu item 2"
+msgstr ""
+
+msgid "Jump to menu item 3"
+msgstr ""
+
+msgid "Jump to menu item 4"
+msgstr ""
+
+msgid "Jump to menu item 5"
+msgstr ""
+
+msgid "Jump to menu item 6"
+msgstr ""
+
+msgid "Jump to menu item 7"
+msgstr ""
+
+msgid "Jump to menu item 8"
+msgstr ""
+
+msgid "Jump to menu item 9"
+msgstr ""
+
+msgid "LEFT/RIGHT: browse     UP/DOWN: scroll     OK: play now     EXIT: cancel"
+msgstr "VLEVO/VPRAVO: procházet     NAHORU/DOLŮ: posun     OK: přehrát nyní     EXIT: zrušit"
+
+msgid "Live TV"
+msgstr ""
+
+msgid "LiveTv"
+msgstr ""
+
+msgid "Local Token:"
+msgstr ""
+
+msgid "Location:"
+msgstr "Umístění:"
+
+msgid "Login failed"
+msgstr ""
+
+msgid ""
+"Login successful.\n"
+"\n"
+"Protect this profile with a PIN before switching to it later?"
+msgstr ""
+"Přihlášení bylo úspěšné.\n"
+"\n"
+"Chcete tento profil chránit PINem, než jej budete moci příště znovu vybrat?"
+
+msgid "MENU: Clone for another user"
+msgstr "MENU: Klonovat pro jiného uživatele"
+
+msgid "Main Menu"
+msgstr ""
+
+msgid "Malformed response from server"
+msgstr ""
+
+msgid "Manual seek / clear rating"
+msgstr ""
+
+msgid "Mappings"
+msgstr "Mapování:"
+
+msgid "Mark media unwatched"
+msgstr "Označit jako neshlédnuté"
+
+msgid "Mark media watched"
+msgstr "Označit jako shlédnuté"
+
+msgid "Media Functions"
+msgstr "Nastavení pro média"
+
+msgid "Medias:"
+msgstr ""
+
+msgid "Misc Settings "
+msgstr ""
+
+msgid "Mixed"
+msgstr ""
+
+msgid "Monitor playback to activate subtitles automatically if needed. You have to enable subtitles with 'Text'-Buttion first."
+msgstr ""
+
+msgid "Most Played"
+msgstr ""
+
+msgid "Movies"
+msgstr "Filmy"
+
+msgid "Music"
+msgstr "Hudba"
+
+msgid "Name                                         IP/plex.tv                                            Port/Email                                        Active"
+msgstr ""
+
+msgid "Name                                         IP/plex.tv                                 Port/Email                                  Active"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+#, python-format
+msgid "Next episode in %d s"
+msgstr ""
+
+msgid "Next item"
+msgstr ""
+
+msgid "Next page"
+msgstr ""
+
+msgid "No Server"
+msgstr ""
+
+msgid "No authentication credentials provided"
+msgstr ""
+
+msgid "No data in this section!"
+msgstr ""
+
+msgid ""
+"No extras found ...\n"
+"\n"
+"Press exit to return."
+msgstr ""
+
+msgid "No servers discovered"
+msgstr ""
+
+msgid "No update for addiontal informations in media views to speed up."
+msgstr ""
+
+msgid "OK: play now     EXIT: cancel"
+msgstr ""
+
+msgid "Ok"
+msgstr ""
+
+msgid "On Deck"
+msgstr "Rozsledované"
+
+#, python-format
+msgid "Open %s"
+msgstr ""
+
+msgid "Open (movie, episode, folder, collection or playlist)"
+msgstr ""
+
+msgid "Open Settings"
+msgstr ""
+
+msgid "Open series"
+msgstr ""
+
+msgid "Original Quality"
+msgstr ""
+
+msgid "Override bitrate from quality profile."
+msgstr ""
+
+msgid "PIN changed"
+msgstr "PIN změněn"
+
+msgid "PIN removed"
+msgstr "PIN odstraněn"
+
+msgid "PIN set for this profile"
+msgstr "PIN nastaven pro tento profil"
+
+msgid "Pages:"
+msgstr "Stránka:"
+
+msgid "Password for Jellyfin account."
+msgstr ""
+
+msgid "Path Settings "
+msgstr ""
+
+msgid "Pathselector"
+msgstr ""
+
+msgid "Pictures"
+msgstr "Fotky"
+
+msgid "Pincode for changing settings"
+msgstr ""
+
+msgid "Pincode for switching back from any home user."
+msgstr ""
+
+msgid "Play"
+msgstr ""
+
+msgid "Play next episode"
+msgstr ""
+
+msgid "Play previous episode"
+msgstr ""
+
+msgid "Play the hero suggestion"
+msgstr ""
+
+msgid "Play trailer / extra"
+msgstr ""
+
+msgid "Playback Settings "
+msgstr ""
+
+msgid "Playlists"
+msgstr "Playlisty"
+
+msgid "Plays tv show themes automatically."
+msgstr ""
+
+msgid "Please enter the pincode!"
+msgstr ""
+
+msgid "Please enter your search string: "
+msgstr ""
+
+msgid ""
+"Please note to run at least once the sync media function within the server menu.\n"
+"This will download the needed files in the right size of 1280x720."
+msgstr ""
+
+msgid ""
+"Please note to run at least once the sync media function within the server menu.\n"
+"This will download the needed files in the right size of 1920x1080."
+msgstr ""
+
+msgid "Please select a server type before saving."
+msgstr "Před uložením vyberte typ serveru."
+
+msgid "Please verify you direct local settings"
+msgstr "Prosím ověř nastavení pro lokální přehrávání (direct local)"
+
+msgid "Prefer forced subtitles if available."
+msgstr ""
+
+msgid "Preferred audio language, fallback to subtitles language."
+msgstr ""
+
+msgid "Preferred subtitles language."
+msgstr ""
+
+msgid "Press exit to return"
+msgstr "Stsikni Exit pro návrat"
+
+msgid "Previous item"
+msgstr ""
+
+msgid "Previous page"
+msgstr ""
+
+msgid ""
+"Process aborted.\n"
+"Press Exit to close."
+msgstr ""
+
+msgid "Quick scan (/24)"
+msgstr ""
+
+msgid "Random"
+msgstr ""
+
+msgid "Rate / mark as favorite"
+msgstr ""
+
+msgid "Rate 1 star / mark favorite"
+msgstr ""
+
+msgid "Rate 2 stars"
+msgstr ""
+
+msgid "Rate 3 stars"
+msgstr ""
+
+msgid "Rate 4 stars"
+msgstr ""
+
+msgid "Rate 5 stars"
+msgstr ""
+
+msgid "Rating"
+msgstr "Hodnocení"
+
+msgid "Really delete this Server Entry?"
+msgstr "Chcete skutečně smazat tento server?"
+
+msgid "Recently Added"
+msgstr "Nedávno přidané"
+
+msgid "Recently Aired"
+msgstr "Nedávno vysílané"
+
+msgid "Recently Released"
+msgstr "Nedávno vydané"
+
+msgid "Recently Viewed"
+msgstr "Nedávno shlédnuté"
+
+msgid "Recently Viewed Episodes"
+msgstr "Nedávno shlédnuté epizody"
+
+msgid "Recently Viewed Shows"
+msgstr "Nedávno shlédnuté seriály"
+
+msgid "Reconnecting to background task ...\n"
+msgstr ""
+
+msgid "Remote Settings "
+msgstr ""
+
+msgid "Remote Token:"
+msgstr "Vzdálený token:"
+
+msgid "Remove PIN"
+msgstr "Odstranit PIN"
+
+msgid "Renames filename.eng.srt automatically to filename.srt so e2 is able to read them."
+msgstr ""
+
+msgid "Resultion:"
+msgstr ""
+
+msgid "Revoke cache files manually"
+msgstr ""
+
+msgid "Runtime:"
+msgstr "Délka:"
+
+msgid "Save"
+msgstr "Uložit"
+
+msgid "Save server answers in cache to speed up a bit."
+msgstr ""
+
+msgid "Save this server?"
+msgstr ""
+
+msgid "Scroll description down"
+msgstr ""
+
+msgid "Scroll description up"
+msgstr ""
+
+msgid "Scroll suggestion text down"
+msgstr ""
+
+msgid "Scroll suggestion text up"
+msgstr ""
+
+msgid "Search ..."
+msgstr ""
+
+msgid "Search Episodes..."
+msgstr "Vyhledat epizody..."
+
+msgid "Search Shows..."
+msgstr "Vyhledat seriály..."
+
+msgid "Search string that should be removed from srt file."
+msgstr ""
+
+msgid "Search..."
+msgstr "Vyhledat..."
+
+msgid "Search…"
+msgstr ""
+
+msgid "Season"
+msgstr ""
+
+msgid "Seasons:"
+msgstr ""
+
+msgid "Seek back / previous suggestion"
+msgstr ""
+
+msgid "Seek forward / next suggestion"
+msgstr ""
+
+msgid "Seen:"
+msgstr ""
+
+msgid "Select Audio Track (applies to next playback)"
+msgstr ""
+
+msgid "Select IP or DNS."
+msgstr ""
+
+msgid "Select Subtitle Track (applies to next playback)"
+msgstr ""
+
+msgid "Select discovery"
+msgstr ""
+
+msgid "Select media to play"
+msgstr "Výběr média pro přehrání"
+
+msgid "Select server"
+msgstr "Vyber server"
+
+msgid "Select server folder"
+msgstr ""
+
+msgid "Select the type of server to add."
+msgstr "Vyberte typ serveru, který chcete přidat."
+
+msgid "Select your type how the box is reachable."
+msgstr ""
+
+msgid "Series"
+msgstr "Série"
+
+msgid "Server"
+msgstr "Server"
+
+msgid "Server Config"
+msgstr ""
+
+msgid "Server List:"
+msgstr ""
+
+msgid "Server Menu"
+msgstr ""
+
+msgid "Server Settings"
+msgstr ""
+
+msgid "Server Syncer"
+msgstr ""
+
+msgid ""
+"Server seems to be offline. Please check your your settings or connection!\n"
+" Retry?"
+msgstr ""
+
+msgid ""
+"Server seems to be offline. Start with Wake on Lan settings? \n"
 "\n"
 "Please note: \n"
 "If you press yes the spinner will run for "
 msgstr ""
-"Plexserver je asi v režimu offline. Začít s probuzením po síti (Wake on "
-"Lan)? \n"
-"\n"
-"Vezměte prosím na vědomí: \n"
-"Stisknete-li ano, načítání poběží až po "
 
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:157
-msgid ""
-"Plexserver seems to be offline. Please check your your settings or "
-"connection!\n"
-" Retry?"
-msgstr ""
-"Plexserver je asi v režimu offline. Zkontrolujte prosím vaše nastavení nebo "
-"připojení!\n"
-" Zkusit znovu?"
+msgid "Set PIN"
+msgstr "Nastavit PIN"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:281
-msgid "Please enter your search string!"
-msgstr "Prosím zadejte hledaný název!"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:300
-msgid "by Artists"
-msgstr "podle interpretrů"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:306
-msgid "by Albums"
-msgstr "podle alb"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:598
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:837
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:291
-msgid "Movies"
-msgstr "Filmy"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:599
-msgid "Tv Shows"
-msgstr "TV seriály"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:604
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:297
-msgid "Music"
-msgstr "Hudba"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:605
-msgid "Pictures"
-msgstr "Fotky"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:606
-msgid "Channels"
-msgstr "Kanály"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:621
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:2739
-msgid "UNEXPECTED ERROR:"
-msgstr "NEOČEKÁVANÁ CHYBA:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:633
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:96
 msgid "Settings"
 msgstr "Nastavení"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:634
-msgid "Server"
-msgstr "Server"
+msgid "Show additional filter in an additional menu step e.g. OnDeck"
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:635
-msgid "Systemcheck"
-msgstr "Ověření systému"
+msgid "Show cast/director/rating details"
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:665
+msgid "Show extended info"
+msgstr ""
+
+msgid "Show help"
+msgstr ""
+
+msgid "Show live tv while you are navigating through your libs."
+msgstr ""
+
+msgid "Show playback info (long press: rate/favorite)"
+msgstr ""
+
+msgid "Shows"
+msgstr "Seriály"
+
+msgid "Simply a name for better overview"
+msgstr ""
+
+msgid "Something went wrong while opening mappings xml!"
+msgstr ""
+
+msgid "Something went wrong while opening users xml!"
+msgstr ""
+
+msgid "Sorry I didn't find the file on the provided locations"
+msgstr "Soubor bohužel nebyl nalezen na uvedeném místě"
+
+msgid "Specifiy the type of additional data."
+msgstr ""
+
+msgid "Specifiy what the exit button in the player should do."
+msgstr ""
+
+msgid "Specify what view type should start automatically."
+msgstr ""
+
+msgid "Start Download"
+msgstr ""
+
+msgid "Start Rendering"
+msgstr ""
+
+msgid "Start host (1-254)"
+msgstr ""
+
+msgid "Start with filtermode in any media view."
+msgstr ""
+
+msgid "Stop and return"
+msgstr ""
+
+msgid "Stop live TV. Enables 'play themes', 'use backdrop videos'"
+msgstr ""
+
+msgid "Streamed"
+msgstr "Streamování (Streamed)"
+
+msgid "Studio:"
+msgstr ""
+
+msgid ""
+"Subtitle Functions\n"
+"\n"
+"Please take note that switching the subtitles here will take only effect if you use direct local or transcoding!"
+msgstr ""
+
+msgid "Subtitle Settings "
+msgstr ""
+
+msgid "Subtitle menu"
+msgstr ""
+
+msgid "Subtitle preference saved. Will apply on next playback."
+msgstr ""
+
+msgid "Subtitles:"
+msgstr "Titulky:"
+
+msgid "Suggested"
+msgstr ""
+
+#, python-format
+msgid "Suggestion in %d s"
+msgstr "Návrh za %d s"
+
+msgid "Summerize sections in an additional menu step."
+msgstr ""
+
+msgid "Summerize servers in an additional menu step. (plex.tv only)"
+msgstr ""
+
+msgid "Switch User"
+msgstr ""
+
+msgid "Switch to this user"
+msgstr "Přepnout na tohoto uživatele"
+
+msgid "Switch user"
+msgstr ""
+
+msgid "Sync Media"
+msgstr ""
+
+msgid "Sync Settings "
+msgstr ""
+
+msgid ""
+"Sync or Renderer is still running!\n"
+"Continue in background?"
+msgstr ""
+
+msgid "Sync this content."
+msgstr ""
+
 msgid "System"
 msgstr "Systém"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_Mappings.py:84
-msgid "Delete Entry"
-msgstr "Smazat záznam"
+msgid "System - Systemcheck"
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_Mappings.py:85
-msgid "Add Entry"
-msgstr "Přidat záznam"
+msgid "System Server"
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_Mappings.py:131
-msgid "Enter your remote path segment here:"
-msgstr "Zadejte vaši vzdálenou cestu pro segment:"
+msgid "System Settings"
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_Mappings.py:133
-#: e:\Development\GitHub\DreamPlex\src/DP_Mappings.py:148
-msgid "Adding new mapping was not completed"
-msgstr "Přidání nového mapování nebylo dokončeno"
+msgid "Systemcheck"
+msgstr "Ověření systému"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_PathSelector.py:66
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:68
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:509
-msgid "Cancel"
-msgstr "Zrušit"
+msgid "TV Shows"
+msgstr "TV Seriály"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_PathSelector.py:67
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:510
-msgid "OK"
-msgstr "OK"
+msgid "Target: "
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_PathSelector.py:157
-msgid "Invalid Location"
-msgstr "Neplatné umístění"
+msgid "The Carousel skin's main-menu banner switches to another suggested title after this many seconds. 0 keeps showing the same one."
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_Player.py:307
-#: e:\Development\GitHub\DreamPlex\src/DP_Player.py:324
+msgid "The show is about to start"
+msgstr ""
+
+msgid "The skin was changed. Exit and re-enter DreamPlex to apply it."
+msgstr ""
+
+msgid "The user was not found!"
+msgstr ""
+
 #, python-format
 msgid "This Box can't decode %s streams!"
 msgstr "Tento box nemůže dekódovat tento stream! %s"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_Player.py:341
-#: e:\Development\GitHub\DreamPlex\src/DP_Player.py:361
+msgid ""
+"This will download all medias from the selected server.\n"
+"\n"
+"Additional to this we download the pictures in 1280x720 for better fullscreen backdrops."
+msgstr ""
+
+msgid ""
+"This will download all medias from the selected server.\n"
+"\n"
+"Additional to this we download the pictures in 1920x1080 for better fullscreen backdrops."
+msgstr ""
+
+msgid "Timeout seconds (e.g. 0.5)"
+msgstr ""
+
+msgid "Toggle on/off to show or hide this server."
+msgstr ""
+
+msgid "Toggle state to on/off to show this server in lost or not."
+msgstr "Přepnout stav zapnout / vypnout, zda se server ztratil nebo ne."
+
+msgid "Total:"
+msgstr "Celkem:"
+
+msgid "Towards the end of an episode (or a related-title suggestion towards the end of a movie), offer to jump to the next one."
+msgstr "Ke konci epizody (nebo nabídka souvisejícího titulu ke konci filmu) nabídnout přechod na další."
+
+msgid "Tracks"
+msgstr ""
+
+msgid "Transcoded"
+msgstr "Transkodování (Transcoded)"
+
+msgid "Tv Shows"
+msgstr "TV seriály"
+
+msgid "UNEXPECTED ERROR:"
+msgstr "NEOČEKÁVANÁ CHYBA:"
+
+msgid "UP/DOWN: scroll     OK: play now     EXIT: cancel"
+msgstr "NAHORU/DOLŮ: posun     OK: přehrát nyní     EXIT: zrušit"
+
+msgid "Unauthorized"
+msgstr ""
+
+msgid "Unknown AuthorizationMode"
+msgstr ""
+
+msgid "Unmark favorite"
+msgstr ""
+
+msgid "Unseen:"
+msgstr ""
+
+msgid "Unsupported mapping for this server"
+msgstr ""
+
+msgid "Unsupported users for this server"
+msgstr ""
+
+msgid "Unwatched"
+msgstr "Neshlédnuté"
+
+msgid "Updating..."
+msgstr ""
+
+msgid "Upper limit only - the server may return fewer, depending on what it has to offer."
+msgstr ""
+
+msgid "Use Home Users?"
+msgstr ""
+
+msgid "Use Pinprotection for switch back to plex.tv user?"
+msgstr ""
+
+msgid "Use this if you have m1v videos as backdrops"
+msgstr "Použijte tohle jestli máte m1v videa pozadí"
+
+msgid "Use this if you secured your plex server in the settings."
+msgstr ""
+
+msgid "Use this only if you do have enough space on your hdd drive or flash."
+msgstr ""
+
+msgid "Use this to start the plugin direct in the main menu."
+msgstr ""
+
+msgid "User switched"
+msgstr ""
+
+msgid "Userinterface Settings "
+msgstr ""
+
+msgid "Username for Jellyfin account."
+msgstr ""
+
+msgid "Users"
+msgstr ""
+
+msgid "Video Codec:"
+msgstr ""
+
+msgid "View '"
+msgstr ""
+
+msgid "Wake On Lan Settings "
+msgstr ""
+
+msgid "Warning:"
+msgstr "Upozornění:"
+
+msgid "We did it :-)"
+msgstr ""
+
+msgid "Without this option we just print to console."
+msgstr ""
+
+msgid "Writer:"
+msgstr ""
+
+#, python-format
+msgid "Writer: %s"
+msgstr ""
+
+msgid "Wrong pincode!"
+msgstr "Nesprávný PIN!"
+
+msgid "Year:"
+msgstr "Rok:"
+
+msgid "You can use Systemcheck in the menu."
+msgstr "Můžete využít Ověření systému v menu."
+
+msgid "You have no data in this section!"
+msgstr "V této sekci nejsou žádná data!"
+
+msgid "You need gstreamer_fragmented installed for this feature! Please check in System ... "
+msgstr "Potřebuješ mít nainstalován plugin gstreamer_fragmented pro tuhle funkci! Prosím ověř v Systému ... "
+
 #, python-format
 msgid ""
 "Your Box can't decode this video stream!\n"
@@ -163,23 +1713,57 @@ msgstr ""
 "Tento box nemůže dekódovat tento video stream!\n"
 "%s"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:343
-msgid "Press exit to return"
-msgstr "Stsikni Exit pro návrat"
+msgid "Your cinema, at home"
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:344
-msgid "If you are using plex.tv"
-msgstr "Pokud používáte plex.tv"
+msgid "backdrop not found, trying to download ..."
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:345
-msgid "please check if curl is installed."
-msgstr "zkontrolujte, zda je správně nainstalován."
+msgid "backdrop video exists under the location "
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:346
-msgid "You can use Systemcheck in the menu."
-msgstr "Můžete využít Ověření systému v menu."
+msgid "delete Medias"
+msgstr ""
 
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:510
+msgid "e.g. lcd4linux"
+msgstr ""
+
+msgid "fastScroll 'Off'"
+msgstr ""
+
+msgid "fastScroll 'On'"
+msgstr ""
+
+msgid "for the user:"
+msgstr "pro uživatele:"
+
+msgid "found backdrop - size("
+msgstr ""
+
+msgid "found poster - size("
+msgstr ""
+
+msgid "get local auth Token"
+msgstr ""
+
+msgid "no Data"
+msgstr ""
+
+msgid "playback mode '"
+msgstr ""
+
+msgid "playmode 'multi'"
+msgstr ""
+
+msgid "playmode 'single'"
+msgstr ""
+
+msgid "plex client for enigma2"
+msgstr "Plex klient pro enigma2"
+
+msgid "plex.tv"
+msgstr "plex.tv"
+
 #, python-format
 msgid ""
 "plex.tv Token error:\n"
@@ -190,870 +1774,316 @@ msgstr ""
 "Ověřte uživatelské jméno a heslo.\n"
 "%s"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:517
+msgid "poster not found, trying to download ..."
+msgstr ""
+
+msgid "press 'Audio' or 'Radio'"
+msgstr ""
+
+msgid "press 'Info'"
+msgstr ""
+
+msgid "press 'Text'"
+msgstr ""
+
+msgid "refresh Library"
+msgstr ""
+
+msgid "resume 'Off'"
+msgstr ""
+
+msgid "resume 'On'"
+msgstr ""
+
+msgid "set 'Seen'"
+msgstr ""
+
+msgid "set 'Unseen'"
+msgstr ""
+
+msgid "show 'Description'"
+msgstr ""
+
+msgid "show 'Details'"
+msgstr ""
+
+msgid "skipping because unsupported image type. "
+msgstr ""
+
+msgid "title: "
+msgstr ""
+
+msgid "trying to render backdrop now ...: "
+msgstr ""
+
+msgid "turn filter mode off"
+msgstr ""
+
+msgid "unsupported mapping:"
+msgstr ""
+
+msgid "unsupported users:"
+msgstr ""
+
+msgid "use for Mapping"
+msgstr ""
+
+msgid "with the id:"
+msgstr ""
+
+msgid "☆☆☆☆☆  (cleared)"
+msgstr "☆☆☆☆☆  (vymazáno)"
+
+#~ msgid " >> plex.tv renew plex.tv token"
+#~ msgstr " >> plex.tv obnovení tokenu pro plex.tv"
+
 #, python-format
-msgid ""
-"UNEXPECTED ERROR:\n"
-"This is the answer from the request ...\n"
-"%s"
-msgstr ""
-"NEOČEKÁVANÁ CHYBA:\n"
-"Tohle je odpověď na požadavek:\n"
-"%s"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:636
-msgid "no xml as response - tree"
-msgstr "žádné vrácené xml - tree"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:644
-msgid "no xml as response - directory"
-msgstr "žádné vrácené xml - directory"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_PlexLibrary.py:649
-msgid "no xml as response - viewGroup"
-msgstr "žádné vrácené xml - viewGroup"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:69
-msgid "Save"
-msgstr "Uložit"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:111
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:550
-msgid "General Settings"
-msgstr "Hlavní nastavení"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:111
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:113
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:114
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:116
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:118
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:122
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:133
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:134
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:135
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:136
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:137
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:138
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:140
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:143
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:145
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:148
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:151
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:154
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:157
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:161
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:162
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:554
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:557
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:559
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:562
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:563
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:565
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:566
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:574
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:577
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:602
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:604
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:607
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:608
-msgid " "
-msgstr " "
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:112
-msgid "> Used Skin"
-msgstr "> Použitý skin"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:112
-msgid "If you change the skin you have to restart at least the GUI!"
-msgstr "Jestliže změníte skin, musíte provést minimálně restart GUI!"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:113
-msgid "> Show Plugin in Main Menu"
-msgstr "> Zobrazit plugin v hlavním menu"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:114
-msgid "> Use Cache for Sections"
-msgstr "> Použít cache pro sekce"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:115
-msgid "> Use Picture Cache"
-msgstr "> Použít cache pro obrázky"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:115
-msgid ""
-"Use this if you do not have enough space on your box e.g. no hdd drive just "
-"flash."
-msgstr ""
-"Použijte tohle, pokud nemáte dostatek místa ve vašem boxu např. nemáte pevný "
-"disk ale pouze flash."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:116
-msgid "> Show Infobar when buffer drained"
-msgstr "> Zobrazit Infobar, když buffer je vyčerpán"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:118
-msgid "> Stop Live TV on startup"
-msgstr "> Zastavit TV vysílání při spuštění"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:122
-msgid ">> Play Themes in TV Shows"
-msgstr ">> Přehrát  témata u TV seriálů"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:123
-msgid ">> Show Backdrops as Videos"
-msgstr ">> Zobrazit pozadí jako video"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:123
-msgid "Use this if you have m1v videos as backdrops"
-msgstr "Použijte tohle jestli máte m1v videa pozadí"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:130
-msgid "> Check for updates on startup"
-msgstr "> Ověř aktualizace během spuštění"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:130
-msgid ""
-"If activated on each start we will check if there is a new version depending "
-"on your update type."
-msgstr ""
-"Jestliže je aktivováno, tak při každém startu bude ověřovat, zda existuje "
-"nová verze pro zvolený typ aktualizace."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:131
-msgid "> Updatetype"
-msgstr "> Typ aktualizace"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:131
-msgid "Use Beta only if you really want to help with testing"
-msgstr "Používejte beta verzi jen když skutečně chcete pomoct s testováním"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:133
-msgid "Userinterface Settings"
-msgstr "Nastavení uživatelského prostředí"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:134
-msgid "> Summerize Sections"
-msgstr "> Shrnovat informace k dané sekci"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:135
-msgid "> Show Filter for Section"
-msgstr "> Zobrazit filter pro sekci"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:136
-msgid "> Show Seen/Unseen count in TvShows"
-msgstr "> Zobrazit počet zhlédnutých/nezhlédnutých dílů u TV seriálů"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:137
-msgid "> Use fastScroll as default"
-msgstr "> Použít Rychlé Rolování jako default"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:138
-msgid "> Show additional data for plex.tv sections"
-msgstr "> Zobrazit dodatečné informace pro plex.tv sekce"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:140
-msgid "> Detail type for additional data"
-msgstr "> Detailní typ pro dodatečné informace"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:143
-msgid "Path Settings"
-msgstr "Nastavení složek"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:145
-msgid "> Media Folder Path"
-msgstr "> Složka pro média"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:148
-msgid "> Config Folder Path"
-msgstr "> Složka pro konfiguraci"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:151
-msgid "> Cache Folder Path"
-msgstr "> Složka pro cache"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:154
-msgid "> Player Temp Path"
-msgstr "> Složka pro přehrávač"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:157
-msgid "> Log Folder Path"
-msgstr "> Složka pro logy"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:161
-msgid "Misc Settings"
-msgstr "Ostatní nastavení"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:162
-msgid "> Debug Mode"
-msgstr "> Debug mód"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:310
-msgid "State"
-msgstr "Stav"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:311
-msgid "Name"
-msgstr "Jméno"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:312
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:170
-msgid "IP"
-msgstr "IP"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:313
-msgid "Port"
-msgstr "Port"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:315
-msgid "Discover"
-msgstr "Vyhledat"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:316
-msgid "Add"
-msgstr "Přidat"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:317
-msgid "Edit"
-msgstr "Upravit"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:318
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:511
-msgid "Delete"
-msgstr "Smazat"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:392
-msgid "Select server"
-msgstr "Vyber server"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:461
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:727
-msgid "Really delete this Server Entry?"
-msgstr "Chcete skutečně smazat tento server?"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:512
-msgid "mappings"
-msgstr "mapování"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:550
-msgid "-"
-msgstr "-"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:552
-msgid " > State"
-msgstr " > Stav"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:552
-msgid "Toggle state to on/off to show this server in lost or not."
-msgstr "Přepnout stav zapnout / vypnout, zda se server ztratil nebo ne."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:553
-msgid " > Autostart"
-msgstr " > Autostart"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:553
-msgid "Enter this server automatically on startup."
-msgstr "Zadat tento server automaticky při startu."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:554
-msgid " > Name"
-msgstr " > Jméno"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:557
-msgid "Connection Settings"
-msgstr "Nastavení připojení"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:559
-msgid " > Connection Type"
-msgstr " > Typ připojení"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:562
-msgid " >> IP"
-msgstr " >> IP"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:563
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:566
-msgid " >> Port"
-msgstr " >> Port"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:565
-msgid " >> DNS"
-msgstr " >> DNS"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:568
-msgid " >> plex.tv URL"
-msgstr " >> plex.tv URL"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:568
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:569
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:570
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:571
-msgid "You need curl installed for this feature! Please check in System ..."
-msgstr ""
-"Potřebuješ mít nainstalován curl pro tuhle funkci! Prosím ověř v Systému ..."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:569
-msgid " >> plex.tv Username"
-msgstr " >> plex.tv Uživatelské jméno"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:570
-msgid " >> plex.tv Password"
-msgstr " >> plex.tv Heslo"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:571
-msgid " >> plex.tv renew plex.tv token"
-msgstr " >> plex.tv obnovení tokenu pro plex.tv"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:574
-msgid "Playback Settings"
-msgstr "Nastavení přehrávání"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:577
-msgid " > Playback Type"
-msgstr " > Typ přehrávání"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:583
-msgid " >> Use universal Transcoder"
-msgstr " >> Použít univerzální Transkodér"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:583
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:585
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:586
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:588
-msgid ""
-"You need gstreamer_fragmented installed for this feature! Please check in "
-"System ... "
-msgstr ""
-"Potřebuješ mít nainstalován plugin gstreamer_fragmented pro tuhle funkci! "
-"Prosím ověř v Systému ... "
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:585
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:588
-msgid " >> Transcoding quality"
-msgstr " >> Kvalita transkodování"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:586
-msgid " >> Segmentsize in seconds"
-msgstr " >> Velikost segmentu v sekundách"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:602
-msgid "Wake On Lan Settings"
-msgstr "Nastavení pro vzdálené spuštění počítače (Wake On Lan)"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:604
-msgid " > Use Wake on Lan (WoL)"
-msgstr " > Použít Vzdálené spouštění pořítače (WoL)"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:607
-msgid " >> Mac address (Size: 12 alphanumeric no seperator) only for WoL"
-msgstr ""
-" >> Mac adresa (Velikost: 12 alfanumerických znaků bez oddělovačů) jen pro "
-"WoL"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:608
-msgid " >> Wait for server delay (max 180 seconds) only for WoL"
-msgstr " >> Doba čekání na probuzení (max. 180 sekund) jen pro WoL"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:644
-msgid "Mappings"
-msgstr "Mapování:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:646
-msgid "check plex.tv Token"
-msgstr "ověřit plex.tv Token"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:714
-msgid "plex.tv Token:"
-msgstr "plex.tv Token:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:714
-msgid "for the user:"
-msgstr "pro uživatele:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:809
-msgid "All"
-msgstr "Všechny"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:810
-msgid "All Movies"
-msgstr "Všechny filmy"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:811
-msgid "All Filmy"
-msgstr "Všechny filmy"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:812
-msgid "All Shows"
-msgstr "Všechny seriály"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:813
-msgid "All episodes"
-msgstr "Všechny epizody"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:814
-msgid "By Genre"
-msgstr "Podle žánru"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:815
-msgid "By Folder"
-msgstr "Podle složky"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:816
-msgid "By First Letter"
-msgstr "Podle prvního písmene"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:817
-msgid "By Resolution"
-msgstr "Podle rozlišení"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:818
-msgid "By Rating"
-msgstr "Podle hodnocení"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:819
-msgid "By Country"
-msgstr "Podle země"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:820
-msgid "By Director"
-msgstr "Podle režiséra"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:821
-msgid "By Decade"
-msgstr "Podle desetiletí"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:822
-msgid "By Year"
-msgstr "Podle roku"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:823
-msgid "By Collection"
-msgstr "Podle sbírky"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:824
-msgid "By Content Rating"
-msgstr "Podle hodnocení obsahu"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:825
-msgid "By Starring Actor"
-msgstr "Podle herce v hlavní roli"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:826
-msgid "Recently Aired"
-msgstr "Nedávno vysílané"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:827
-msgid "Recently Added"
-msgstr "Nedávno přidané"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:828
-msgid "Recently Released"
-msgstr "Nedávno vydané"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:829
-msgid "Recently Viewed"
-msgstr "Nedávno shlédnuté"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:830
-msgid "Recently Viewed Episodes"
-msgstr "Nedávno shlédnuté epizody"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:831
-msgid "Recently Viewed Shows"
-msgstr "Nedávno shlédnuté seriály"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:832
-msgid "Unwatched"
-msgstr "Neshlédnuté"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:833
-msgid "On Deck"
-msgstr "Rozsledované"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:834
-msgid "Search..."
-msgstr "Vyhledat..."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:835
-msgid "Search Shows..."
-msgstr "Vyhledat seriály..."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:836
-msgid "Search Episodes..."
-msgstr "Vyhledat epizody..."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:838
-msgid "Shows"
-msgstr "Seriály"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:839
-msgid "Series"
-msgstr "Série"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:70
-msgid "found mipsel (OE 1.6) => Check for 'gst-plugin-fragmented"
-msgstr "nalezen mipsel (OE 1.6) => Ověření pluginu 'gst-plugin-fragmented"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:73
-msgid "found mips32el (OE 2.0) => Check for 'gst-plugins-bad-fragmented"
-msgstr ""
-"nalezen mips32el (OE 2.0) => Ověření pluginu 'gst-plugins-bad-fragmented"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:77
-msgid "Check for 'gst-plugin-fragmented if you are using OE16."
-msgstr "Ověření pluginu 'gst-plugin-fragmented - jestliže používáte OE16."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:78
-msgid "Check for 'gst-plugins-bad-fragmented if you are using OE20."
-msgstr "Ověření pluginu 'gst-plugins-bad-fragmented - jestliže používáte OE20."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:80
-msgid "Check curl installation data."
-msgstr "Ověřit instalační data pro curl."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:81
-msgid "Check DreamPlex installation data."
-msgstr "Ověřit nainstalovaná data DreamPlexu."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:84
-msgid "Check for update."
-msgstr "Ověřit dostupnost aktualizací."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:88
-msgid "Exit"
-msgstr "Konec"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:145
-msgid "Your current Version is "
-msgstr "Tvoje aktuální verze je "
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:148
-msgid "No update available"
-msgstr "Žádná aktualizace není dostupná"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:151
-msgid "No internet connection available!"
-msgstr "Není dostupné internetové připojení!"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:268
-msgid ""
-"Enigma2 must be restarted!\n"
-"Should Enigma2 now restart?"
-msgstr ""
-"Enigma2 musí být restartována!\n"
-"Mám nyní provést restart Enigma2 ?"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:284
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:354
-msgid "Information:\n"
-msgstr "Informace:\n"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:358
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:361
-msgid ""
-"The selected plugin is not installed!\n"
-" Do you want to proceed to install?"
-msgstr ""
-"Vybraný plugin není nainstalován!\n"
-" Chcete ho nainstalovat?"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:405
-#: e:\Development\GitHub\DreamPlex\src/DP_SystemCheck.py:447
-msgid "Could not install "
-msgstr "Nemůžu nainstalovat "
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:251
-msgid "toggle View "
-msgstr "přepnout zobrazení "
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:251
-msgid "(current 'Default')"
-msgstr "(aktuálně 'Default')"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:255
-msgid "fastScroll = On"
-msgstr "Rychlé Rolování = Zapnuto"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:257
-msgid "fastScroll = Off"
-msgstr "Rychlé Rolování = Vypnuto"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:260
-msgid "load additional data"
-msgstr "načíst dodatečné informace"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:263
-msgid "show media functions"
-msgstr "zobraz funkce pro média"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:284
-msgid "Subtitles:"
-msgstr "Titulky:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:288
-msgid "Audio:"
-msgstr "Audio:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:292
-msgid "Genre:"
-msgstr "Žánr:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:296
-msgid "Year:"
-msgstr "Rok:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:300
-msgid "Runtime:"
-msgstr "Délka:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:869
-msgid "Select sort"
-msgstr "Výběr třídění"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:951
-msgid "Select filter"
-msgstr "Výběr filtru"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:990
-msgid "Select view"
-msgstr "Výběr zobrazení"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1325
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1327
+#~ msgid "%s"
+#~ msgstr "%s"
+
+#~ msgid "(current 'Default')"
+#~ msgstr "(aktuálně 'Default')"
+
+#~ msgid "1: mark   0: unmark   OK: confirm   EXIT: cancel"
+#~ msgstr "1: zapnout   0: vypnout   OK: potvrdit   EXIT: zrušit"
+
+#~ msgid "> Check for updates on startup"
+#~ msgstr "> Ověř aktualizace během spuštění"
+
+#~ msgid "> Show Infobar when buffer drained"
+#~ msgstr "> Zobrazit Infobar, když buffer je vyčerpán"
+
+#~ msgid "> Updatetype"
+#~ msgstr "> Typ aktualizace"
+
+#~ msgid ">> Show Backdrops as Videos"
+#~ msgstr ">> Zobrazit pozadí jako video"
+
+#~ msgid "Audio Functions"
+#~ msgstr "Nastavení pro audio"
+
+#~ msgid "Check DreamPlex installation data."
+#~ msgstr "Ověřit nainstalovaná data DreamPlexu."
+
+#~ msgid "Check curl installation data."
+#~ msgstr "Ověřit instalační data pro curl."
+
+#~ msgid "Check for 'gst-plugin-fragmented if you are using OE16."
+#~ msgstr "Ověření pluginu 'gst-plugin-fragmented - jestliže používáte OE16."
+
+#~ msgid "Check for 'gst-plugins-bad-fragmented if you are using OE20."
+#~ msgstr "Ověření pluginu 'gst-plugins-bad-fragmented - jestliže používáte OE20."
+
+#~ msgid "Check for update."
+#~ msgstr "Ověřit dostupnost aktualizací."
+
+#~ msgid "Clear default view"
+#~ msgstr "Vymazat defaultní zobrazení"
+
+#~ msgid "Close"
+#~ msgstr "Zavřít"
+
+#~ msgid "Connection Settings"
+#~ msgstr "Nastavení připojení"
+
+#~ msgid "Could not install "
+#~ msgstr "Nemůžu nainstalovat "
+
+#~ msgid "Edit"
+#~ msgstr "Upravit"
+
+#~ msgid ""
+#~ "Enigma2 must be restarted!\n"
+#~ "Should Enigma2 now restart?"
+#~ msgstr ""
+#~ "Enigma2 musí být restartována!\n"
+#~ "Mám nyní provést restart Enigma2 ?"
+
+#~ msgid "Exit"
+#~ msgstr "Konec"
+
+#~ msgid "Help"
+#~ msgstr "Pomoc"
+
+#~ msgid "If activated on each start we will check if there is a new version depending on your update type."
+#~ msgstr "Jestliže je aktivováno, tak při každém startu bude ověřovat, zda existuje nová verze pro zvolený typ aktualizace."
+
+#~ msgid "Information:\n"
+#~ msgstr "Informace:\n"
+
+#~ msgid "LEFT/RIGHT: browse     OK: play now     EXIT: cancel"
+#~ msgstr "VLEVO/VPRAVO: procházet     OK: přehrát nyní     EXIT: zrušit"
+
+#~ msgid "Misc Settings"
+#~ msgstr "Ostatní nastavení"
+
+#~ msgid "Name"
+#~ msgstr "Jméno"
+
+#~ msgid "No internet connection available!"
+#~ msgstr "Není dostupné internetové připojení!"
+
+#~ msgid "No plugins available"
+#~ msgstr "Nejsou dostupné žádné pluginy"
+
+#~ msgid "No update available"
+#~ msgstr "Žádná aktualizace není dostupná"
+
+#~ msgid "Not available"
+#~ msgstr "Není dostupné"
+
+#~ msgid "OK"
+#~ msgstr "OK"
+
+#~ msgid "Options"
+#~ msgstr "Možnosti"
+
+#~ msgid "Path Settings"
+#~ msgstr "Nastavení složek"
+
+#~ msgid "Playback Settings"
+#~ msgstr "Nastavení přehrávání"
+
+#~ msgid "Please enter your search string!"
+#~ msgstr "Prosím zadejte hledaný název!"
+
+#~ msgid ""
+#~ "Plexserver seems to be offline. Please check your your settings or connection!\n"
+#~ " Retry?"
+#~ msgstr ""
+#~ "Plexserver je asi v režimu offline. Zkontrolujte prosím vaše nastavení nebo připojení!\n"
+#~ " Zkusit znovu?"
+
+#~ msgid ""
+#~ "Plexserver seems to be offline. Start with Wake on Lan settings? \n"
+#~ "\n"
+#~ "Please note: \n"
+#~ "If you press yes the spinner will run for "
+#~ msgstr ""
+#~ "Plexserver je asi v režimu offline. Začít s probuzením po síti (Wake on Lan)? \n"
+#~ "\n"
+#~ "Vezměte prosím na vědomí: \n"
+#~ "Stisknete-li ano, načítání poběží až po "
+
+#~ msgid "Port"
+#~ msgstr "Port"
+
+#~ msgid "Refresh this section"
+#~ msgstr "Znovu načti tuhle sekci"
+
+#~ msgid "Select filter"
+#~ msgstr "Výběr filtru"
+
+#~ msgid "Select sort"
+#~ msgstr "Výběr třídění"
+
+#~ msgid "Select view"
+#~ msgstr "Výběr zobrazení"
+
+#~ msgid "Set view as default"
+#~ msgstr "Nastavit zobrazení jako defaultní"
+
+#~ msgid "Show media details"
+#~ msgstr "Detailní informace o médiu"
+
+#~ msgid "State"
+#~ msgstr "Stav"
+
+#~ msgid "Subtitle Functions"
+#~ msgstr "Nastavení pro titulky"
+
+#~ msgid ""
+#~ "The selected plugin is not installed!\n"
+#~ " Do you want to proceed to install?"
+#~ msgstr ""
+#~ "Vybraný plugin není nainstalován!\n"
+#~ " Chcete ho nainstalovat?"
+
 #, python-format
-msgid "set Filter (set to '%s')"
-msgstr "nastavit filtr (nastaveno na '%s')"
+#~ msgid ""
+#~ "UNEXPECTED ERROR:\n"
+#~ "This is the answer from the request ...\n"
+#~ "%s"
+#~ msgstr ""
+#~ "NEOČEKÁVANÁ CHYBA:\n"
+#~ "Tohle je odpověď na požadavek:\n"
+#~ "%s"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1364
-msgid "Not available"
-msgstr "Není dostupné"
+#~ msgid "Use Beta only if you really want to help with testing"
+#~ msgstr "Používejte beta verzi jen když skutečně chcete pomoct s testováním"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1366
-msgid "not available"
-msgstr "není dostupné"
+#~ msgid "Use this if you do not have enough space on your box e.g. no hdd drive just flash."
+#~ msgstr "Použijte tohle, pokud nemáte dostatek místa ve vašem boxu např. nemáte pevný disk ale pouze flash."
 
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1570
-msgid "Select media to play"
-msgstr "Výběr média pro přehrání"
+#~ msgid "Userinterface Settings"
+#~ msgstr "Nastavení uživatelského prostředí"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1610
+#~ msgid "Wake On Lan Settings"
+#~ msgstr "Nastavení pro vzdálené spuštění počítače (Wake On Lan)"
+
+#~ msgid "You have to reenter the section to see the changes!"
+#~ msgstr "Musíte znovu vstoupit do této sekce, aby jste viděl změny!"
+
+#~ msgid "You need curl installed for this feature! Please check in System ..."
+#~ msgstr "Potřebuješ mít nainstalován curl pro tuhle funkci! Prosím ověř v Systému ..."
+
+#~ msgid "Your current Version is "
+#~ msgstr "Tvoje aktuální verze je "
+
+#~ msgid "by Albums"
+#~ msgstr "podle alb"
+
+#~ msgid "by Artists"
+#~ msgstr "podle interpretrů"
+
+#~ msgid "check plex.tv Token"
+#~ msgstr "ověřit plex.tv Token"
+
+#~ msgid "fastScroll = Off"
+#~ msgstr "Rychlé Rolování = Vypnuto"
+
+#~ msgid "fastScroll = On"
+#~ msgstr "Rychlé Rolování = Zapnuto"
+
+#~ msgid "found mips32el (OE 2.0) => Check for 'gst-plugins-bad-fragmented"
+#~ msgstr "nalezen mips32el (OE 2.0) => Ověření pluginu 'gst-plugins-bad-fragmented"
+
+#~ msgid "found mipsel (OE 1.6) => Check for 'gst-plugin-fragmented"
+#~ msgstr "nalezen mipsel (OE 1.6) => Ověření pluginu 'gst-plugin-fragmented"
+
+#~ msgid "load additional data"
+#~ msgstr "načíst dodatečné informace"
+
+#~ msgid "mappings"
+#~ msgstr "mapování"
+
+#~ msgid "no xml as response - directory"
+#~ msgstr "žádné vrácené xml - directory"
+
+#~ msgid "no xml as response - tree"
+#~ msgstr "žádné vrácené xml - tree"
+
+#~ msgid "no xml as response - viewGroup"
+#~ msgstr "žádné vrácené xml - viewGroup"
+
+#~ msgid "not available"
+#~ msgstr "není dostupné"
+
+#~ msgid "please check if curl is installed."
+#~ msgstr "zkontrolujte, zda je správně nainstalován."
+
+#~ msgid "plex.tv Token:"
+#~ msgstr "plex.tv Token:"
+
 #, python-format
-msgid "%s"
-msgstr "%s"
+#~ msgid "set Filter (set to '%s')"
+#~ msgstr "nastavit filtr (nastaveno na '%s')"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1614
-msgid "Sorry I didn't find the file on the provided locations"
-msgstr "Soubor bohužel nebyl nalezen na uvedeném místě"
+#~ msgid "show media functions"
+#~ msgstr "zobraz funkce pro média"
 
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1615
-msgid "Location:"
-msgstr "Umístění:"
+#~ msgid "toggle View "
+#~ msgstr "přepnout zobrazení "
 
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1616
-msgid "Please verify you direct local settings"
-msgstr "Prosím ověř nastavení pro lokální přehrávání (direct local)"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1617
-msgid "I will now try to play the file via transcode."
-msgstr "Nyní zkusím přehrát daný soubor přes transkódování."
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1618
-msgid "Warning:"
-msgstr "Upozornění:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1631
-msgid ""
-" This file was partially played.\n"
-"\n"
-" Do you want to resume?"
-msgstr ""
-" Tento soubor byl již částečně přehrán.\n"
-"\n"
-" Chcete pokračovat?"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1668
-msgid "Total:"
-msgstr "Celkem:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1669
-msgid "Pages:"
-msgstr "Stránka:"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1711
-msgid "Mark media unwatched"
-msgstr "Označit jako neshlédnuté"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1712
-msgid "Mark media watched"
-msgstr "Označit jako shlédnuté"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1713
-msgid "Initiate Library refresh"
-msgstr "Iniciovat aktualizaci knihovny"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1714
-msgid "Show media details"
-msgstr "Detailní informace o médiu"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1715
-msgid "Refresh this section"
-msgstr "Znovu načti tuhle sekci"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1718
-msgid "Media Functions"
-msgstr "Nastavení pro média"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1766
-msgid "Subtitle Functions"
-msgstr "Nastavení pro titulky"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1805
-msgid "Audio Functions"
-msgstr "Nastavení pro audio"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1848
-msgid "Are you sure?"
-msgstr "Určitě?"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1862
-msgid "Deleting aborted!"
-msgstr "Mazání zrušeno!"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1872
-msgid "You have to reenter the section to see the changes!"
-msgstr "Musíte znovu vstoupit do této sekce, aby jste viděl změny!"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1884
-msgid "Set view as default"
-msgstr "Nastavit zobrazení jako defaultní"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1885
-msgid "Clear default view"
-msgstr "Vymazat defaultní zobrazení"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1892
-msgid "No plugins available"
-msgstr "Nejsou dostupné žádné pluginy"
-
-#: e:\Development\GitHub\DreamPlex\src/DP_View.py:1894
-msgid "Options"
-msgstr "Možnosti"
-
-#: e:\Development\GitHub\DreamPlex\src/plugin.py:49
-msgid "plex client for enigma2"
-msgstr "Plex klient pro enigma2"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:170
-msgid "DNS"
-msgstr "DNS"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:170
-msgid "plex.tv"
-msgstr "plex.tv"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:174
-msgid "Streamed"
-msgstr "Streamování (Streamed)"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:174
-msgid "Transcoded"
-msgstr "Transkodování (Transcoded)"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:174
-msgid "Direct Local"
-msgstr "Přímé přehrávání (Direct Local)"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "64kbps, 128p, 3fps"
-msgstr "64kbps, 128p, 3fps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "96kbps, 128p, 12fps"
-msgstr "96kbps, 128p, 12fps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "208kbps, 160p, 15fps"
-msgstr "208kbps, 160p, 15fps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "320kbps, 240p"
-msgstr "320kbps, 240p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "720kbps, 320p"
-msgstr "720kbps, 320p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "1.5Mbps, 480p"
-msgstr "1.5Mbps, 480p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "2Mbps, 720p"
-msgstr "2Mbps, 720p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "3Mbps, 720p"
-msgstr "3Mbps, 720p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "4Mbps, 720p"
-msgstr "4Mbps, 720p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "8Mbps, 1080p"
-msgstr "8Mbps, 1080p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "10Mbps, 1080p"
-msgstr "10Mbps, 1080p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "12Mbps, 1080p"
-msgstr "12Mbps, 1080p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:211
-msgid "20Mbps, 1080p"
-msgstr "20Mbps, 1080p"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "420x240, 320kbps"
-msgstr "420x240, 320kbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "576x320, 720 kbps"
-msgstr "576x320, 720 kbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "720x480, 1,5mbps"
-msgstr "720x480, 1,5mbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "1024x768, 2mbps"
-msgstr "1024x768, 2mbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "1280x720, 3mbps"
-msgstr "1280x720, 3mbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "1280x720, 4mbps"
-msgstr "1280x720, 4mbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "1920x1080, 8mbps"
-msgstr "1920x1080, 8mbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "1920x1080, 10mbps"
-msgstr "1920x1080, 10mbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "1920x1080, 12mbps"
-msgstr "1920x1080, 12mbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:215
-msgid "1920x1080, 20mbps"
-msgstr "1920x1080, 20mbps"
-
-#: e:\Development\GitHub\DreamPlex\src/__init__.py:294
-msgid "TV Shows"
-msgstr "TV Seriály"
+#~ msgid "♡  (unmarked)"
+#~ msgstr "♡  (zrušeno)"

@@ -21,32 +21,49 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 """
-#===============================================================================
-# IMPORT
-#===============================================================================
-from os import environ, listdir
-from os.path import isdir, join as path_join, isfile
+from __future__ import annotations
 import gettext
+from dataclasses import dataclass
+# ===============================================================================
+# IMPORT
+# ===============================================================================
+from os import environ, listdir
+from os.path import isdir, join as path_join, isfile, dirname as path_dirname
+from xml.etree.ElementTree import Element, ElementTree
+from typing import Type, Callable, List
 
-from Components.config import config
-from Components.config import ConfigSubsection
-from Components.config import ConfigSelection
-from Components.config import ConfigInteger
-from Components.config import ConfigSubList
-from Components.config import ConfigText
-from Components.config import ConfigYesNo
-from Components.config import ConfigIP
-from Components.config import ConfigPIN
-from Components.config import ConfigDirectory
 from Components.Language import language
-
+from Components.config import ConfigSelection
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS, SCOPE_SKIN, SCOPE_CURRENT_SKIN, SCOPE_LANGUAGE
-
-
 from .DPH_Singleton import Singleton
+from .DP_SettingsStorage import SettingsStorage, AbstractSettings, AbstractServerSettings, AbstractServerSettingsFactory
 from .DP_ViewFactory import getViews
+from .DPH_ConfigMigration import migrate
+from .__common__ import getVersion, registerPlexFonts, loadSkinParams, loadMainSkin, checkPlexEnvironment, \
+	checkDirectory, \
+	getBoxInformation, printl2 as printl, getXmlContent, getBoxResolution, getSkinFolder, setSkinFolder, \
+	getSkinResolution
+def _(txt):
+	#printl("", "__init__::_(txt)", "S")
 
-from .__common__ import getVersion, registerPlexFonts, loadSkinParams, loadPlexSkin, checkPlexEnvironment, getBoxInformation, printl2 as printl, getXmlContent, getBoxResolution, getSkinFolder, setSkinFolder, getSkinResolution
+	if len(txt) == 0:
+		return ""
+	text = gettext.dgettext("DreamPlex", txt)
+	if text == txt:
+		text = gettext.gettext(txt)
+
+	printl("text = " + str(text), "__init__::_(txt)", "D")
+
+	#printl("", "__init__::_(txt)", "C")
+	return text
+
+# _() has to be defined above this point: backend subpackages (src/plex/,
+# src/jellyfin/, ...) are imported as part of this module's own execution
+# (see _discoverServerBackends() below) and both do "from ..__init__ import
+# _" at their own module level. Defining it further down - where it used to
+# sit, next to sanitize() - left it missing from this module's namespace at
+# the moment those imports run, a circular import that failed with "cannot
+# import name '_' from partially initialized module".
 
 #===============================================================================
 #
@@ -62,49 +79,76 @@ defaultMediaFolderPath = "/hdd/dreamplex/media/"
 defaultPlayerTempPath = "/hdd/dreamplex/"
 defaultConfigFolderPath = "/hdd/dreamplex/config/"
 
+# Single file holding the whole configuration since 3.1: global settings,
+# servers, users and path mappings. Before that they were spread across the
+# enigma2 settings and the homeUsers / mountMappings files.
+SETTINGS_FILE_NAME = "settings.xml"
+
+EMPTY_SERVER_CONF = "EmptyServerConf"
+
 # skin data
 defaultSkin = "original"
 skins = []
+sanitizer: List[Callable[[str, List[int], bool], str]] = []
 
-config.plugins.dreamplex = ConfigSubsection()
-config.plugins.dreamplex.about = ConfigSelection(default="1", choices=[("1", " ")])  # need this for seperator in settings
-config.plugins.dreamplex.debugMode = ConfigYesNo()
-config.plugins.dreamplex.writeDebugFile = ConfigYesNo()
-config.plugins.dreamplex.showInMainMenu = ConfigYesNo(default=True)
-config.plugins.dreamplex.showFilter = ConfigYesNo(default=True)
-config.plugins.dreamplex.autoLanguage = ConfigYesNo()
-config.plugins.dreamplex.playTheme = ConfigYesNo()
-config.plugins.dreamplex.showUnSeenCounts = ConfigYesNo()
-config.plugins.dreamplex.fastScroll = ConfigYesNo()
-config.plugins.dreamplex.liveTvInViews = ConfigYesNo()
-config.plugins.dreamplex.startWithFilterMode = ConfigYesNo()
-config.plugins.dreamplex.summerizeSections = ConfigYesNo(default=True)
-config.plugins.dreamplex.summerizeServers = ConfigYesNo(default=True)
-config.plugins.dreamplex.stopLiveTvOnStartup = ConfigYesNo()
-config.plugins.dreamplex.useCache = ConfigYesNo(default=True)
-config.plugins.dreamplex.usePicCache = ConfigYesNo(default=True)
-config.plugins.dreamplex.useBackdropVideos = ConfigYesNo()
-config.plugins.dreamplex.showDetailsInList = ConfigYesNo()
-config.plugins.dreamplex.showDetailsInListDetailType = ConfigSelection(default="1", choices=[("1", "user"), ("2", "server")])
-config.plugins.dreamplex.boxName = ConfigText(default="DreamPlex", visible_width=50, fixed_size=False)
-config.plugins.dreamplex.lcd4linux = ConfigYesNo()
-config.plugins.dreamplex.exitFunction = ConfigSelection(default="0", choices=[("0", "Nothing"), ("1", "stop playback, return to library"), ("2", "search library while playing")])
 
-config.plugins.dreamplex.pluginfolderpath = ConfigDirectory(default=defaultPluginFolderPath)
-config.plugins.dreamplex.skinfolderpath = ConfigDirectory(default=defaultSkinsFolderPath)
+@dataclass
+class ServerSettingsData:
+	name: str
+	factoryClass: Type[AbstractServerSettingsFactory] | None
 
-config.plugins.dreamplex.remoteAgent = ConfigYesNo()
-config.plugins.dreamplex.remotePort = ConfigInteger(default=32400, limits=(1, 65555))
-config.plugins.dreamplex.seekTime = ConfigInteger(default=5, limits=(1, 30))
+ServerSettings: dict[str, ServerSettingsData] = {
+	EMPTY_SERVER_CONF: ServerSettingsData(name = "EmptyServerConf", factoryClass = None),
+}
 
-config.plugins.dreamplex.logfolderpath = ConfigDirectory(default=defaultLogFolderPath, visible_width=50)
-config.plugins.dreamplex.cachefolderpath = ConfigDirectory(default=defaultCacheFolderPath, visible_width=50)
-config.plugins.dreamplex.mediafolderpath = ConfigDirectory(default=defaultMediaFolderPath, visible_width=50)
-config.plugins.dreamplex.configfolderpath = ConfigDirectory(default=defaultConfigFolderPath, visible_width=50)
-config.plugins.dreamplex.playerTempPath = ConfigDirectory(default=defaultPlayerTempPath, visible_width=50)
 
-config.plugins.dreamplex.entriescount = ConfigInteger(0)
-config.plugins.dreamplex.Entries = ConfigSubList()
+def registerServerBackend(settingsClass: Type[AbstractServerSettings], factoryClass: Type[AbstractServerSettingsFactory], logSanitizer: Callable[[str, List[int], bool], str] = None) -> None:
+	"""
+	ServiceLoader-style self-registration hook: a backend subpackage (e.g.
+	src/plex/, src/jellyfin/) calls this from its own __init__.py, as an
+	import side effect, instead of this module hardcoding one ServerSettings
+	entry per backend. See _discoverServerBackends() below, which is what
+	imports those subpackages in the first place.
+
+	`logSanitizer`, if given, is that backend's own log-scrubbing function
+	(e.g. redacting its auth token from a logged URL/header) - appended to
+	the module-level `sanitizer` list the same way sanitize() already
+	expects, ahead of the generic _defaultSanitizer fallback appended once,
+	after every import, near the bottom of this module.
+	"""
+	name = settingsClass.SETTINGS_NAME
+	printl("registered server backend: " + name, "__init__::registerServerBackend", "I")
+	ServerSettings[name] = ServerSettingsData(name=name, factoryClass=factoryClass)
+	if logSanitizer is not None:
+		sanitizer.append(logSanitizer)
+
+
+def _discoverServerBackends() -> None:
+	"""
+	Imports every immediate subpackage of this plugin that declares itself
+	a real Python package (i.e. has its own __init__.py) - each one is
+	expected to call registerServerBackend() while it does, the way
+	src/plex/__init__.py and src/jellyfin/__init__.py do. A future backend
+	(e.g. src/emby/) needs no change here at all: dropping its folder in is
+	enough - this is the same idea as Java's ServiceLoader, without needing
+	packaging/entry_points for what is a single self-contained plugin.
+	Non-package subfolders (fonts/, skins/, __pycache__/) are silently
+	skipped, since they have no __init__.py to satisfy this check.
+	"""
+	import importlib
+	packageDir = path_dirname(__file__)
+	for name in sorted(listdir(packageDir)):
+		if not isdir(path_join(packageDir, name)):
+			continue
+		if not isfile(path_join(packageDir, name, "__init__.py")):
+			continue
+		try:
+			importlib.import_module("." + name, package=__name__)
+		except Exception as e:
+			printl("could not load server backend '%s': %s" % (name, str(e)), "__init__::_discoverServerBackends", "W")
+
+
+_discoverServerBackends()
 
 #===============================================================================
 #
@@ -131,159 +175,29 @@ def printGlobalSettings():
 	printl("=== VERSION ===", "__init__::getBoxInformation", "I")
 	printl("current Version : " + str(version), "__init__::initGlobalSettings", "I")
 
+	settings: SettingsStorage = Singleton().getSettingsInstance()
+
 	printl("=== GLOBAL SETTINGS ===", "__init__::getBoxInformation", "I")
-	printl("debugMode: " + str(config.plugins.dreamplex.debugMode.value), "__init__::initGlobalSettings", "I")
-	printl("writeDebugFile: " + str(config.plugins.dreamplex.writeDebugFile.value), "__init__::initGlobalSettings", "I")
-	printl("boxName: " + str(config.plugins.dreamplex.boxName.value), "__init__::initGlobalSettings", "I")
-	printl("pluginfolderpath: " + str(config.plugins.dreamplex.pluginfolderpath.value), "__init__::initGlobalSettings", "I")
-	printl("logfolderpath: " + str(config.plugins.dreamplex.logfolderpath.value), "__init__::initGlobalSettings", "I")
-	printl("mediafolderpath: " + str(config.plugins.dreamplex.mediafolderpath.value), "__init__::initGlobalSettings", "I")
-	printl("cachefolderpath: " + str(config.plugins.dreamplex.cachefolderpath.value), "__init__::initGlobalSettings", "I")
-	printl("playerTempPath: " + str(config.plugins.dreamplex.playerTempPath.value), "__init__::initGlobalSettings", "I")
-	printl("showInMainMenu: " + str(config.plugins.dreamplex.showInMainMenu.value), "__init__::initGlobalSettings", "I")
-	printl("showFilter: " + str(config.plugins.dreamplex.showFilter.value), "__init__::initGlobalSettings", "I")
-	printl("autoLanguage: " + str(config.plugins.dreamplex.autoLanguage.value), "__init__::initGlobalSettings", "I")
-	printl("stopLiveTvOnStartup: " + str(config.plugins.dreamplex.stopLiveTvOnStartup.value), "__init__::initGlobalSettings", "I")
-	printl("playTheme: " + str(config.plugins.dreamplex.playTheme.value), "__init__::initGlobalSettings", "I")
-	printl("fastScroll: " + str(config.plugins.dreamplex.fastScroll.value), "__init__::initGlobalSettings", "I")
-	printl("summerizeSections: " + str(config.plugins.dreamplex.summerizeSections.value), "__init__::initGlobalSettings", "I")
-	printl("summerizeServers: " + str(config.plugins.dreamplex.summerizeServers.value), "__init__::initGlobalSettings", "I")
-	printl("useCache: " + str(config.plugins.dreamplex.useCache.value), "__init__::initGlobalSettings", "I")
-	printl("usePicCache: " + str(config.plugins.dreamplex.usePicCache.value), "__init__::initGlobalSettings", "I")
+	printl("debugMode: " + str(settings.debugMode.getValue()), "__init__::initGlobalSettings", "I")
+	printl("writeDebugFile: " + str(settings.writeDebugFile.getValue()), "__init__::initGlobalSettings", "I")
+	printl("boxName: " + str(settings.boxName.getValue()), "__init__::initGlobalSettings", "I")
+	printl("pluginfolderpath: " + str(settings.pluginFolderPath.getValue()), "__init__::initGlobalSettings", "I")
+	printl("logfolderpath: " + str(settings.logFolderPath.getValue()), "__init__::initGlobalSettings", "I")
+	printl("mediafolderpath: " + str(settings.mediaFolderPath.getValue()), "__init__::initGlobalSettings", "I")
+	printl("cachefolderpath: " + str(settings.cacheFolderPath.getValue()), "__init__::initGlobalSettings", "I")
+	printl("playerTempPath: " + str(settings.playerTempPath.getValue()), "__init__::initGlobalSettings", "I")
+	printl("showInMainMenu: " + str(settings.showInMainMenu.getValue()), "__init__::initGlobalSettings", "I")
+	printl("showFilter: " + str(settings.showFilter.getValue()), "__init__::initGlobalSettings", "I")
+	printl("autoLanguage: " + str(settings.autoLanguage.getValue()), "__init__::initGlobalSettings", "I")
+	printl("stopLiveTvOnStartup: " + str(settings.stopLiveTvOnStartup.getValue()), "__init__::initGlobalSettings", "I")
+	printl("playTheme: " + str(settings.playTheme.getValue()), "__init__::initGlobalSettings", "I")
+	printl("fastScroll: " + str(settings.fastScroll.getValue()), "__init__::initGlobalSettings", "I")
+	printl("summerizeSections: " + str(settings.summerizeSections.getValue()), "__init__::initGlobalSettings", "I")
+	printl("summerizeServers: " + str(settings.summerizeServers.getValue()), "__init__::initGlobalSettings", "I")
+	printl("useCache: " + str(settings.useCache.getValue()), "__init__::initGlobalSettings", "I")
+	printl("usePicCache: " + str(settings.usePicCache.getValue()), "__init__::initGlobalSettings", "I")
 
 	printl("", "__init__::initPlexSettings", "C")
-
-#===============================================================================
-#
-#===============================================================================
-
-
-def initServerEntryConfig():
-	printl("", "__init__::initServerEntryConfig", "S")
-
-	config.plugins.dreamplex.Entries.append(ConfigSubsection())
-	i = len(config.plugins.dreamplex.Entries) - 1
-
-	defaultName = "PlexServer"
-	defaultIp = [192, 168, 0, 1]
-	defaultPort = 32400
-
-	# SERVER SETTINGS
-	config.plugins.dreamplex.Entries[i].id = ConfigInteger(i)
-	config.plugins.dreamplex.Entries[i].state = ConfigYesNo(default=True)
-	config.plugins.dreamplex.Entries[i].autostart = ConfigYesNo()
-	config.plugins.dreamplex.Entries[i].name = ConfigText(default=defaultName, visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].connectionType = ConfigSelection(default="0", choices=[("0", _("IP")), ("1", _("DNS")), ("2", _("plex.tv"))])
-	config.plugins.dreamplex.Entries[i].ip = ConfigIP(default=defaultIp)
-	config.plugins.dreamplex.Entries[i].dns = ConfigText(default="my.dns.url", visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].port = ConfigInteger(default=defaultPort, limits=(1, 65555))
-	config.plugins.dreamplex.Entries[i].playbackType = ConfigSelection(default="0", choices=[("0", _("Streamed")), ("1", _("Transcoded")), ("2", _("Direct Local"))])
-	config.plugins.dreamplex.Entries[i].localAuth = ConfigYesNo()
-	config.plugins.dreamplex.Entries[i].machineIdentifier = ConfigText(visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].loadExtraData = ConfigSelection(default="0", choices=[("0", "None"), ("1", "Plex Pass"), ("2", "YTTrailer")])
-
-	config.plugins.dreamplex.Entries[i].srtRenamingForDirectLocal = ConfigYesNo()
-	config.plugins.dreamplex.Entries[i].subtitlesLanguage = ConfigText(default="de", visible_width=10, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].useForcedSubtitles = ConfigYesNo(default=True)
-
-	printl("=== SERVER SETTINGS ===", "__init__::initServerEntryConfig", "D")
-	printl("Server Settings: ", "__init__::initServerEntryConfig", "D")
-	printl("id: " + str(config.plugins.dreamplex.Entries[i].id.value), "__init__::initServerEntryConfig", "D")
-	printl("state: " + str(config.plugins.dreamplex.Entries[i].state.value), "__init__::initServerEntryConfig", "D")
-	printl("autostart: " + str(config.plugins.dreamplex.Entries[i].autostart.value), "__init__::initServerEntryConfig", "D")
-	printl("name: " + str(config.plugins.dreamplex.Entries[i].name.value), "__init__::initServerEntryConfig", "D")
-	printl("connectionType: " + str(config.plugins.dreamplex.Entries[i].connectionType.value), "__init__::initServerEntryConfig", "D")
-	printl("ip: " + str(config.plugins.dreamplex.Entries[i].ip.value), "__init__::initServerEntryConfig", "D")
-	printl("dns: " + str(config.plugins.dreamplex.Entries[i].dns.value), "__init__::initServerEntryConfig", "D")
-	printl("port: " + str(config.plugins.dreamplex.Entries[i].port.value), "__init__::initServerEntryConfig", "D")
-	printl("playbackType: " + str(config.plugins.dreamplex.Entries[i].playbackType.value), "__init__::initServerEntryConfig", "D")
-
-	# plex.tv
-	config.plugins.dreamplex.Entries[i].myplexUrl = ConfigText(default="plex.tv", visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].myplexUsername = ConfigText(visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].myplexId = ConfigInteger(default=0, limits=(1, 999999999999))
-	config.plugins.dreamplex.Entries[i].myplexPassword = ConfigText(visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].myplexPinProtect = ConfigYesNo()
-	config.plugins.dreamplex.Entries[i].myplexPin = ConfigPIN(default=0000)
-	config.plugins.dreamplex.Entries[i].myplexToken = ConfigText(visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].myplexLocalToken = ConfigText(visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].myplexTokenUsername = ConfigText(visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].myplexHomeUsers = ConfigYesNo()
-	config.plugins.dreamplex.Entries[i].protectSettings = ConfigYesNo()
-	config.plugins.dreamplex.Entries[i].settingsPin = ConfigPIN(default=0000)
-	config.plugins.dreamplex.Entries[i].myplexCurrentHomeUser = ConfigText(visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].myplexCurrentHomeUserPin = ConfigText(visible_width=4)
-	config.plugins.dreamplex.Entries[i].myplexCurrentHomeUserAccessToken = ConfigText(visible_width=4)
-	config.plugins.dreamplex.Entries[i].myplexCurrentHomeUserId = ConfigInteger(default=0, limits=(1, 999999999999))
-
-	printl("=== plex.tv ===", "__init__::initServerEntryConfig", "D")
-	printl("plex.tvUrl: " + str(config.plugins.dreamplex.Entries[i].myplexUrl.value), "__init__::initServerEntryConfig", "D")
-	printl("plex.tvUsername: " + str(config.plugins.dreamplex.Entries[i].myplexUsername.value), "__init__::initServerEntryConfig", "D", True, 8)
-	printl("plex.tvId: " + str(config.plugins.dreamplex.Entries[i].myplexId.value), "__init__::initServerEntryConfig", "D", True, 8)
-	printl("plex.tvPassword: " + str(config.plugins.dreamplex.Entries[i].myplexPassword.value), "__init__::initServerEntryConfig", "D", True, 6)
-	printl("plex.tvPinProtect: " + str(config.plugins.dreamplex.Entries[i].myplexPinProtect.value), "__init__::initServerEntryConfig", "D")
-	printl("plex.tvPin: " + str(config.plugins.dreamplex.Entries[i].myplexPin.value), "__init__::initServerEntryConfig", "D")
-	printl("plex.tvToken: " + str(config.plugins.dreamplex.Entries[i].myplexToken.value), "__init__::initServerEntryConfig", "D", True, 8)
-	printl("plex.tvTokenUsername: " + str(config.plugins.dreamplex.Entries[i].myplexTokenUsername.value), "__init__::initServerEntryConfig", "D")
-	printl("plex.tvHomeUsers: " + str(config.plugins.dreamplex.Entries[i].myplexHomeUsers.value), "__init__::initServerEntryConfig", "D")
-	printl("plex.tvCurrentHomeUser: " + str(config.plugins.dreamplex.Entries[i].myplexCurrentHomeUser.value), "__init__::initServerEntryConfig", "D")
-	printl("plex.tvCurrentHomeUserPin: " + str(config.plugins.dreamplex.Entries[i].myplexCurrentHomeUserPin.value), "__init__::initServerEntryConfig", "D")
-	printl("protectSettings: " + str(config.plugins.dreamplex.Entries[i].protectSettings.value), "__init__::initServerEntryConfig", "D")
-	printl("settingsPin: " + str(config.plugins.dreamplex.Entries[i].settingsPin.value), "__init__::initServerEntryConfig", "D")
-
-	# STREAMED
-	# no options at the moment
-
-	# TRANSCODED
-	config.plugins.dreamplex.Entries[i].universalTranscoder = ConfigYesNo(default=True)
-
-	# old transcoder settings
-	config.plugins.dreamplex.Entries[i].quality = ConfigSelection(default="7", choices=[("0", _("64kbps, 128p, 3fps")), ("1", _("96kbps, 128p, 12fps")), ("2", _("208kbps, 160p, 15fps")), ("3", _("320kbps, 240p")), ("4", _("720kbps, 320p")), ("5", _("1.5Mbps, 480p")), ("6", _("2Mbps, 720p")), ("7", _("3Mbps, 720p")), ("8", _("4Mbps, 720p")), ("9", _("8Mbps, 1080p")), ("10", _("10Mbps, 1080p")), ("11", _("12Mbps, 1080p")), ("12", _("20Mbps, 1080p"))])
-	config.plugins.dreamplex.Entries[i].segments = ConfigInteger(default=5, limits=(1, 10))
-
-	# universal transcoder settings
-	config.plugins.dreamplex.Entries[i].uniQuality = ConfigSelection(default="3", choices=[("0", _("420x240, 320kbps")), ("1", _("576x320, 720 kbps")), ("2", _("720x480, 1,5mbps")), ("3", _("1024x768, 2mbps")), ("4", _("1280x720, 3mbps")), ("5", _("1280x720, 4mbps")), ("6", _("1920x1080, 8mbps")), ("7", _("1920x1080, 10mbps")), ("8", _("1920x1080, 12mbps")), ("9", _("1920x1080, 20mbps"))])
-
-	printl("=== TRANSCODED ===", "__init__::initServerEntryConfig", "D")
-	printl("universalTranscoder: " + str(config.plugins.dreamplex.Entries[i].universalTranscoder.value), "__init__::initServerEntryConfig", "D")
-	printl("quality: " + str(config.plugins.dreamplex.Entries[i].quality.value), "__init__::initServerEntryConfig", "D")
-	printl("segments: " + str(config.plugins.dreamplex.Entries[i].segments.value), "__init__::initServerEntryConfig", "D")
-	printl("uniQuality: " + str(config.plugins.dreamplex.Entries[i].uniQuality.value), "__init__::initServerEntryConfig", "D")
-	# TRANSCODED VIA PROXY
-
-	# DIRECT LOCAL
-	printl("=== DIRECT LOCAL ===", "__init__::initServerEntryConfig", "D")
-	printl("use forced subtitles: " + str(config.plugins.dreamplex.Entries[i].useForcedSubtitles.value), "__init__::initServerEntryConfig", "D")
-
-	# DIRECT REMOTE
-	config.plugins.dreamplex.Entries[i].smbUser = ConfigText(visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].smbPassword = ConfigText(visible_width=50, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].nasOverrideIp = ConfigIP(default=[192, 168, 0, 1])
-	config.plugins.dreamplex.Entries[i].nasRoot = ConfigText(default="/", visible_width=50, fixed_size=False)
-
-	printl("=== DIRECT REMOTE ===", "__init__::initServerEntryConfig", "D")
-	printl("smbUser: " + str(config.plugins.dreamplex.Entries[i].smbUser.value), "__init__::initServerEntryConfig", "D", True)
-	printl("smbPassword: " + str(config.plugins.dreamplex.Entries[i].smbPassword.value), "__init__::initServerEntryConfig", "D", True)
-	printl("nasOverrideIp: " + str(config.plugins.dreamplex.Entries[i].nasOverrideIp.value), "__init__::initServerEntryConfig", "D")
-	printl("nasRoot: " + str(config.plugins.dreamplex.Entries[i].nasRoot.value), "__init__::initServerEntryConfig", "D")
-
-	# WOL
-	config.plugins.dreamplex.Entries[i].wol = ConfigYesNo()
-	config.plugins.dreamplex.Entries[i].wol_mac = ConfigText(default="00AA00BB00CC", visible_width=12, fixed_size=False)
-	config.plugins.dreamplex.Entries[i].wol_delay = ConfigInteger(default=60, limits=(1, 180))
-
-	printl("=== WOL ===", "__init__::initServerEntryConfig", "D")
-	printl("wol: " + str(config.plugins.dreamplex.Entries[i].wol.value), "__init__::initServerEntryConfig", "D")
-	printl("wol_mac: " + str(config.plugins.dreamplex.Entries[i].wol_mac.value), "__init__::initServerEntryConfig", "D")
-	printl("wol_delay: " + str(config.plugins.dreamplex.Entries[i].wol_delay.value), "__init__::initServerEntryConfig", "D")
-
-	printl("=== SYNC ===", "__init__::initServerEntryConfig", "D")
-	config.plugins.dreamplex.Entries[i].syncMovies = ConfigYesNo(default=True)
-	config.plugins.dreamplex.Entries[i].syncShows = ConfigYesNo(default=True)
-	config.plugins.dreamplex.Entries[i].syncMusic = ConfigYesNo(default=True)
-
-	printl("", "__init__::initServerEntryConfig", "C")
-	return config.plugins.dreamplex.Entries[i]
 
 #===============================================================================
 #
@@ -293,15 +207,22 @@ def initServerEntryConfig():
 def registerSkinParamsInstance():
 	printl("", "__init__::registerSkinParamsInstance", "S")
 
+	settings: SettingsStorage = Singleton().getSettingsInstance()
 	boxResolution = str(getBoxResolution())
-	skinName = str(config.plugins.dreamplex.skin.value)
+	skinName = str(settings.skinName.getValue())
 	printl("current skin: " + skinName, "__common__::registerSkinParamsInstance", "S")
 
-	# if we are our default we switch automatically between the resolutions
-	if (skinName == "default" or skinName == "BlueMod") and boxResolution == "FHD":
+	# Every skin switches automatically between its HD/FHD variant on an FHD
+	# box - checking that a "<skin>_FHD" folder actually exists (not a
+	# hardcoded skinName == "default" or "BlueMod" list, which silently left
+	# every skin added since - Carousel included - stuck on its HD layout on
+	# an FHD box, squeezed into the top-left corner of the screen instead of
+	# scaled to fill it) is what makes this apply to a new skin with no code
+	# change here, the same way getInstalledSkins() discovers it.
+	if boxResolution == "FHD" and isdir(path_join(settings.skinFolderPath.getValue(), "%s_FHD" % skinName)):
 		skinName = "%s_FHD" % skinName
 
-	skinfolder = "/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/%s" % skinName
+	skinfolder = path_join(settings.skinFolderPath.getValue(), skinName)
 
 	setSkinFolder(currentSkinFolder=skinfolder)
 	printl("current skinfolder: " + skinfolder, "__common__::checkSkinResolution", "S")
@@ -344,23 +265,6 @@ def checkSkinResolution():
 #===============================================================================
 
 
-def initPlexServerConfig():
-	printl("", "__init__::initPlexServerConfig", "S")
-
-	count = config.plugins.dreamplex.entriescount.value
-	if count != 0:
-		i = 0
-		while i < count:
-			initServerEntryConfig()
-			i += 1
-
-	printl("", "__init__::initPlexServerConfig", "C")
-
-#===============================================================================
-#
-#===============================================================================
-
-
 def loadPlexPlugins():
 	printl("", "__init__::loadPlexPlugins", "S")
 
@@ -392,6 +296,23 @@ def loadPlexPlugins():
 	printl("", "__init__::loadPlexPlugins", "C")
 
 
+# Backend-specific log-scrubbing functions (redacting a Plex X-Plex-Token,
+# a Jellyfin X-MediaBrowser-Token/X-Emby-Authorization DeviceId, ...) are
+# registered by each backend's own __init__.py via registerServerBackend()'s
+# sanitizer= parameter (see src/plex/__init__.py, src/jellyfin/__init__.py) -
+# this module only owns the generic fallback below, applied after every
+# backend-specific one has had a chance to redact something more precisely.
+def _defaultSanitizer(string: str, steps:List[int], obfuscate: bool) -> str:
+	if obfuscate is True:
+		string = string[:-steps[0]]
+		for i in range(steps[0]):
+			string += "*"
+	return string
+
+
+sanitizer.append(_defaultSanitizer)
+
+
 #===============================================================================
 #
 #===============================================================================
@@ -411,16 +332,26 @@ def localeInit():
 #===============================================================================
 
 
-def getInstalledSkins():
+def getInstalledSkins(folderpath: str = None) -> tuple[str, list[str]]:
 	printl("", "__init__::getInstalledSkins", "S")
 
 	mySkins = []
 	myDefaultSkin = "default"
 
 	try:
-		folderpath = config.plugins.dreamplex.skinfolderpath.value
+		# `folderpath` has to be passed in, not read from
+		# Singleton().getSettingsInstance().skinFolderPath - this function is
+		# called from inside SettingsStorage.__init__() itself (see
+		# DP_SettingsStorage.py), before that very instance gets registered
+		# into the Singleton. Reading through the Singleton here returned
+		# None every single time, so this always silently fell into the
+		# except branch below and only ever offered "default" - a real,
+		# 100%-reproducible bug, not something the new Carousel skin
+		# triggered.
+		if folderpath is None:
+			folderpath = defaultSkinsFolderPath
 		for skin in listdir(folderpath):
-			if skin not in ["default_FHD", "BlueMod_FHD"]:  # we exclude the default_FHD and BlueMod_FHD because we switch between HD and FHD automatically
+			if skin not in ["default_FHD", "BlueMod_FHD", "Carousel_FHD"]:  # we exclude the _FHD variants because we switch between HD and FHD automatically
 				# print(("skin: " + str(skin), None, "D"))
 				if isdir(path_join(folderpath, skin)):
 					mySkins.append(skin)
@@ -446,9 +377,9 @@ def getInstalledSkins():
 
 	printl("Found enigma2 skins \"%s\"" % str(mySkins), "__init__::getInstalledSkins", "D")
 
-	config.plugins.dreamplex.skin = ConfigSelection(default=myDefaultSkin, choices=mySkins)
-
 	printl("", "__init__::getInstalledSkins", "C")
+
+	return myDefaultSkin, mySkins
 
 #===============================================================================
 #
@@ -458,15 +389,17 @@ def getInstalledSkins():
 def getViewTypesForSettings():
 	printl("", "__init__::getViewTypesForSettings", "S")
 
+	settings: SettingsStorage = Singleton().getSettingsInstance()
+
 	# view settings
 	viewChoicesForMovies = getViewsByType("movies")
-	config.plugins.dreamplex.defaultMovieView = ConfigSelection(default="0", choices=viewChoicesForMovies)
+	settings.defaultMovieView.setConfigElement(ConfigSelection(default="0", choices=viewChoicesForMovies))
 
 	viewChoicesForShows = getViewsByType("shows")
-	config.plugins.dreamplex.defaultShowView = ConfigSelection(default="0", choices=viewChoicesForShows)
+	settings.defaultShowView.setConfigElement(ConfigSelection(default="0", choices=viewChoicesForShows))
 
 	viewChoicesForMusic = getViewsByType("music")
-	config.plugins.dreamplex.defaultMusicView = ConfigSelection(default="0", choices=viewChoicesForMusic)
+	settings.defaultMusicView.setConfigElement(ConfigSelection(default="0", choices=viewChoicesForMusic))
 
 	printl("", "__init__::getViewTypesForSettings", "C")
 
@@ -493,32 +426,65 @@ def getViewsByType(myType):
 #===============================================================================
 
 
-def _(txt):
-	#printl("", "__init__::_(txt)", "S")
-
-	if len(txt) == 0:
-		return ""
-	text = gettext.dgettext("DreamPlex", txt)
-	if text == txt:
-		text = gettext.gettext(txt)
-
-	printl("text = " + str(text), "__init__::_(txt)", "D")
-
-	#printl("", "__init__::_(txt)", "C")
-	return text
+def sanitize(txt: str, steps:int = 4, obfuscate: bool = False):
+	res: str = txt
+	for s in sanitizer:
+		res = s(res, [steps], obfuscate)
+	return res
 
 #===============================================================================
 # EXECUTE ON STARTUP
 #===============================================================================
 
 
+def initSettingsStorage():
+	"""Create the settings store and register it in the singleton.
+
+	Everything downstream reaches the configuration through
+	Singleton().getSettingsInstance(), so this has to run before any other
+	step of prepareEnvironment().
+
+	On the first run after an upgrade the file does not exist yet: the
+	configuration of the previous layout, spread across the enigma2 settings
+	and the homeUsers / mountMappings XML files, is converted here. When there
+	is nothing to convert an empty document is created and the defaults apply.
+	"""
+	printl("", "__init__::initSettingsStorage", "S")
+
+	configFolder = defaultConfigFolderPath
+	checkDirectory(configFolder)
+
+	location = path_join(configFolder, SETTINGS_FILE_NAME)
+
+	if not isfile(location):
+		printl("settings file not found at " + location, "__init__::initSettingsStorage", "I")
+
+		if not migrate(location, configFolder):
+			printl("creating an empty settings file", "__init__::initSettingsStorage", "I")
+			ElementTree(Element("dreamplex")).write(location, encoding="utf-8", xml_declaration=True)
+
+	settings = SettingsStorage(location)
+	Singleton().getSettingsInstance(settings)
+
+	printl("settings loaded from " + location, "__init__::initSettingsStorage", "I")
+	printl("", "__init__::initSettingsStorage", "C")
+
+	return settings
+
+
 def prepareEnvironment():
 	# the order here is important
 	localeInit()
-	getInstalledSkins()
+	# Plugins() (see plugin.py) already creates the settings singleton before
+	# Autostart() ever runs, since enigma2 builds the plugin/menu list first.
+	# Calling initSettingsStorage() again here unconditionally would re-parse
+	# settings.xml a second time for no reason, and - if the config folder's
+	# mount was not ready yet on Plugins()'s much earlier call - risks running
+	# the legacy-config migration a second time too.
+	if Singleton().getSettingsInstance() is None:
+		initSettingsStorage()
 	initBoxInformation()
 	printGlobalSettings()
-	initPlexServerConfig()
 	registerSkinParamsInstance()
 	loadSkinParams()
 	checkSkinResolution()
@@ -533,5 +499,18 @@ def prepareEnvironment():
 
 
 def startEnvironment():
+	# prepareEnvironment() only runs once, at Autostart(reason=0) - i.e.
+	# enigma2 boot - so a skin change made in Settings only used to take
+	# effect after a full GUI restart, even though this function itself
+	# (unlike prepareEnvironment()) already runs on every single plugin
+	# entry (see plugin.py's DPS_MainMenu()). Re-resolving the skin folder
+	# here too is what makes "exit and reopen the plugin" enough - both
+	# calls are idempotent (they just re-set the same globals), so running
+	# them twice at boot (once via prepareEnvironment(), once here) is
+	# harmless.
+	registerSkinParamsInstance()
+	loadSkinParams()
+	checkSkinResolution()
+
 	# we put load skin here to avoid bootloops if there is something wrong with the skin
-	loadPlexSkin()
+	loadMainSkin()

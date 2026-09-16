@@ -24,6 +24,8 @@ You should have received a copy of the GNU General Public License
 #===============================================================================
 # IMPORT
 #===============================================================================
+from __future__ import annotations
+from typing import Any, TYPE_CHECKING
 import sys
 import os
 import datetime
@@ -31,13 +33,25 @@ import shutil
 import math
 import uuid
 import glob
+from dataclasses import dataclass
+
 from six import PY2
 
 from enigma import addFont, loadPNG, loadJPG, getDesktop
 from skin import loadSkin
-from Components.config import config
 from Components.AVSwitch import AVSwitch
 
+# AbstractServerSettings, ServerSettings, ServerSettingsData,
+# AbstractServerSettingsFactory and sanitize all live in __init__.py, and
+# __init__.py imports THIS module (via DP_SettingsStorage) before defining
+# any of them: importing them here at module level is a circular import that
+# fails with "cannot import name ... from partially initialized module".
+# AbstractServerSettings, ServerSettingsData and AbstractServerSettingsFactory
+# are only ever used in annotations, deferred to strings by the future import
+# above, so TYPE_CHECKING is enough for them. ServerSettings and sanitize are
+# called for real, so each is imported locally where it is used.
+if TYPE_CHECKING:
+	from . import AbstractServerSettings, ServerSettings, ServerSettingsData, AbstractServerSettingsFactory
 
 from .DPH_Singleton import Singleton
 
@@ -45,9 +59,9 @@ from .DPH_Singleton import Singleton
 # import cProfile
 #===============================================================================
 try:
-# Python 2.5
+	# Python 2.5
 	import xml.etree.cElementTree as etree
-	#printl2("running with cElementTree on Python 2.5+", __name__, "D")
+#printl2("running with cElementTree on Python 2.5+", __name__, "D")
 except ImportError:
 	try:
 		# Python 2.5
@@ -61,7 +75,7 @@ except ImportError:
 #===============================================================================
 # CONSTANTS
 #===============================================================================
-version = "2.3.0"
+version = "3.1.1"
 boxResoltion = None
 skinAuthors = ""
 skinResolution = "HD"
@@ -69,8 +83,8 @@ skinCompatibility = "v2"
 skinDebugMode = False
 skinHighlightedColor = "#e69405"
 skinNormalColor = "#ffffff"
-skinFolder = None
-g_boxData = None
+skinFolder: str | None = None
+g_boxData: tuple[Any, Any, Any, Any] | None = None
 screens = []
 liveTv = None
 g_uuid = None
@@ -83,34 +97,31 @@ CLOSING_MESSAGE = "<<<<<<<<<<"
 
 def printl2(string, parent=None, dmode="U", obfuscate=False, steps=4):
 	"""
-	@param string:
-	@param parent:
-	@param dmode: default = "U" undefined
-							"E" shows error
-							"W" shows warning
-							"I" shows important information to have better overview if something really happening or not
-							"D" shows additional debug information for better debugging
-							"S" shows started functions/classes etc.
-							"C" shows closing functions/classes etc.
-	@return: none
-	"""
+    @param string:
+    @param parent:
+    @param dmode: default = "U" undefined
+                            "E" shows error
+                            "W" shows warning
+                            "I" shows important information to have better overview if something really happening or not
+                            "D" shows additional debug information for better debugging
+                            "S" shows started functions/classes etc.
+                            "C" shows closing functions/classes etc.
+    @return: none
+    """
 
-	debugMode = config.plugins.dreamplex.debugMode.value
+	# A handful of module-level globals (e.g. DP_Syncer's MediaSyncerInfo) are
+	# constructed while their own module is first imported, which can happen
+	# before initSettingsStorage() has run - settings do not exist yet. printl
+	# is a logging helper: it must never be able to crash the plugin just
+	# because it was called too early, so treat "no settings yet" the same as
+	# "debug logging is off", which is what happens anyway once they load.
+	instance: Singleton = Singleton()
+	settings = instance.getSettingsInstance()
+	debugMode: bool = settings is not None and settings.debugMode.getValue()
 
 	if debugMode:
-
-		offset = string.find("X-Plex-Token")
-		if not string.find("X-Plex-Token") == -1:
-			steps = 8
-			start = offset + 13
-			end = start + steps
-			new_string = string[0:start] + "********" + string[end:]
-			string = new_string
-
-		if obfuscate is True:
-			string = string[:-steps]
-			for i in range(steps):
-				string += "*"
+		from . import sanitize  # see the note on the TYPE_CHECKING import above
+		string = sanitize(string, steps, obfuscate)
 
 		if parent is None:
 			out = str(string)
@@ -222,7 +233,9 @@ def getSkinResolution():
 
 def revokeCacheFiles():
 	printl2("", "__common__::revokeCacheFiles", "S")
-	cachePath = config.plugins.dreamplex.cachefolderpath.value
+	instance: Singleton = Singleton()
+	settings = instance.getSettingsInstance()
+	cachePath = settings.cacheFolderPath.getValue()
 
 	try:
 		os.chdir(cachePath)
@@ -230,12 +243,30 @@ def revokeCacheFiles():
 		for filename in files:
 			os.unlink(filename)
 
-		printl2("", "__common__::revokeCacheFiles", "C")
+	except Exception as ex:
+		printl2("Exception(" + str(type(ex)) + "): " + str(ex), "__common__::revokeCacheFiles", "E")
+
+	# Posters/backdrops (mediaFolderPath) are a separate cache from the
+	# listing .cache files above - downloaded once by DP_Syncer/DP_View and
+	# never re-checked again once a file with that name exists (see
+	# DP_View.showPoster()/showBackdrop(), DP_Syncer.syncThroughMediaLibrary()) -
+	# "Delete cache" used to leave them untouched, the only way to force a
+	# redownload was deleting them by hand. bootlogo.m1v is left alone - it
+	# is not something this plugin downloads or regenerates, so it is not
+	# "cache" even though it lives in the same folder.
+	try:
+		mediaPath = settings.mediaFolderPath.getValue()
+		os.chdir(mediaPath)
+		for pattern in ('*.jpg', '*.m1v'):
+			for filename in glob.glob(pattern):
+				if filename == 'bootlogo.m1v':
+					continue
+				os.unlink(filename)
 
 	except Exception as ex:
 		printl2("Exception(" + str(type(ex)) + "): " + str(ex), "__common__::revokeCacheFiles", "E")
 
-		printl2("", "__common__::revokeCacheFiles", "C")
+	printl2("", "__common__::revokeCacheFiles", "C")
 
 #===============================================================================
 #
@@ -244,15 +275,17 @@ def revokeCacheFiles():
 
 def writeToLog(dmode, out):
 	"""
-	singleton handler for the log file
+    singleton handler for the log file
 
-	@param dmode: E, W, S, H, A, C, I
-	@param out: message string
-	@return: none
-	"""
-	if config.plugins.dreamplex.writeDebugFile.value:
+    @param dmode: E, W, S, H, A, C, I
+    @param out: message string
+    @return: none
+    """
+
+	instance = Singleton()
+
+	if instance.getSettingsInstance().writeDebugFile.getValue():
 		try:
-			instance = Singleton()
 			if instance.getLogFileInstance() == "":
 				openLogFile()
 				gLogFile = instance.getLogFileInstance()
@@ -261,14 +294,12 @@ def writeToLog(dmode, out):
 				gLogFile = instance.getLogFileInstance()
 
 			now = datetime.datetime.now()
-			gLogFile.write("%02d:%02d:%02d.%07d " % (now.hour, now.minute, now.second, now.microsecond) + " >>> " + str(
-				dmode) + " <<<  " + str(out) + "\n")
+			gLogFile.write("%02d:%02d:%02d.%07d " % (now.hour, now.minute, now.second, now.microsecond) + " >>> " + str(dmode) + " <<<  " + str(out) + "\n")
 			gLogFile.flush()
 
 		except Exception as ex:
-			config.plugins.dreamplex.writeDebugFile.value = False
-			config.plugins.dreamplex.debugMode.save()
-
+			instance.getSettingsInstance().writeDebugFile.setValue(False)
+			instance.getSettingsInstance().writeToFile()
 			printl2("Exception(" + str(type(ex)) + "): " + str(ex), "__common__::writeToLog", "E")
 
 #===============================================================================
@@ -278,11 +309,11 @@ def writeToLog(dmode, out):
 
 def openLogFile():
 	"""
-	singleton instance for logfile
-	"""
+    singleton instance for logfile
+    """
 	#printl2("", "openLogFile", "S")
-
-	logDir = config.plugins.dreamplex.logfolderpath.value
+	instance: Singleton = Singleton()
+	logDir = instance.getSettingsInstance().logFolderPath.getValue()
 
 	try:
 		if os.path.exists(logDir + "dreamplex_former.log"):
@@ -291,13 +322,12 @@ def openLogFile():
 		if os.path.exists(logDir + "dreamplex.log"):
 			shutil.copy2(logDir + "dreamplex.log", logDir + "dreamplex_former.log")
 
-		instance = Singleton()
 		instance.getLogFileInstance(open(logDir + "dreamplex.log", "w"))
 
 	except Exception as ex:
 		printl2("Exception(" + str(type(ex)) + "): " + str(ex), "openLogFile", "E")
 
-	#printl2("", "openLogFile", "C")
+#printl2("", "openLogFile", "C")
 
 #===============================================================================
 #
@@ -306,16 +336,16 @@ def openLogFile():
 
 def testInetConnectivity(target="https://www.google.com"):
 	"""
-	test if we get an answer from the specified url
+    test if we get an answer from the specified url
 
-	@param target:
-	@return: bool
-	"""
+    @param target:
+    @return: bool
+    """
 	printl2("", "__common__::testInetConnectivity", "S")
 
 	try:
 		from urllib.request import build_opener
-	except:
+	except Exception:
 		from urllib2 import build_opener
 
 	try:
@@ -329,7 +359,7 @@ def testInetConnectivity(target="https://www.google.com"):
 			printl2("failure, returning FALSE", "__common__::testInetConnectivity", "D")
 			printl2("", "__common__::testInetConnectivity", "C")
 			return False
-	except:
+	except Exception:
 		printl2("exception, returning FALSE", "__common__::testInetConnectivity", "D")
 		printl2("", "__common__::testInetConnectivity", "C")
 		return False
@@ -339,35 +369,35 @@ def testInetConnectivity(target="https://www.google.com"):
 #===============================================================================
 
 
-def testPlexConnectivity(ip, port):
+def testMediaServerConnectivity(ip, port):
 	"""
-	test if the plex server is online on the specified port
+    test if the plex server is online on the specified port
 
-	@param ip: e.g. 192.168.0.1
-	@param port: e.g. 32400
-	@return: bool
-	"""
-	printl2("", "__common__::testPlexConnectivity", "S")
+    @param ip: e.g. 192.168.0.1
+    @param port: e.g. 32400
+    @return: bool
+    """
+	printl2("", "__common__::testMediaServerConnectivity", "S")
 
 	import socket
 
 	sock = socket.socket()
 
-	printl2("IP => " + str(ip), "__common__::testPlexConnectivity", "I")
-	printl2("PORT => " + str(port), "__common__::testPlexConnectivity", "I")
+	printl2("IP => " + str(ip), "__common__::testMediaServerConnectivity", "I")
+	printl2("PORT => " + str(port), "__common__::testMediaServerConnectivity", "I")
 
 	try:
 		sock.settimeout(5)
 		sock.connect((ip, port))
 		sock.close()
 
-		printl2("", "__common__::testPlexConnectivity", "C")
+		printl2("", "__common__::testMediaServerConnectivity", "C")
 		return True
 	except socket.error as e:
-		printl2("Strange error creating socket: %s" % e, "__common__::testPlexConnectivity", "E")
+		printl2("Strange error creating socket: %s" % e, "__common__::testMediaServerConnectivity", "E")
 		sock.close()
 
-		printl2("", "__common__::testPlexConnectivity", "C")
+		printl2("", "__common__::testMediaServerConnectivity", "C")
 		return False
 
 
@@ -376,11 +406,11 @@ def testPlexConnectivity(ip, port):
 #===============================================================================
 def registerPlexFonts():
 	"""
-	registers fonts for skins
+    registers fonts for skins
 
-	@param: none
-	@return none
-	"""
+    @param: none
+    @return none
+    """
 	printl2("", "__common__::registerPlexFonts", "S")
 
 	printl2("adding fonts", "__common__::registerPlexFonts", "D")
@@ -457,20 +487,20 @@ def loadSkinParams():
 #===============================================================================
 
 
-def loadPlexSkin():
+def loadMainSkin():
 	"""
-	loads the corresponding skin.xml file
+    loads the corresponding skin.xml file
 
-	@param: none
-	@return none
-	"""
-	printl2("", "__common__::loadPlexSkin", "S")
+    @param: none
+    @return none
+    """
+	printl2("", "__common__::loadMainSkin", "S")
 
 	currentSkin = getSkinFolder() + "/skin.xml"
 
 	loadSkin(currentSkin)
 
-	printl2("", "__common__::loadPlexSkin", "C")
+	printl2("", "__common__::loadMainSkin", "C")
 
 #===============================================================================
 #
@@ -479,19 +509,22 @@ def loadPlexSkin():
 
 def checkPlexEnvironment():
 	"""
-	checks needed file structure for plex
+    checks needed file structure for plex
 
-	@param: none
-	@return none
-	"""
+    @param: none
+    @return none
+    """
 	printl2("", "__common__::checkPlexEnvironment", "S")
 
-	playerTempFolder = config.plugins.dreamplex.playerTempPath.value
-	logFolder = config.plugins.dreamplex.logfolderpath.value
-	mediaFolder = config.plugins.dreamplex.mediafolderpath.value
-	configFolder = config.plugins.dreamplex.configfolderpath.value
-	cacheFolder = config.plugins.dreamplex.cachefolderpath.value
-	homeUsersFolder = config.plugins.dreamplex.configfolderpath.value
+	instance: Singleton = Singleton()
+	settings = instance.getSettingsInstance()
+
+	playerTempFolder = settings.playerTempPath.getValue()
+	logFolder = settings.logFolderPath.getValue()
+	mediaFolder = settings.mediaFolderPath.getValue()
+	configFolder = settings.configFolderPath.getValue()
+	cacheFolder = settings.cacheFolderPath.getValue()
+	homeUsersFolder = settings.homeUsersFolderPath.getValue()
 
 	checkDirectory(playerTempFolder)
 	checkDirectory(logFolder)
@@ -509,11 +542,11 @@ def checkPlexEnvironment():
 
 def checkDirectory(directory):
 	"""
-	checks if dir exists. if not it is added
+    checks if dir exists. if not it is added
 
-	@param directory: e.g. /media/hdd/
-	@return: none
-	"""
+    @param directory: e.g. /media/hdd/
+    @return: none
+    """
 	printl2("", "__common__::checkDirectory", "S")
 	printl2("checking ... " + directory, "__common__::checkDirectory", "D")
 
@@ -534,33 +567,10 @@ def checkDirectory(directory):
 #===============================================================================
 
 
-def getServerFromURL(url):  # CHECKED
-	"""
-	Simply split the URL up and get the server portion, sans port
-
-	@param url: with or without protocol
-	@return: the server URL
-	"""
-	printl2("", "__common__::getServerFromURL", "S")
-
-	if url[0:4] == "http" or url[0:4] == "plex":
-
-		printl2("", "__common__::getServerFromURL", "C")
-		return url.split('/')[2]
-	else:
-
-		printl2("", "__common__::getServerFromURL", "C")
-		return url.split('/')[0]
-
-#===============================================================================
-#
-#===============================================================================
-
-
 def getBoxInformation():
 	"""
-	@return: manu, model, arch, version
-	"""
+    @return: manu, model, arch, version
+    """
 	printl2("", "__common__::getBoxtype", "S")
 
 	if g_boxData is None:
@@ -628,7 +638,7 @@ def setSkinFolder(currentSkinFolder):
 #===========================================================================
 
 
-def getSkinFolder():
+def getSkinFolder() -> str:
 	printl2("", "__common__::getSkinFolder", "S")
 
 	printl2("", "__common__::getSkinFolder", "C")
@@ -713,7 +723,6 @@ def getScale():
 #
 #===========================================================================
 
-
 def checkXmlFile(location):
 	printl2("", "__common__::checkXmlFile", "S")
 
@@ -775,6 +784,72 @@ def writeXmlContent(content, location):
 	printl2("xmlString: " + str(xmlString), "__common__::getXmlContent", "C")
 
 	printl2("", "__common__::getXmlContent", "C")
+
+#===========================================================================
+#
+#===========================================================================
+
+
+def downloadFileAsync(url, destPath, headers=None, callback=None, errback=None):
+	"""Download url to destPath in a background thread, calling callback()
+	(or errback(exception)) on the enigma2 main thread once it is done.
+
+	This used to be done with Twisted's downloadPage(), which pulls in
+	twisted.web.client and, with it, twisted.internet.reactor. enigma2
+	itself is Twisted-based and already has a reactor installed by the time
+	any plugin loads: the moment DreamPlex's own import chain reached this
+	module, Twisted's lazy default-reactor selection tried to install a
+	second one and raised ReactorAlreadyInstalledError, which enigma2's
+	plugin loader reported as "Extensions/DreamPlex (reactor already
+	installed)" and refused to load the plugin at all - there is no
+	recovering from that short of never touching twisted.internet.reactor
+	in the first place. There is no reason to depend on Twisted for a plain
+	file download, so this uses urllib instead.
+
+	The download itself runs in a worker thread so it does not block the
+	main loop; the result is picked up by an eTimer polling every 100 ms,
+	since only the main thread may touch enigma2 UI objects. The timer is
+	returned and MUST be kept referenced by the caller (e.g. as an instance
+	attribute) for as long as the download can still be in flight - nothing
+	else keeps it alive, and an unreferenced eTimer can be garbage collected
+	before it fires.
+	"""
+	from urllib.request import urlopen, Request
+	import threading
+	import shutil
+	from enigma import eTimer
+
+	result = {}
+
+	def worker():
+		try:
+			req = Request(url, headers=headers or {})
+			with urlopen(req, timeout=20) as resp, open(destPath, "wb") as out:
+				shutil.copyfileobj(resp, out)
+			result["ok"] = True
+		except Exception as ex:
+			result["ok"] = False
+			result["error"] = ex
+
+	thread = threading.Thread(target=worker)
+	thread.daemon = True
+	thread.start()
+
+	timer = eTimer()
+
+	def poll():
+		if thread.is_alive():
+			return
+		timer.stop()
+		if result.get("ok"):
+			if callback is not None:
+				callback()
+		elif errback is not None:
+			errback(result.get("error"))
+
+	timer.callback.append(poll)
+	timer.start(100, False)
+	return timer
 
 #===========================================================================
 #
@@ -950,7 +1025,8 @@ def getPlexHeader(g_sessionID, asDict=True):
 	printl2("", "__common__::getPlexHeader", "S")
 
 	boxData = getBoxInformation()
-	boxName = config.plugins.dreamplex.boxName.value
+	instance: Singleton = Singleton()
+	boxName = instance.getSettingsInstance().boxName.getValue()
 
 	# why do we use ios!!!!! instead of enigma
 	# Unable to find client profile for device; platform=Enigma, platformVersion=oe20, device=Dreambox, model=500hd
@@ -958,15 +1034,15 @@ def getPlexHeader(g_sessionID, asDict=True):
 
 	if asDict:
 		plexHeader = {'X-Plex-Platform': "iOS",
-					'X-Plex-Platform-Version': boxData[3],
-					'X-Plex-Provides': "player",
-					'X-Plex-Product': "DreamPlex",
-					'X-Plex-Version': getVersion(),
-					'X-Plex-Device': boxData[0],
-					'X-Plex-Device-Name': boxName,
-					'X-Plex-Model': boxData[1],
-					'X-Plex-Client-Identifier': g_sessionID,
-					'X-Plex-Client-Platform': "iOS"}
+					  'X-Plex-Platform-Version': boxData[3],
+					  'X-Plex-Provides': "player",
+					  'X-Plex-Product': "DreamPlex",
+					  'X-Plex-Version': getVersion(),
+					  'X-Plex-Device': boxData[0],
+					  'X-Plex-Device-Name': boxName,
+					  'X-Plex-Model': boxData[1],
+					  'X-Plex-Client-Identifier': g_sessionID,
+					  'X-Plex-Client-Platform': "iOS"}
 	else:
 		plexHeader = []
 		plexHeader.append('X-Plex-Platform:iOS')  # + boxData[2]) # arch
@@ -1011,7 +1087,7 @@ def encodeThat(stringToEncode):
 	if PY2:
 		try:
 			encodedString = stringToEncode.encode('utf-8', "ignore")
-		except:
+		except Exception:
 			encodedString = stringToEncode
 	else:
 		return stringToEncode
@@ -1030,7 +1106,13 @@ def getMyIp():
 
 	try:
 		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		s.connect(('google.com', 0))
+		# a UDP "connect" only asks the kernel to pick the outbound route/local
+		# address, no packet is actually sent - using a plain IP literal here
+		# (instead of a hostname) means this keeps working even without a DNS
+		# resolver or internet reachability, which matters because the
+		# Jellyfin subnet scan (DPH_JellyfinDiscovery) needs the local IP to
+		# even start, regardless of whether the box can reach the internet.
+		s.connect(('10.255.255.255', 1))
 		myIp = s.getsockname()[0]
 
 		#printl2("", "__common__::getMyIp", "S")
@@ -1089,23 +1171,41 @@ def getOKMsg():
 #===========================================================================
 
 
-def getPlexHeaders():
-	#printl("", "getPlexHeaders", "S")
+def getServerHeaders(serverType=None):
+	#printl("", "getServerHeaders", "S")
 
-	plexHeader = {
-		"Content-type": "application/x-www-form-urlencoded",
-		"X-Plex-Version": getVersion(),
-		"X-Plex-Client-Identifier": getUUID(),
-		"X-Plex-Provides": "player",
-		"X-Plex-Product": "DreamPlex",
-		"X-Plex-Device-Name": config.plugins.dreamplex.boxName.value,
-		"X-Plex-Platform": "Enigma2",
-		"X-Plex-Model": "Enigma2",
-		"X-Plex-Device": "stb",
-	}
+	if serverType is None:
+		return {}
 
-	# if settings['myplex_user']:
-	# plexHeader["X-Plex-Username"] = settings['myplex_user']
+	from . import ServerSettings  # see the note on the TYPE_CHECKING import above
+	ss: ServerSettingsData = ServerSettings[serverType]
+	if ss is None:
+		return {}
+	else:
+		sf: AbstractServerSettingsFactory = ss.factoryClass()
+		return sf.getServerHeaders()
 
-	#printl("", "getPlexHeaders", "C")
-	return plexHeader
+@dataclass
+class DiscoveredServer:
+	type: str
+	server: str | None = None
+	discovery: str | None = None
+	owned: str | None = None
+	master: int | None = None
+	role: str | None = None
+	clazz: any = None
+	contentType: str | None = None
+	uuid: str | None = None
+	serverName: str | None = None
+	port: int | None = None
+	updated: str | None = None
+	version: str | None = None
+
+@dataclass
+class EntryServer:
+	name: str
+	serverHost: str
+	serverPort: str | None
+	username: str | None
+	active: str | None
+	settings: AbstractServerSettings

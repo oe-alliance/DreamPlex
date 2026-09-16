@@ -26,7 +26,7 @@ You should have received a copy of the GNU General Public License
 #=================================
 from enigma import eListboxPythonMultiContent, gFont, RT_HALIGN_LEFT, RT_VALIGN_CENTER
 
-from Components.ActionMap import ActionMap
+from Components.ActionMap import ActionMap, HelpableActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.MenuList import MenuList
 from Components.Sources.StaticText import StaticText
@@ -36,9 +36,11 @@ from Components.Pixmap import Pixmap
 
 from Screens.Screen import Screen
 from Screens.HelpMenu import HelpableScreen
+from . import Singleton
+from .DP_SettingsStorage import SettingsStorage
 
 from .__common__ import printl2 as printl
-from .__init__ import _  # _ is translation
+from . import _  # _ is translation
 
 from .DP_PathSelector import DPS_PathSelector
 from .DPH_ScreenHelper import DPH_PlexScreen
@@ -69,6 +71,9 @@ class DPS_Settings(Screen, ConfigListScreen, HelpableScreen, DPH_PlexScreen):
 
 		self._hasChanged = False
 
+		settings: SettingsStorage = Singleton().getSettingsInstance()
+		self._skinNameAtOpen = settings.skinName.getValue()
+
 		self["Title"] = Label(_("System Settings"))
 		self["btn_greenText"] = Label()
 		self["btn_green"] = Pixmap()
@@ -85,6 +90,14 @@ class DPS_Settings(Screen, ConfigListScreen, HelpableScreen, DPH_PlexScreen):
 			"right": self.keyRight,
 			"bouquet_up": self.keyBouquetUp,
 			"bouquet_down": self.keyBouquetDown,
+		}, -2)
+
+		# Second trigger for the same Help screen, on LIST - see
+		# DPH_ScreenHelper.DPH_Screen for why (remotes whose HELP button
+		# does not reach the box as KEY_HELP).
+		self["helpShortcut"] = HelpableActionMap(self, "DP_HelpShortcut",
+		{
+			"helpAlt": (self.showHelp, _("Show help")),
 		}, -2)
 
 		self.createSetup()
@@ -116,90 +129,103 @@ class DPS_Settings(Screen, ConfigListScreen, HelpableScreen, DPH_PlexScreen):
 
 		separator = "".ljust(240, "_")
 
+		settings: SettingsStorage = Singleton().getSettingsInstance()
+
 		self.cfglist = []
 
 		# GENERAL SETTINGS
-		self.cfglist.append(getConfigListEntry(_("General Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-		self.cfglist.append(getConfigListEntry(_("> Boxname"), config.plugins.dreamplex.boxName, _("Enter the name of your box, e.g. Livingroom.")))
-		self.cfglist.append(getConfigListEntry(_("> Used Skin"), config.plugins.dreamplex.skin, _("If you change the skin you have to restart at least the GUI!")))
-		self.cfglist.append(getConfigListEntry(_("> Show Plugin in Main Menu"), config.plugins.dreamplex.showInMainMenu, _("Use this to start the plugin direct in the main menu.")))
-		self.cfglist.append(getConfigListEntry(_("> Use Cache for Sections"), config.plugins.dreamplex.useCache, _("Save plex server answers in cache to speed up a bit.")))
-		self.cfglist.append(getConfigListEntry(_("> Use Picture Cache"), config.plugins.dreamplex.usePicCache, _("Use this only if you do have enough space on your hdd drive or flash.")))
-		self.cfglist.append(getConfigListEntry(_("> Show Player Poster on external LCD"), config.plugins.dreamplex.lcd4linux, _("e.g. lcd4linux")))
+		self.cfglist.append(getConfigListEntry(_("General Settings ") + separator, settings.about.getConfigElement(), _(" ")))
+		self.cfglist.append(getConfigListEntry(_("> Boxname"), settings.boxName.getConfigElement(), _("Enter the name of your box, e.g. Livingroom.")))
+		self.cfglist.append(getConfigListEntry(_("> Used Skin"), settings.skinName.getConfigElement(), _("If you change the skin you have to restart at least the GUI!")))
+		self.cfglist.append(getConfigListEntry(_("> Show Plugin in Main Menu"), settings.showInMainMenu.getConfigElement(), _("Use this to start the plugin direct in the main menu.")))
+		self.cfglist.append(getConfigListEntry(_("> Use Cache for Sections"), settings.useCache.getConfigElement(), _("Save server answers in cache to speed up a bit.")))
+		self.cfglist.append(getConfigListEntry(_("> Use Picture Cache"), settings.usePicCache.getConfigElement(), _("Use this only if you do have enough space on your hdd drive or flash.")))
+		self.cfglist.append(getConfigListEntry(_("> Show Player Poster on external LCD"), settings.lcd4linux.getConfigElement(), _("e.g. lcd4linux")))
 
 		# USERINTERFACE SETTINGS
-		self.cfglist.append(getConfigListEntry(_("Userinterface Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-		self.cfglist.append(getConfigListEntry(_("> Summerize Servers"), config.plugins.dreamplex.summerizeServers, _("Summerize servers in an additional menu step. (plex.tv only)")))
-		self.cfglist.append(getConfigListEntry(_("> Summerize Sections"), config.plugins.dreamplex.summerizeSections, _("Summerize sections in an additional menu step.")))
-		self.cfglist.append(getConfigListEntry(_("> Show Filter for Section"), config.plugins.dreamplex.showFilter, _("Show additional filter in an additional menu step e.g. OnDeck")))
-		self.cfglist.append(getConfigListEntry(_("> Show Seen/Unseen count in TvShows"), config.plugins.dreamplex.showUnSeenCounts, _("Calculate and show them for tv shows.")))
-		self.cfglist.append(getConfigListEntry(_("> Start with Filtermode"), config.plugins.dreamplex.startWithFilterMode, _("Start with filtermode in any media view.")))
-		self.cfglist.append(getConfigListEntry(_("> Exit function in Player"), config.plugins.dreamplex.exitFunction, _("Specifiy what the exit button in the player should do.")))
+		self.cfglist.append(getConfigListEntry(_("Userinterface Settings ") + separator, settings.about.getConfigElement(), _(" ")))
+		self.cfglist.append(getConfigListEntry(_("> Summerize Servers"), settings.summerizeServers.getConfigElement(), _("Summerize servers in an additional menu step. (plex.tv only)")))
+		self.cfglist.append(getConfigListEntry(_("> Summerize Sections"), settings.summerizeSections.getConfigElement(), _("Summerize sections in an additional menu step.")))
+		self.cfglist.append(getConfigListEntry(_("> Show Filter for Section"), settings.showFilter.getConfigElement(), _("Show additional filter in an additional menu step e.g. OnDeck")))
+		self.cfglist.append(getConfigListEntry(_("> Show Seen/Unseen count in TvShows"), settings.showUnSeenCounts.getConfigElement(), _("Calculate and show them for tv shows.")))
+		self.cfglist.append(getConfigListEntry(_("> Start with Filtermode"), settings.startWithFilterMode.getConfigElement(), _("Start with filtermode in any media view.")))
+		self.cfglist.append(getConfigListEntry(_("> Exit function in Player"), settings.exitFunction.getConfigElement(), _("Specifiy what the exit button in the player should do.")))
 
-		self.cfglist.append(getConfigListEntry(_("> Show Backdrops as Videos"), config.plugins.dreamplex.useBackdropVideos, _("Use this if you have m1v videos as backdrops")))
-		self.cfglist.append(getConfigListEntry(_("> Stop Live TV on startup"), config.plugins.dreamplex.stopLiveTvOnStartup, _("Stop live TV. Enables 'play themes', 'use backdrop videos'")))
+		self.cfglist.append(getConfigListEntry(_("> Offer next episode"), settings.showNextEpisode.getConfigElement(), _("Towards the end of an episode (or a related-title suggestion towards the end of a movie), offer to jump to the next one.")))
+		if settings.showNextEpisode.getValue():
+			self.cfglist.append(getConfigListEntry(_(">> Show it this many seconds before the end"), settings.nextEpisodeThreshold.getConfigElement(), _("How long before the end of the episode the offer appears.")))
+			self.cfglist.append(getConfigListEntry(_(">> Countdown before playing next"), settings.nextEpisodeCountdown.getConfigElement(), _("If you do nothing, the next episode starts after this many seconds.")))
+			self.cfglist.append(getConfigListEntry(_(">> Autoplay the suggested movie"), settings.similarSuggestionAutoplay.getConfigElement(), _("If off (default), the related-title suggestion for a movie waits for OK and never starts itself.")))
+
+		self.cfglist.append(getConfigListEntry(_("> Main menu hero rotation (seconds, 0=off)"), settings.heroRotationInterval.getConfigElement(), _("The Carousel skin's main-menu banner switches to another suggested title after this many seconds. 0 keeps showing the same one.")))
+		if settings.heroRotationInterval.getValue():
+			self.cfglist.append(getConfigListEntry(_(">> Refresh suggestions after this many rotations"), settings.heroRefetchAfterLoops.getConfigElement(), _("How many times the banner cycles through its current list of suggestions before asking the server for a new one.")))
+		self.cfglist.append(getConfigListEntry(_("> Max hero suggestions to request"), settings.heroMaxItems.getConfigElement(), _("Upper limit only - the server may return fewer, depending on what it has to offer.")))
+
+		self.cfglist.append(getConfigListEntry(_("> Show Backdrops as Videos"), settings.useBackdropVideos.getConfigElement(), _("Use this if you have m1v videos as backdrops")))
+		self.cfglist.append(getConfigListEntry(_("> Stop Live TV on startup"), settings.stopLiveTvOnStartup.getConfigElement(), _("Stop live TV. Enables 'play themes', 'use backdrop videos'")))
 
 		# playing themes stops live tv for this reason we enable this only if live stops on startup is set
 		# also backdrops as video needs to turn of live tv
-		if config.plugins.dreamplex.stopLiveTvOnStartup.value:
+		if settings.stopLiveTvOnStartup.getValue():
 			# if backdrop videos are active we have to turn off theme playback
-			if config.plugins.dreamplex.useBackdropVideos.value:
-				config.plugins.dreamplex.playTheme.value = False
+			if settings.useBackdropVideos.getValue():
+				settings.playTheme.setValue(False)
 			else:
-				self.cfglist.append(getConfigListEntry(_(">> Play Themes in TV Shows"), config.plugins.dreamplex.playTheme, _("Plays tv show themes automatically.")))
+				self.cfglist.append(getConfigListEntry(_(">> Play Themes in TV Shows"), settings.playTheme.getConfigElement(), _("Plays tv show themes automatically.")))
 		else:
 			# if the live startup stops is not set we have to turn of playtheme automatically
-			config.plugins.dreamplex.playTheme.value = False
-			#config.plugins.dreamplex.useBackdropVideos.value = False
+			settings.playTheme.setValue(False)
+			#settings.useBackdropVideos.setValue(False)
 
-		if config.plugins.dreamplex.useBackdropVideos.value:
-			config.plugins.dreamplex.fastScroll.value = False
-			config.plugins.dreamplex.liveTvInViews.value = False
+		if settings.useBackdropVideos.getValue():
+			settings.fastScroll.setValue(False)
+			settings.liveTvInViews.setValue(False)
 		else:
-			self.cfglist.append(getConfigListEntry(_("> Use fastScroll as default"), config.plugins.dreamplex.fastScroll, _("No update for addiontal informations in media views to speed up.")))
-			if not config.plugins.dreamplex.stopLiveTvOnStartup.value:
-				self.cfglist.append(getConfigListEntry(_("> Show liveTv in Views instead of backdrops"), config.plugins.dreamplex.liveTvInViews, _("Show live tv while you are navigating through your libs.")))
+			self.cfglist.append(getConfigListEntry(_("> Use fastScroll as default"), settings.fastScroll.getConfigElement(), _("No update for addiontal informations in media views to speed up.")))
+			if not settings.stopLiveTvOnStartup.getValue():
+				self.cfglist.append(getConfigListEntry(_("> Show liveTv in Views instead of backdrops"), settings.liveTvInViews.getConfigElement(), _("Show live tv while you are navigating through your libs.")))
 
-		self.cfglist.append(getConfigListEntry(_("> Show additional data for plex.tv sections"), config.plugins.dreamplex.showDetailsInList, _("If server summerize is off you can here add additional information for better overview.")))
-		if config.plugins.dreamplex.showDetailsInList.value:
-			self.cfglist.append(getConfigListEntry(_("> Detail type for additional data"), config.plugins.dreamplex.showDetailsInListDetailType, _("Specifiy the type of additional data.")))
+		self.cfglist.append(getConfigListEntry(_("> Show additional data for plex.tv sections"), settings.showDetailsInList.getConfigElement(), _("If server summerize is off you can here add additional information for better overview.")))
+		if settings.showDetailsInList.getValue():
+			self.cfglist.append(getConfigListEntry(_("> Detail type for additional data"), settings.showDetailsInListDetailType.getConfigElement(), _("Specifiy the type of additional data.")))
 
 		# VIEW SETTINGS
-		self.cfglist.append(getConfigListEntry(_("Path Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-		self.cfglist.append(getConfigListEntry(_("> Default View for Movies"), config.plugins.dreamplex.defaultMovieView, _("Specify what view type should start automatically.")))
-		self.cfglist.append(getConfigListEntry(_("> Default View for Shows"), config.plugins.dreamplex.defaultShowView, _("Specify what view type should start automatically.")))
-		self.cfglist.append(getConfigListEntry(_("> Default View for Music"), config.plugins.dreamplex.defaultMusicView, _("Specify what view type should start automatically.")))
+		self.cfglist.append(getConfigListEntry(_("Path Settings ") + separator, settings.about.getConfigElement(), _(" ")))
+		self.cfglist.append(getConfigListEntry(_("> Default View for Movies"), settings.defaultMovieView.getConfigElement(), _("Specify what view type should start automatically.")))
+		self.cfglist.append(getConfigListEntry(_("> Default View for Shows"), settings.defaultShowView.getConfigElement(), _("Specify what view type should start automatically.")))
+		self.cfglist.append(getConfigListEntry(_("> Default View for Music"), settings.defaultMusicView.getConfigElement(), _("Specify what view type should start automatically.")))
 
 		# PATH SETTINGS
-		self.cfglist.append(getConfigListEntry(_("Path Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
+		self.cfglist.append(getConfigListEntry(_("Path Settings ") + separator, settings.about.getConfigElement(), _(" ")))
 
-		self.mediafolderpath = getConfigListEntry(_("> Media Folder Path"), config.plugins.dreamplex.mediafolderpath, _("/hdd/dreamplex/medias"))
+		self.mediafolderpath = getConfigListEntry(_("> Media Folder Path"), settings.mediaFolderPath.getConfigElement(), _("/hdd/dreamplex/medias"))
 		self.cfglist.append(self.mediafolderpath)
 
-		self.configfolderpath = getConfigListEntry(_("> Config Folder Path"), config.plugins.dreamplex.configfolderpath, _("/hdd/dreamplex/config"))
+		self.configfolderpath = getConfigListEntry(_("> Config Folder Path"), settings.configFolderPath.getConfigElement(), _("/hdd/dreamplex/config"))
 		self.cfglist.append(self.configfolderpath)
 
-		self.cachefolderpath = getConfigListEntry(_("> Cache Folder Path"), config.plugins.dreamplex.cachefolderpath, _("/hdd/dreamplex/cache"))
+		self.cachefolderpath = getConfigListEntry(_("> Cache Folder Path"), settings.cacheFolderPath.getConfigElement(), _("/hdd/dreamplex/cache"))
 		self.cfglist.append(self.cachefolderpath)
 
-		self.playerTempPath = getConfigListEntry(_("> Player Temp Path"), config.plugins.dreamplex.playerTempPath, _("/tmp"))
+		self.playerTempPath = getConfigListEntry(_("> Player Temp Path"), settings.playerTempPath.getConfigElement(), _("/tmp"))
 		self.cfglist.append(self.playerTempPath)
 
-		self.logfolderpath = getConfigListEntry(_("> Log Folder Path"), config.plugins.dreamplex.logfolderpath, _("/tmp"))
+		self.logfolderpath = getConfigListEntry(_("> Log Folder Path"), settings.logFolderPath.getConfigElement(), _("/tmp"))
 		self.cfglist.append(self.logfolderpath)
 
 		# REMOTE
-		self.cfglist.append(getConfigListEntry(_("Remote Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-		self.cfglist.append(getConfigListEntry(_("> Activate Remote Player"), config.plugins.dreamplex.remoteAgent, _("Activate to be able to use with any app with remote function for Plex.")))
-		if config.plugins.dreamplex.remoteAgent.value:
-			self.cfglist.append(getConfigListEntry(_("> Remote Player Port"), config.plugins.dreamplex.remotePort, _("Change the port to your needs.")))
+		self.cfglist.append(getConfigListEntry(_("Remote Settings ") + separator, settings.about.getConfigElement(), _(" ")))
+		self.cfglist.append(getConfigListEntry(_("> Activate Remote Player"), settings.remoteAgent.getConfigElement(), _("Activate to be able to use with any app with remote function for Plex.")))
+		if settings.remoteAgent.getValue():
+			self.cfglist.append(getConfigListEntry(_("> Remote Player Port"), settings.remotePort.getConfigElement(), _("Change the port to your needs.")))
 
 		# MISC
-		self.cfglist.append(getConfigListEntry(_("Misc Settings ") + separator, config.plugins.dreamplex.about, _(" ")))
-		self.cfglist.append(getConfigListEntry(_("> Debug Mode"), config.plugins.dreamplex.debugMode, _("Enable only if needed. Slows down rapidly.")))
+		self.cfglist.append(getConfigListEntry(_("Misc Settings ") + separator, settings.about.getConfigElement(), _(" ")))
+		self.cfglist.append(getConfigListEntry(_("> Debug Mode"), settings.debugMode.getConfigElement(), _("Enable only if needed. Slows down rapidly.")))
 
-		if config.plugins.dreamplex.debugMode.value:
-			self.cfglist.append(getConfigListEntry(_("> Write debugfile"), config.plugins.dreamplex.writeDebugFile, _("Without this option we just print to console.")))
+		if settings.debugMode.getValue():
+			self.cfglist.append(getConfigListEntry(_("> Write debugfile"), settings.writeDebugFile.getConfigElement(), _("Without this option we just print to console.")))
 
 		self["config"].list = self.cfglist
 		self["config"].l.setList(self.cfglist)
@@ -267,23 +293,24 @@ class DPS_Settings(Screen, ConfigListScreen, HelpableScreen, DPH_PlexScreen):
 		printl("type: " + str(myType), self, "D")
 
 		if pathValue is not None:
+			settings: SettingsStorage = Singleton().getSettingsInstance()
 
 			if myType == "media":
-				self.mediafolderpath[1].value = pathValue
+				settings.mediaFolderPath.setValue(pathValue)
 
 			elif myType == "config":
-				self.configfolderpath[1].value = pathValue
+				settings.configFolderPath.setValue(pathValue)
 
 			elif myType == "player":
-				self.playerTempPath[1].value = pathValue
+				settings.playerTempPath.setValue(pathValue)
 
 			elif myType == "log":
-				self.logfolderpath[1].value = pathValue
+				settings.logFolderPath.setValue(pathValue)
 
 			elif myType == "cache":
-				self.cachefolderpath[1].value = pathValue
+				settings.cacheFolderPath.setValue(pathValue)
 
-		config.plugins.dreamplex.save()
+			settings.writeToFile()
 
 		printl("", self, "C")
 
@@ -293,11 +320,16 @@ class DPS_Settings(Screen, ConfigListScreen, HelpableScreen, DPH_PlexScreen):
 	def keySave(self):
 		printl("", self, "S")
 
-		config.plugins.dreamplex.entriescount.save()
-		config.plugins.dreamplex.Entries.save()
-		config.plugins.dreamplex.save()
-		configfile.save()
-		self.close(None)
+		settings: SettingsStorage = Singleton().getSettingsInstance()
+		settings.writeToFile()
+
+		if settings.skinName.getValue() != self._skinNameAtOpen:
+			from Screens.MessageBox import MessageBox
+			self.session.openWithCallback(lambda _result=None: self.close(None), MessageBox,
+				_("The skin was changed. Exit and re-enter DreamPlex to apply it."),
+				MessageBox.TYPE_INFO, timeout=6)
+		else:
+			self.close(None)
 
 		printl("", self, "C")
 
@@ -340,59 +372,5 @@ class DPS_Settings(Screen, ConfigListScreen, HelpableScreen, DPH_PlexScreen):
 		printl("", self, "S")
 
 		self["config"].instance.moveSelection(self["config"].instance.pageDown)
-
-		printl("", self, "C")
-
-
-#===============================================================================
-#
-#===============================================================================
-class DPS_ServerEntryList(MenuList):
-
-	def __init__(self, menuList, enableWrapAround=True):
-		printl("", self, "S")
-
-		MenuList.__init__(self, menuList, enableWrapAround, eListboxPythonMultiContent)
-		self.l.setFont(0, gFont("Regular", 20))
-		self.l.setFont(1, gFont("Regular", 18))
-
-		printl("", self, "C")
-
-	#===========================================================================
-	#
-	#===========================================================================
-	def postWidgetCreate(self, instance):
-		printl("", self, "S")
-
-		MenuList.postWidgetCreate(self, instance)
-		instance.setItemHeight(20)
-
-		printl("", self, "C")
-
-	#===========================================================================
-	#
-	#===========================================================================
-	def buildList(self):
-		printl("", self, "S")
-
-		self.list = []
-
-		for entry in config.plugins.dreamplex.Entries:
-			res = [entry]
-			res.append((eListboxPythonMultiContent.TYPE_TEXT, 55, 0, 200, 20, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, str(entry.name.value)))
-
-			if entry.connectionType.value == "2":
-				text1 = entry.myplexUrl.value
-				text2 = entry.myplexUsername.value
-			else:
-				text1 = "%d.%d.%d.%d" % tuple(entry.ip.value)
-				text2 = "%d" % entry.port.value
-
-			res.append((eListboxPythonMultiContent.TYPE_TEXT, 260, 0, 150, 20, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, str(text1)))
-			res.append((eListboxPythonMultiContent.TYPE_TEXT, 450, 0, 80, 20, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, str(text2)))
-			self.list.append(res)
-
-		self.l.setList(self.list)
-		self.moveToIndex(0)
 
 		printl("", self, "C")

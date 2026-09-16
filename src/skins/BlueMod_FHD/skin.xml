@@ -146,7 +146,7 @@
 		<ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/BlueMod_FHD/images/hintbox.png" position="40,890" zPosition="1" size="1860,130" transparent="0" />
 		<widget source="help" render="Label" position="60,897" size="1830,120" font="OpenSans; 32" foregroundColor="foreground" backgroundColor="background" zPosition="30" transparent="1" />
 		<widget name="btn_green" zPosition="6" position="495,1033" size="30,40" alphatest="blend" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="535,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="535,1033" size="420,40" transparent="1" zPosition="1" />
 		<!-- <eLabel text="DPS_Settings" position="500,12" size="600,50" font="OpenSans;32" halign="left" valign="center" foregroundColor="green" backgroundColor="background" transparent="1" zPosition="100" /> -->
 	</screen>
 
@@ -181,6 +181,8 @@
 		<widget source="Title" text="System Server" render="Label" transparent="1" zPosition="4" valign="center" position="30,12" size="290,50" font="OpenSans; 32" foregroundColor="grey" backgroundColor="background" halign="left" />
 	<!-- header -->
 		<widget name="header" zPosition="3" position="40,80" size="1220,40" foregroundColor="foreground" backgroundColor="background" transparent="1" font="OpenSans;32" />
+	<!-- MENU key hint (clone), right-aligned on the header row -->
+		<widget name="btn_menuText" zPosition="4" position="600,80" size="660,40" halign="right" valign="center" foregroundColor="foreground" backgroundColor="background" transparent="1" font="OpenSans; 22" />
 	<!-- column header -->
 		<eLabel backgroundColor="background" font="OpenSans; 32" halign="left" position="40,130" size="180,40" text="Name" transparent="1" valign="bottom" zPosition="1" />
 		<eLabel backgroundColor="background" font="OpenSans; 32" halign="left" position="420,130" size="180,40" text="IP / plex.tv" transparent="1" valign="bottom" zPosition="1" />
@@ -206,10 +208,10 @@
 		<widget name="btn_green" zPosition="6" position="495,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_yellow" zPosition="6" position="970,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_blue" zPosition="6" position="1445,1033" size="30,40" alphatest="blend" />
-		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="60,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="535,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="1010,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="1485,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="60,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="535,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="1010,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="1485,1033" size="420,40" transparent="1" zPosition="1" />
 		<!-- <eLabel text="DPS_Server" position="500,12" size="600,50" font="OpenSans;32" halign="left" valign="center" foregroundColor="green" backgroundColor="background" transparent="1" zPosition="100" /> -->
 	</screen>
 
@@ -236,10 +238,10 @@
 		<widget name="btn_green" zPosition="6" position="495,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_yellow" zPosition="6" position="970,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_blue" zPosition="6" position="1445,1033" size="30,40" alphatest="blend" />
-		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="60,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="535,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="1010,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="1485,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="60,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="535,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="1010,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="1485,1033" size="420,40" transparent="1" zPosition="1" />
 		<!-- <eLabel text="DPS_ServerConfig" position="500,12" size="600,50" font="OpenSans;32" halign="left" valign="center" foregroundColor="green" backgroundColor="background" transparent="1" zPosition="100" /> -->
 	</screen>
 
@@ -261,8 +263,8 @@
 		<widget name="btn_red" zPosition="6" position="20,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_green" zPosition="6" position="495,1033" size="30,40" alphatest="blend" />
 
-		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="60,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="535,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="60,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="535,1033" size="420,40" transparent="1" zPosition="1" />
 		<!-- <eLabel text="DPS_Mappings" position="500,12" size="600,50" font="OpenSans;32" halign="left" valign="center" foregroundColor="green" backgroundColor="background" transparent="1" zPosition="100" /> -->
 	</screen>
 	
@@ -286,8 +288,8 @@
 		<widget name="btn_red" zPosition="6" position="20,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_green" zPosition="6" position="495,1033" size="30,40" alphatest="blend" />
 
-		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="60,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="535,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="60,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="535,1033" size="420,40" transparent="1" zPosition="1" />
 		<!-- <eLabel text="DPS_PathSelector" position="500,12" size="600,50" font="OpenSans;32" halign="left" valign="center" foregroundColor="green" backgroundColor="background" transparent="1" zPosition="100" /> -->
 	</screen>
 
@@ -310,9 +312,9 @@
 		<widget name="btn_green" zPosition="6" position="495,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_yellow" zPosition="6" position="970,1033" size="30,40" alphatest="blend" />
 
-		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="60,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="535,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="1010,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="60,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="535,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="1010,1033" size="420,40" transparent="1" zPosition="1" />
 		<!-- <eLabel text="DPS_Users" position="500,12" size="600,50" font="OpenSans;32" halign="left" valign="center" foregroundColor="green" backgroundColor="background" transparent="1" zPosition="100" /> -->
 	</screen>
 
@@ -340,9 +342,9 @@
 		<widget name="btn_green" zPosition="6" position="495,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_blue" zPosition="6" position="970,1033" size="30,40" alphatest="blend" />
 
-		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="60,1033" size="410,40" transparent="1" zPosition="1" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="535,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="1010,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="60,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="535,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="1010,1033" size="420,40" transparent="1" zPosition="1" />
 		<!-- <eLabel text="DPS_Syncer" position="500,12" size="600,50" font="OpenSans;32" halign="left" valign="center" foregroundColor="green" backgroundColor="background" transparent="1" zPosition="100" /> -->
 	</screen>
 
@@ -392,7 +394,11 @@
 		<widget name="text_HomeUserLabel" position="20,1033" zPosition="15" size="220,40" font="OpenSans;30" halign="left" valign="center" foregroundColor="grey" backgroundColor="background" transparent="1" />
 		<widget name="text_HomeUser" position="250,1033" zPosition="15" size="390,40" font="OpenSans;30" halign="left" valign="center" foregroundColor="grey" backgroundColor="background" transparent="1" />
 		<widget name="btn_green" zPosition="6" position="645,1033" size="30,40" alphatest="blend" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="685,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="685,1033" size="420,40" transparent="1" zPosition="1" />
+		<!-- sync-cache button: previously not shown at all in this skin, so
+		     it silently did nothing visible when pressed -->
+		<widget name="btn_red" zPosition="6" position="1150,1033" size="30,40" alphatest="blend" />
+		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="1190,1033" size="390,40" transparent="1" zPosition="1" />
 		<!-- <eLabel text="DPS_ServerMenu" position="500,12" size="600,50" font="OpenSans;32" halign="left" valign="center" foregroundColor="green" backgroundColor="background" transparent="1" zPosition="100" /> -->
 	</screen>
 
@@ -415,7 +421,16 @@
 		<panel name="clockpanel" />
 		<!-- <eLabel text="DPS_InputBox" position="500,12" size="600,50" font="OpenSans;32" halign="left" valign="center" foregroundColor="green" backgroundColor="background" transparent="1" zPosition="100" /> -->
 	</screen>
-	
+
+	<!-- DPS_TextInputBox: same as DPS_InputBox but without the mini-tv, for
+	     plain text prompts (Jellyfin discovery wizard, username/password,
+	     browse-time search prompts) that have no video/search context to
+	     preview -->
+	<screen name="DPS_TextInputBox" position="285,435" size="1350,210" title=" " backgroundColor="#1a1a1a" flags="wfNoBorder">
+		<widget name="text" zPosition="10" position="30,18" transparent="1" size="1290,105" font="OpenSans; 28" backgroundColor="#1a1a1a" foregroundColor="#ffffff" halign="left"/>
+		<widget name="input" zPosition="10" position="30,135" transparent="1" size="1290,53" font="OpenSans; 30" backgroundColor="#000000" foregroundColor="#ffffff" halign="left"/>
+	</screen>
+
 	<!-- DPS_ViewList -->
 	<screen name="DPS_ViewList" position="0,0" size="1920,1080" title=" " flags="wfNoBorder" backgroundColor="background">
 	<!-- background -->
@@ -509,10 +524,10 @@
 		<widget name="btn_green" zPosition="6" position="460,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_yellow" zPosition="6" position="900,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_blue" zPosition="6" position="1340,1033" size="30,40" alphatest="blend" />
-		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="55,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="495,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="935,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="1375,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="55,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="495,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="935,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="1375,1033" size="420,40" transparent="1" zPosition="1" />
 	<!-- functions -->
 		<widget name="number_key_popup" zPosition="51" halign="left" valign="center" position="863,303" size="75,80" font="OpenSans;70" foregroundColor="bernstein" transparent="1" />
 		<widget name="L1" transparent="1" zPosition="10" position="1780,1033" size="30,40" font="OpenSans; 27" halign="center" valign="center" />
@@ -612,10 +627,10 @@
 		<widget name="btn_green" zPosition="6" position="460,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_yellow" zPosition="6" position="900,1033" size="30,40" alphatest="blend" />
 		<widget name="btn_blue" zPosition="6" position="1340,1033" size="30,40" alphatest="blend" />
-		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="55,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="495,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="935,1033" size="400,40" transparent="1" zPosition="1" />
-		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 27" halign="left" valign="center" position="1375,1033" size="400,40" transparent="1" zPosition="1" />
+		<widget name="btn_redText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="55,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_greenText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="495,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_yellowText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="935,1033" size="420,40" transparent="1" zPosition="1" />
+		<widget name="btn_blueText" backgroundColor="background" font="OpenSans; 24" halign="left" valign="center" position="1375,1033" size="420,40" transparent="1" zPosition="1" />
 	<!-- functions -->
 		<widget name="number_key_popup" zPosition="51" halign="left" valign="center" position="1370,943" size="75,80" font="OpenSans;70" foregroundColor="bernstein" transparent="1" />
 		<widget name="L1" transparent="1" zPosition="10" position="1780,1033" size="30,40" font="OpenSans; 27" halign="center" valign="center" />
@@ -722,5 +737,15 @@
 			<convert type="ServicePosition">Remaining,Negate,ShowHours,ShowNoSeconds</convert>
 		</widget>
 </screen>
+
+
+	<screen name="DPS_NextEpisode" position="1200,60" size="685,260" flags="wfNoBorder" backgroundColor="transparent" zPosition="100">
+		<eLabel position="0,0" zPosition="-1" size="685,260" backgroundColor="#40000000" transparent="0" />
+		<widget name="carouselPoster" position="18,18" size="140,200" alphatest="blend" transparent="1" zPosition="1" />
+		<widget name="nextEpisodeText" position="172,18" size="495,40" font="OpenSans; 30" halign="left" valign="center" transparent="1" foregroundColor="#FF8C00" backgroundColor="#40000000" noWrap="1" />
+		<widget name="nextEpisodeTitle" position="172,60" size="495,36" font="OpenSans; 24" halign="left" valign="center" transparent="1" foregroundColor="#ffffff" backgroundColor="#40000000" noWrap="1" />
+		<widget name="carouselSummary" position="172,98" size="495,120" font="OpenSans; 20" halign="left" valign="top" transparent="1" foregroundColor="#cccccc" backgroundColor="#40000000" />
+		<widget name="nextEpisodeHint" position="18,226" size="649,28" font="OpenSans; 20" halign="left" valign="center" transparent="1" foregroundColor="#cccccc" backgroundColor="#40000000" noWrap="1" />
+	</screen>
 
 </skin>

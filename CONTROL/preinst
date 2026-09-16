@@ -1,10 +1,19 @@
 #!/bin/sh
 echo -e '\n'
 echo Starting installation of DreamPlex ...
-echo Deleting presets ...
-rm /hdd/dreamplex/*.bin > /dev/null 2>&1
-echo Deleting cache files ...
-rm /hdd/dreamplex/cache/* > /dev/null 2>&1
-echo Deleting media files ...
-rm /hdd/dreamplex/media/* > /dev/null 2>&1
+# Presets, cache and media used to be wiped here unconditionally - but
+# preinst runs on every install, update AND reinstall, not just a fresh one,
+# so every test cycle ("opkg install --force-reinstall ...") was silently
+# throwing away the user's server list and settings along with the actual
+# cache. Wiping /hdd/dreamplex belongs to uninstall only - see CONTROL/postrm,
+# which already does "rm -r /hdd/dreamplex" when the plugin is removed.
+echo Removing stale compiled Python cache ...
+# opkg only tracks the files a package explicitly installs. The .pyc files
+# a previous install byte-compiled (install_PYTHON, or an older enigma2
+# image doing it automatically) are never in that list, so replacing the
+# package leaves them behind - and Python is happy to run stale bytecode
+# instead of the new .py source it no longer matches. Wipe them before the
+# new files land.
+find /usr/lib/enigma2/python/Plugins/Extensions/DreamPlex -name "__pycache__" -type d -exec rm -rf {} + > /dev/null 2>&1
+find /usr/lib/enigma2/python/Plugins/Extensions/DreamPlex -name "*.pyc" -exec rm -f {} + > /dev/null 2>&1
 exit 0

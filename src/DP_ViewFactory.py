@@ -29,6 +29,7 @@ from Screens.MessageBox import MessageBox
 
 from Tools import Notifications
 from Components.config import config, configfile
+from . import SettingsStorage
 
 from .DPH_Singleton import Singleton
 
@@ -134,6 +135,7 @@ def getViewsFromSkinParams(myType):
 	printl("", "DP_ViewFactory::getViewsFromSkinParams", "S")
 
 	tree = Singleton().getSkinParamsInstance()
+	dream: SettingsStorage = Singleton().getSettingsInstance()
 
 	availableViewList = []
 
@@ -183,10 +185,9 @@ def getViewsFromSkinParams(myType):
 			# if we are mandatory we stop here
 			if defaultParams["settings"][setting] == "mandatory" and value is None:
 				skinDebugMode = translateValues(getSkinDebugMode())
-				if config.plugins.dreamplex.skin.value != "default" and not skinDebugMode:
-					config.plugins.dreamplex.skin.value = "default"
-					config.plugins.dreamplex.skin.save()
-					configfile.save()
+				if dream.skinName.getValue() != "default" and not skinDebugMode:
+					dream.skinName.setValue("default")
+					dream.writeToFile()
 					Notifications.AddNotification(MessageBox, "DreamPlex crashed due to a skin error!\nSwitching back to default in settings.\n", type=MessageBox.TYPE_INFO, timeout=10)
 				else:
 					printl("this value: " + str(value) + "is misssing ....", "DP_ViewFactory::getViewsFromSkinParams", "D")

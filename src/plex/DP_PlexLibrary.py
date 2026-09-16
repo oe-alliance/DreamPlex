@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License
 #===============================================================================
 # IMPORT
 #===============================================================================
+from __future__ import annotations
 import os
 import ssl
 import socket
@@ -31,37 +32,44 @@ import sys
 import hmac
 import traceback
 from six import PY2, PY3
+
+from ..DP_MediaLibrary import DP_MediaLibrary, RATING_KIND_STARS
+from ..DP_SettingsStorage import SettingsStorage
+from .PlexSettings import PlexSettings
+
 # import uuid
 try:
 	import cPickle as pickle
-except:
+except Exception:
 	import pickle
 
 from time import time
 
 try:
 	from http.client import HTTPConnection, HTTPSConnection
-except:
+except Exception:
 	from httplib import HTTPConnection, HTTPSConnection
 
 try:
 	from urllib.parse import quote_plus, unquote
 	from urllib.request import urlopen, Request
-except:
+except Exception:
 	from urllib import quote_plus, unquote
 	from urllib2 import urlopen, Request
 
 from base64 import b64encode, b64decode
-from Components.config import config
 from hashlib import sha256
 from random import seed
 from Tools.Directories import fileExists, copyfile
 
 from Screens.Screen import Screen
 
-from .__plugin__ import getPlugin, Plugin
-from .__common__ import printl2 as printl, getXmlContent, getPlexHeader, encodeThat, getUUID, revokeCacheFiles
-from . import _, defaultPluginFolderPath  # _ is translation
+from ..__plugin__ import getPlugin, Plugin
+from ..DPH_CacheGuard import isCacheFileTrusted, secureCacheFile
+from ..__common__ import printl2 as printl, getXmlContent, getPlexHeader, encodeThat, getUUID, revokeCacheFiles, getVersion, getMyIp
+from .. import _  # _ is translation
+from ..DP_SettingsStorage import defaultPluginFolderPath
+from ..DPH_Singleton import Singleton
 
 #===============================================================================
 # import cProfile
@@ -91,12 +99,31 @@ seed()
 DEFAULT_PORT = "32400"
 PLEXTV_SERVER = "plex.tv"
 
+
+#===============================================================================
+#
+#===============================================================================
+def getPlexTvSslContext():
+	"""Contesto SSL per le chiamate a plex.tv.
+
+	Su questo canale transitano le credenziali dell'utente (Basic auth in
+	fase di login) e il token di accesso: senza verifica del certificato
+	sarebbero leggibili da chiunque sia in grado di intercettare il
+	traffico. plex.tv espone un certificato valido, quindi il contesto
+	predefinito di Python e' sufficiente.
+
+	Se la verifica fallisce con "certificate verify failed", il problema e'
+	quasi sempre il bundle di CA della box: aggiornare il pacchetto
+	ca-certificates dell'immagine.
+	"""
+	return ssl.create_default_context()
+
 #===============================================================================
 # PlexLibrary
 #===============================================================================
 
 
-class PlexLibrary(Screen):
+class PlexLibrary(DP_MediaLibrary):
 
 	g_sessionID = None
 	g_sections = []
@@ -168,7 +195,7 @@ class PlexLibrary(Screen):
 	#
 	#===========================================================================
 
-	def __init__(self, session, serverConfig=None, resolvedMyPlexAddress=None, machineIdentifier=None):
+	def __init__(self, session, serverConfig:PlexSettings=None, resolvedMyPlexAddress=None, machineIdentifier=None):
 		printl("", self, "S")
 
 		Screen.__init__(self, session)
@@ -176,30 +203,32 @@ class PlexLibrary(Screen):
 		self.g_error = False
 		printl("running on " + str(sys.version_info), self, "I")
 
+		self.settings: SettingsStorage = Singleton().getSettingsInstance()
+
 		# global serverConfig
 		self.g_serverConfig = serverConfig
 
 		# global settings
-		self.g_useFilterSections = config.plugins.dreamplex.showFilter.value
-		self.g_showUnSeenCounts = config.plugins.dreamplex.showUnSeenCounts.value
+		self.g_useFilterSections = self.settings.showFilter.getValue()
+		self.g_showUnSeenCounts = self.settings.showUnSeenCounts.getValue()
 		self.g_sessionID = getUUID()
 
 		# server settings
-		self.serverConfig_Name = str(self.g_serverConfig.name.value)
-		self.serverConfig_connectionType = str(self.g_serverConfig.connectionType.value)
-		self.serverConfig_port = str(self.g_serverConfig.port.value)
-		self.serverConfig_quality = str(self.g_serverConfig.quality.value)
-		self.serverConfig_myplexToken = str(self.g_serverConfig.myplexToken.value)
-		self.serverConfig_myplexLocalToken = str(self.g_serverConfig.myplexLocalToken.value)
-		self.serverConfig_playbackType = self.g_serverConfig.playbackType.value
-		self.serverConfig_localAuth = self.g_serverConfig.localAuth.value
+		self.serverConfig_Name = str(self.g_serverConfig.name().getValue())
+		self.serverConfig_connectionType = str(self.g_serverConfig.connectionType().getValue())
+		self.serverConfig_port = str(self.g_serverConfig.port().getValue())
+		self.serverConfig_quality = str(self.g_serverConfig.quality().getValue())
+		self.serverConfig_myplexToken = str(self.g_serverConfig.myplexToken().getValue())
+		self.serverConfig_myplexLocalToken = str(self.g_serverConfig.myplexLocalToken().getValue())
+		self.serverConfig_playbackType = self.g_serverConfig.playbackType().getValue()
+		self.serverConfig_localAuth = self.g_serverConfig.localAuth().getValue()
 
 		# PLAYBACK TYPES
-		self.g_segments = self.g_serverConfig.segments.value  # is needed here because of fallback
+		self.g_segments = self.g_serverConfig.segments().getValue()  # is needed here because of fallback
 
 		self.setPlaybackType(self.serverConfig_playbackType)
 
-		printl("using this debugMode: " + str(config.plugins.dreamplex.debugMode.value), self, "D")
+		printl("using this debugMode: " + str(self.settings.debugMode.getValue()), self, "D")
 		printl("using this serverName: " + self.serverConfig_Name, self, "I")
 		printl("using this connectionType: " + self.serverConfig_connectionType, self, "I")
 
@@ -215,14 +244,14 @@ class PlexLibrary(Screen):
 
 		else:  # DNS
 			try:
-				self.g_host = str(socket.gethostbyname(self.g_serverConfig.dns.value))
-				printl("using this FQDN: " + self.g_serverConfig.dns.value, self, "I")
+				self.g_host = str(socket.gethostbyname(self.g_serverConfig.dns().getValue()))
+				printl("using this FQDN: " + self.g_serverConfig.dns().getValue(), self, "I")
 				printl("found this ip for fqdn: " + self.g_host, self, "I")
 				printl("using this serverPort: " + self.serverConfig_port, self, "I")
 			except Exception as e:
 				printl("socket error: " + str(e), self, "W")
 				printl("trying fallback to ip", self, "I")
-				self.g_host = "%d.%d.%d.%d" % tuple(self.g_serverConfig.ip.value)
+				self.g_host = "%d.%d.%d.%d" % tuple(self.g_serverConfig.ip().getValue())
 
 		# if self.g_error is True:
 		# 	self.leaveOnError()
@@ -243,7 +272,7 @@ class PlexLibrary(Screen):
 		elif myType == "1":  # TRANSCODED
 			self.g_stream = "1"
 			self.g_transcode = "true"
-			self.g_segments = self.g_serverConfig.segments.value
+			self.g_segments = self.g_serverConfig.segments().getValue()
 
 			printl("using transcode: " + str(self.g_transcode), self, "I")
 			printl("using this transcoding quality: " + str(self.serverConfig_quality), self, "I")
@@ -276,6 +305,27 @@ class PlexLibrary(Screen):
 		fullList.append((_("Tv Shows"), Plugin.MENU_TVSHOWS, "showEntry", entryData))
 		fullList.append((_("Music"), Plugin.MENU_MUSIC, "musicEntry", entryData))
 
+		# settings.summerizeSections defaults to True, so THIS (not
+		# getAllSections()) is the menu most users actually see - Playlists
+		# needs its own row here too, same lesson learned on the Jellyfin
+		# side this session (getSectionTypes() vs. getAllSections()).
+		# g_serverDict['address'] is set at connection time regardless of
+		# direct/myplex.tv mode (unlike the per-section entryData['address']
+		# the On Deck/New/Playlists entries in getAllSections() use, which
+		# only exists inside that method's per-section loop).
+		if self.g_serverDict.get('address'):
+			playlists = dict()
+			playlists["contentUrl"] = self.getContentUrl(self.g_serverDict['address'], "/playlists")
+			playlists["type"] = "movie"
+			playlists["currentViewMode"] = "movie"
+			playlists["nextViewMode"] = "playlists"
+			fullList.append((_("Playlists"), getPlugin("mixed", Plugin.MENU_MIXED), "mixedEntry", playlists))
+
+		# Collections, unlike Playlists, belong to one specific movie
+		# library section rather than a single server-wide endpoint - one
+		# row per movie section found (see _movieSectionCollectionsEntries()).
+		fullList.extend(self._movieSectionCollectionsEntries())
+
 		extend = False  # SWITCH
 
 		if extend:
@@ -286,8 +336,53 @@ class PlexLibrary(Screen):
 		printl("", self, "C")
 		return fullList
 
-	def getServerSectionPaths(self):
-		sectionpaths = []
+	#===========================================================================
+	# One "<Section title> - Collections" mixed-menu row per movie library
+	# section - shared by getSectionTypes() (the default, "summarized" menu
+	# most users actually see) and getAllSections() (the unfiltered one),
+	# since both need it and the per-section address/token resolution below
+	# (particularly the plex.tv/shared-server branch, via
+	# setAccessTokenHeader()) is exactly what getAllSections()'s own main
+	# loop already does for every section - duplicating it a second,
+	# independent time would risk getting the myplex.tv token handling
+	# subtly wrong in a way there is no way to catch without a live shared
+	# server to test against.
+	#===========================================================================
+	def _movieSectionCollectionsEntries(self):
+		printl("", self, "S")
+		entries = []
+
+		tree = self.getAllSectionsXmlTree()
+		if not tree:
+			printl("", self, "C")
+			return entries
+
+		for entry in tree.findall('Directory'):
+			entryData = dict(entry.items())
+			if entryData.get('type') != 'movie':
+				continue
+
+			if self.serverConfig_connectionType == "2":  # plex.tv
+				entryData['address'] = entryData['address'] + ":" + entryData['port']
+				self.setAccessTokenHeader(address=str(entryData.get('address')), accessToken=str(entryData.get('accessToken', None)), serverVersion=str(entryData.get('serverVersion')))
+			else:
+				entryData['address'] = str(self.g_host + ":" + self.serverConfig_port)
+
+			title = entryData.get('title')
+			title = title.encode('utf-8') if PY2 else title
+
+			collectionsEntry = dict()
+			collectionsEntry['contentUrl'] = self.getContentUrl(entryData['address'], "/library/sections/" + str(entryData.get('key')) + "/collections")
+			collectionsEntry['type'] = 'movie'
+			collectionsEntry['currentViewMode'] = 'movie'
+			collectionsEntry['nextViewMode'] = 'collections'
+			entries.append((_(title) + " - " + _("Collections"), getPlugin("mixed", Plugin.MENU_MIXED), "mixedEntry", collectionsEntry))
+
+		printl("", self, "C")
+		return entries
+
+	def getServerSectionPaths(self) -> list[str]:
+		sectionpaths: list[str] = []
 
 		if self.serverConfig_connectionType == "2":
 			return []
@@ -367,7 +462,7 @@ class PlexLibrary(Screen):
 		entryData = None
 
 		self.sectionCacheLoaded = False
-		if config.plugins.dreamplex.useCache.value:
+		if self.settings.useCache.getValue():
 			# load section cache
 			self.loadSectionCache()
 
@@ -382,7 +477,7 @@ class PlexLibrary(Screen):
 
 			printl("entries: " + str(entries), self, "D")
 
-			summerizeServers = config.plugins.dreamplex.summerizeServers.value
+			summerizeServers = self.settings.summerizeServers.getValue()
 
 			if summerizeServers and not serverFilterActive and self.serverConfig_connectionType == "2":
 
@@ -422,7 +517,7 @@ class PlexLibrary(Screen):
 
 					# set the source for the section data
 					source = "plex"
-					if config.plugins.dreamplex.useCache.value:
+					if self.settings.useCache.getValue():
 						source = self.updateSectionCache(entryData)
 
 					entryData["source"] = source
@@ -450,13 +545,13 @@ class PlexLibrary(Screen):
 
 					# if this is a plex.tv connection we look if we should provide more information for better overview since plex.tv combines all servers and shares
 					detail = ""
-					if config.plugins.dreamplex.showDetailsInList.value and self.serverConfig_connectionType == "2":
-						if config.plugins.dreamplex.showDetailsInListDetailType.value == "1":
+					if self.settings.showDetailsInList.getValue() and self.serverConfig_connectionType == "2":
+						if self.settings.showDetailsInListDetailType.getValue() == "1":
 							if "sourceTitle" in entryData:
 								detail = " \n( " + entryData['sourceTitle'] + ")"
 							else:
 								detail = " \n(" + str(entryData['serverName']) + ")"
-						elif config.plugins.dreamplex.showDetailsInListDetailType.value == "2":
+						elif self.settings.showDetailsInListDetailType.getValue() == "2":
 							if "serverName" in entryData:
 								detail = " \n(" + str(entryData['serverName']) + ")"
 
@@ -525,7 +620,28 @@ class PlexLibrary(Screen):
 					#mh //fullList.append((_("New"), getPlugin("mixed", Plugin.MENU_MIXED), "mixedEntry", recentlyAdded))
 					fullList.insert(1, (_("New"), getPlugin("mixed", Plugin.MENU_MIXED), "mixedEntry", recentlyAdded))
 
-					if config.plugins.dreamplex.useCache.value:
+					# Playlists are a single server-wide endpoint, unlike
+					# Collections (one per library section - not implemented
+					# yet, see getPlaylists()'s docstring for why this one is
+					# safe to add on its own). nextViewMode "playlists" (not
+					# "mixed" like On Deck/New above) since the top-level
+					# listing itself needs <Playlist> tag parsing, not the
+					# <Video>/<Directory> shape getMixedContentFromSection()
+					# expects - only entering one specific playlist reaches
+					# that generic path, via its own "key" attribute.
+					playlists = dict()
+					playlists["contentUrl"] = self.getContentUrl(entryData['address'], "/playlists")
+					playlists["type"] = "movie"
+					playlists["currentViewMode"] = "movie"
+					playlists["nextViewMode"] = "playlists"
+					fullList.insert(2, (_("Playlists"), getPlugin("mixed", Plugin.MENU_MIXED), "mixedEntry", playlists))
+
+					# one "<Section> - Collections" row per movie library
+					# (see _movieSectionCollectionsEntries())
+					for i, collectionsRow in enumerate(self._movieSectionCollectionsEntries()):
+						fullList.insert(3 + i, collectionsRow)
+
+					if self.settings.useCache.getValue():
 						self.saveSectionCache()
 
 			# as a last step we check if there where any content
@@ -581,7 +697,7 @@ class PlexLibrary(Screen):
 				else:
 					entryData["contentUrl"] = incomingEntryData["contentUrl"] + "/" + entryData["key"]
 
-					if config.plugins.dreamplex.useCache.value:
+					if self.settings.useCache.getValue():
 						# we set this here now to have this information later
 						if self.currentUuid in self.g_sectionCache:
 							entryData["source"] = self.g_sectionCache[self.currentUuid]["source"]
@@ -634,6 +750,86 @@ class PlexLibrary(Screen):
 
 		printl("", self, "C")
 		return self.getMediaData(url, tagType="Video", nextViewMode="play", currentViewMode="ShowMovies", fromRemotePlayer=fromRemotePlayer)
+
+	#===========================================================================
+	# Plex playlists (see getSectionTypes()/getAllSections() for where the
+	# top-level "Playlists" row comes from). A single server-wide /playlists
+	# endpoint, unlike Collections (one per library section - not
+	# implemented yet), returning <Playlist> rows - neither
+	# getDirectoryData() (<Directory>) nor getMediaData() (<Video>/<Track>,
+	# plus movie-specific image/genre/cast processing that does not apply
+	# here) fits, so this is its own small method rather than a variant of
+	# either. Entering one specific playlist uses its own "key" XML
+	# attribute (already the /playlists/{id}/items sub-resource) with
+	# nextViewMode "mixed", reusing the proven getMixedContentFromSection()
+	# path On Deck/New already exercise for a flat list of Video/Track rows.
+	#===========================================================================
+	def getPlaylists(self, url):
+		printl("", self, "S")
+		printl("url: " + str(url), self, "D")
+
+		tree = self.getXmlTreeFromUrl(url)
+		server = str(self.getServerFromURL(url))
+
+		if not tree:
+			printl("", self, "C")
+			return [], {}
+
+		fullList = []
+		mediaContainer = dict(tree.items())
+
+		for entry in tree.findall("Playlist"):
+			entryData = dict(entry.items())
+			entryData['server'] = server
+			entryData['tagType'] = "Directory"
+			# forced regardless of whatever raw "type"/"playlistType" the
+			# XML carries (e.g. "video"/"audio") - DPS_ViewMixed._refresh()
+			# only recognizes the literal "Folder"/"Directory" markers for a
+			# row to descend into, the same class of bug _to_entry() was
+			# fixed for on the Jellyfin side this session.
+			entryData['type'] = "Folder"
+			entryData['currentViewMode'] = "ShowMovies"
+			entryData['nextViewMode'] = "mixed"
+			fullList.append(self.getFullListEntry(entryData, url))
+
+		printl("", self, "C")
+		return fullList, mediaContainer
+
+	#===========================================================================
+	# Collections for one specific movie library section (see
+	# _movieSectionCollectionsEntries() for where the row that reaches this
+	# comes from) - <Directory> rows, like getDirectoryData() already
+	# handles, but Plex tags each collection with its own type="collection"
+	# attribute, which getDirectoryData() would leave untouched (it only
+	# fills in "Folder" when no "type" attribute is present at all) - same
+	# guard as getPlaylists() above, against the same class of bug
+	# _to_entry() was fixed for on the Jellyfin side this session.
+	#===========================================================================
+	def getCollectionsForSection(self, url):
+		printl("", self, "S")
+		printl("url: " + str(url), self, "D")
+
+		tree = self.getXmlTreeFromUrl(url)
+		server = str(self.getServerFromURL(url))
+
+		if not tree:
+			printl("", self, "C")
+			return [], {}
+
+		fullList = []
+		mediaContainer = dict(tree.items())
+
+		for entry in tree.findall("Directory"):
+			entryData = dict(entry.items())
+			entryData['server'] = server
+			entryData['tagType'] = "Directory"
+			entryData['type'] = "Folder"
+			entryData['currentViewMode'] = "ShowMovies"
+			entryData['nextViewMode'] = "mixed"
+			fullList.append(self.getFullListEntry(entryData, url))
+
+		printl("", self, "C")
+		return fullList, mediaContainer
 
 	#===============================================================================
 	#
@@ -1005,7 +1201,7 @@ class PlexLibrary(Screen):
 	def setIpData(self):
 		printl("", self, "S")
 
-		self.g_host = "%d.%d.%d.%d" % tuple(self.g_serverConfig.ip.value)
+		self.g_host = "%d.%d.%d.%d" % tuple(self.g_serverConfig.ip().getValue())
 
 		printl("using this serverIp: " + self.g_host, self, "I")
 		printl("using this serverPort: " + self.serverConfig_port, self, "I")
@@ -1018,9 +1214,9 @@ class PlexLibrary(Screen):
 	def setMyPlexData(self):
 		printl("", self, "S")
 
-		self.g_myplex_username = self.g_serverConfig.myplexUsername.value
-		self.g_myplex_password = self.g_serverConfig.myplexPassword.value
-		self.g_myplex_url = self.g_serverConfig.myplexUrl.value
+		self.g_myplex_username = self.g_serverConfig.myplexUsername().getValue()
+		self.g_myplex_password = self.g_serverConfig.myplexPassword().getValue()
+		self.g_myplex_url = self.g_serverConfig.myplexUrl().getValue()
 
 		if self.serverConfig_myplexToken == "":
 			printl("serverconfig: " + str(self.g_serverConfig), self, "D")
@@ -1030,13 +1226,12 @@ class PlexLibrary(Screen):
 				self.g_error = True
 
 			else:
-				self.g_serverConfig.myplexTokenUsername.value = self.g_myplex_username
-				self.g_serverConfig.myplexTokenUsername.save()
-				self.g_serverConfig.myplexToken.value = self.serverConfig_myplexToken
-				self.g_serverConfig.myplexToken.save()
+				self.g_serverConfig.myplexTokenUsername().setValue(self.g_myplex_username)
+				self.g_serverConfig.myplexToken().setValue(self.serverConfig_myplexToken)
+				self.g_serverConfig.saveChanges()
 
 		else:
-			self.serverConfig_myplexToken = self.g_serverConfig.myplexToken.value
+			self.serverConfig_myplexToken = self.g_serverConfig.myplexToken().getValue()
 
 		printl("plex.tvUrl: " + str(self.g_myplex_url), self, "D")
 		printl("plex.tv_username: " + str(self.g_myplex_username), self, "D", True, 10)
@@ -1059,7 +1254,7 @@ class PlexLibrary(Screen):
 			printl("Adding plex.tv as server location", self, "D")
 
 			if resolvedMyPlexAddress is not None:  # this is the case if we come from remote player
-				response = self.getSharedServerForPlexUser()
+				response = self.getSharedServerForUser()
 				servers = response.findall("Server")
 				for server in servers:
 					serverMachineIdentifier = server.get("machineIdentifier")
@@ -1170,15 +1365,20 @@ class PlexLibrary(Screen):
 	def loadSectionCache(self):
 		printl("", self, "S")
 
-		self.sectionCache = "%s%s.cache" % (config.plugins.dreamplex.cachefolderpath.value, "sections", )
+		self.sectionCache = "%s%s.cache" % (self.settings.cacheFolderPath.getValue(), "sections", )
 		try:
+			# pickle.load() executes the content of the file: loading one we
+			# did not write ourselves runs arbitrary code.
+			if not isCacheFileTrusted(self.sectionCache):
+				raise IOError("untrusted cache file: %s" % self.sectionCache)
+
 			fd = open(self.sectionCache, "rb")
 			self.g_sectionCache = pickle.load(fd)
 			fd.close()
 			printl("section chache data loaded", self, "D")
 			self.sectionCacheLoaded = True
-		except:
-			printl("section chache data not loaded", self, "D")
+		except Exception as e:
+			printl("section chache data not loaded: " + str(e), self, "D")
 			self.g_sectionCache = {}
 
 		printl("", self, "C")
@@ -1192,6 +1392,7 @@ class PlexLibrary(Screen):
 		fd = open(self.sectionCache, "wb")
 		pickle.dump(self.g_sectionCache, fd, 2)  # pickle.HIGHEST_PROTOCOL
 		fd.close()
+		secureCacheFile(self.sectionCache)
 
 		printl("", self, "C")
 
@@ -1262,7 +1463,7 @@ class PlexLibrary(Screen):
 	#===============================================================================
 	#
 	#===============================================================================
-	def getSharedServerForPlexUser(self):
+	def getSharedServerForUser(self):
 		printl("", self, "S")
 
 		xmlResponse = self.getXmlTreeFromPlex('/pms/servers')
@@ -1273,7 +1474,7 @@ class PlexLibrary(Screen):
 	#===============================================================================
 	#
 	#===============================================================================
-	def getHomeUsersFromPlex(self):
+	def getAlternateUsers(self):
 		printl("", self, "S")
 
 		xmlResponse = self.getXmlTreeFromPlex('/api/home/users')
@@ -1284,7 +1485,7 @@ class PlexLibrary(Screen):
 	#===============================================================================
 	#
 	#===============================================================================
-	def switchHomeUser(self, userId, pin):
+	def switchUser(self, userId, pin):
 		printl("", self, "S")
 
 		xmlResponse = self.getXmlTreeFromPlex('/api/home/users/' + str(userId) + '/switch?pin=' + str(pin), requestType="POST")
@@ -1295,11 +1496,11 @@ class PlexLibrary(Screen):
 	#===============================================================================
 	#
 	#===============================================================================
-	def getPlexUserTokenForLocalServerAuthentication(self, ipInConfig):
+	def getUserTokenForLocalServerAuthentication(self, ipInConfig):
 		printl("", self, "S")
 
 		printl("ipInConfig = " + str(ipInConfig), self, "D")
-		xmlResponse = self.getSharedServerForPlexUser()
+		xmlResponse = self.getSharedServerForUser()
 
 		servers = xmlResponse.findall('Server')
 
@@ -1313,6 +1514,43 @@ class PlexLibrary(Screen):
 		printl("No ip match!!!!!!", self, "D")
 		printl("", self, "C")
 		return False
+
+	# Plex never embeds subtitle/audio stream lists in a listing entry's
+	# context menu data the way Jellyfin does - DP_View.displaySubtitleMenu()/
+	# displayAudioMenu() always fall back to getSubtitlesById()/getAudioById()
+	# for it, which None (not an empty list) signals here.
+	def getContextSubtitleStreams(self, context):
+		return None
+
+	def getContextAudioStreams(self, context):
+		return None
+
+	def getRemoteClientIdentifierHeaderNames(self):
+		return ['X-Plex-Client-Identifier']
+
+	def getRemotePollHeaders(self, commandID):
+		return {
+			'Access-Control-Expose-Headers': 'X-Plex-Client-Identifier',
+			'Content-Type': 'text/xml',
+		}
+
+	def getRemoteResourceDescriptor(self, boxName):
+		return ("<MediaContainer><Player protocolCapabilities='playback, navigation' product='" + getMyIp() +
+				"' platformVersion='" + getVersion() + "' platform='Enigma2' machineIdentifier='" + getUUID() +
+				"' title='" + boxName + "' protocolVersion='1' deviceClass='stb'/></MediaContainer>")
+
+	def getRemoteContentType(self):
+		return 'text/xml; charset="utf-8"'
+
+	def getRemoteAccessControlHeaders(self):
+		return {
+			'X-Plex-Client-Identifier': getUUID(),
+			'Access-Control-Max-Age': '1209600',
+			'Access-Control-Allow-Credentials': 'true',
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+			'Access-Control-Allow-Headers': "x-plex-client-identifier,x-plex-device,x-plex-device-name,x-plex-platform,x-plex-platform-version,x-plex-product,x-plex-target-client-identifier,x-plex-username,x-plex-version",
+		}
 
 	#===============================================================================
 	#
@@ -1383,7 +1621,7 @@ class PlexLibrary(Screen):
 		myplex_header['Authorization'] = "Basic %s" % base64string
 		myplex_header['X-Plex-Username'] = self.g_myplex_username
 
-		conn = HTTPSConnection(PLEXTV_SERVER, timeout=20, port=443, context=ssl._create_unverified_context())
+		conn = HTTPSConnection(PLEXTV_SERVER, timeout=20, port=443, context=getPlexTvSslContext())
 		conn.request(url="/users/sign_in.xml", method="POST", headers=myplex_header)
 		data = conn.getresponse()
 		response = data.read()
@@ -1408,12 +1646,10 @@ class PlexLibrary(Screen):
 		else:
 			self.serverConfig_myplexToken = token
 			self.serverConfig_myplexId = myId
-			self.g_serverConfig.myplexTokenUsername.value = self.g_myplex_username
-			self.g_serverConfig.myplexTokenUsername.save()
-			self.g_serverConfig.myplexToken.value = self.serverConfig_myplexToken
-			self.g_serverConfig.myplexToken.save()
-			self.g_serverConfig.myplexId.value = self.serverConfig_myplexId
-			self.g_serverConfig.myplexId.save()
+			self.g_serverConfig.myplexTokenUsername().setValue(self.g_myplex_username)
+			self.g_serverConfig.myplexToken().setValue(self.serverConfig_myplexToken)
+			self.g_serverConfig.myplexId().setValue(self.serverConfig_myplexId)
+			self.g_serverConfig.saveChanges()
 
 		printl("token: " + token, self, "D", True, 8)
 		printl("id: " + str(myId), self, "D")
@@ -1509,6 +1745,167 @@ class PlexLibrary(Screen):
 			traceback.print_exc()
 			printl("error: " + str(ex), self, "D")
 
+	def refreshLibrarySection(self, token):
+		printl("", self, "S")
+
+		# token is already the full URL to GET, built once by
+		# buildContextMenu() from the current listing's own url - unchanged
+		# behavior from before this became its own abstract method.
+		if token:
+			self.doRequest(token)
+
+		printl("", self, "C")
+
+	#============================================================================
+	#
+	#============================================================================
+	def getSimilarItems(self, server, itemId, limit=6):
+		"""Best-effort "you might also like" carousel via Plex's related-hub
+		endpoint. Unlike Jellyfin's flat /Items/{id}/Similar, Plex nests
+		results under <Hub> elements, so this searches recursively
+		(.//Video) instead of reusing getMediaData() (which only looks at
+		direct children of the MediaContainer). DP_PlexLibrary cannot be
+		imported in the automated test harness (see
+		scripts/test_real_startup.py's note on why - real filesystem-path
+		code runs at class-body scope), so this is reviewed by inspection,
+		not unit-tested, same as rateItem()/reportPlaybackProgress().
+		"""
+		printl("", self, "S")
+
+		if not server or not itemId:
+			printl("", self, "C")
+			return []
+
+		try:
+			url = "%s://%s/library/metadata/%s/related" % (self.http, server, itemId)
+			tree = self.getXmlTreeFromUrl(url)
+			videoNodes = tree.findall(".//Video")[:limit] if tree is not None else []
+
+			entries = []
+			for entry in videoNodes:
+				entryData = dict(entry.items())
+				entryData['server'] = str(server)
+				entryData['tagType'] = "Video"
+				entryData['genre'] = " / ".join(self.getListFromTag(entry, "Genre"))
+				entryData['director'] = " / ".join(self.getListFromTag(entry, "Director"))
+				entryData['cast'] = " / ".join(self.getListFromTag(entry, "Role"))
+				entryData = self.getImageData(entryData, entry, server)
+				entries.append(self.getFullListEntry(entryData, url))
+		except Exception as e:
+			printl("could not fetch similar-title suggestions: " + str(e), self, "W")
+			printl("", self, "C")
+			return []
+
+		printl("", self, "C")
+		return entries
+
+	def _fetchHeroBucket(self, urlPath, limit, heroKind):
+		"""One hero bucket (see getHeroSuggestions()) - urlPath is one of
+		Plex's own hub endpoints ("/library/onDeck", "/library/
+		recentlyAdded", both already used elsewhere for the "On Deck"/"New"
+		menu rows), heroKind tags every entryData so DP_ServerMenu can show
+		a "Continue"/"Suggested" badge on the hero banner."""
+		if not self.g_currentServer:
+			return []
+
+		url = "%s://%s%s" % (self.http, self.g_currentServer, urlPath)
+		tree = self.getXmlTreeFromUrl(url)
+		videoNodes = tree.findall(".//Video")[:limit] if tree is not None else []
+
+		entries = []
+		for entry in videoNodes:
+			entryData = dict(entry.items())
+			entryData['server'] = str(self.g_currentServer)
+			entryData['tagType'] = "Video"
+			entryData['genre'] = " / ".join(self.getListFromTag(entry, "Genre"))
+			entryData['director'] = " / ".join(self.getListFromTag(entry, "Director"))
+			entryData['cast'] = " / ".join(self.getListFromTag(entry, "Role"))
+			entryData['heroKind'] = heroKind
+			entryData = self.getImageData(entryData, entry, self.g_currentServer)
+			entries.append(self.getFullListEntry(entryData, url))
+		return entries
+
+	def getHeroSuggestions(self, limit=6):
+		"""Plex's "On Deck" hub (in-progress/next-up, already used by
+		getAllSections()'s own On Deck row) for the "continue" bucket, and
+		"recentlyAdded" (its own "New" row) for "suggested" once On Deck
+		runs out of items - the concrete fetch behind DP_MediaLibrary.
+		getHeroSuggestions() (see there for why this is its own method
+		rather than something DP_MainMenu calls directly). Same
+		reviewed-by-inspection-only caveat as getSimilarItems() above."""
+		printl("", self, "S")
+
+		try:
+			entries = self._fetchHeroBucket("/library/onDeck", limit, "continue")
+			if len(entries) < limit:
+				seenKeys = {e[1].get('ratingKey') for e in entries}
+				for entry in self._fetchHeroBucket("/library/recentlyAdded", limit - len(entries), "suggested"):
+					if entry[1].get('ratingKey') not in seenKeys:
+						entries.append(entry)
+		except Exception as e:
+			printl("could not fetch hero suggestions: " + str(e), self, "W")
+			printl("", self, "C")
+			return []
+
+		printl("", self, "C")
+		return entries
+
+	def getRatingKind(self) -> str:
+		return RATING_KIND_STARS
+
+	def submitRating(self, server, itemId, value):
+		self.rateItem(server, itemId, value)
+
+	#========================================================================
+	# Sets this Plex user's personal star rating for an item (0-10, i.e.
+	# half-star steps on a 5-star scale) - DP_Player's FAV-key rating panel.
+	#========================================================================
+	def rateItem(self, server, ratingKey, rating0to10):
+		"""rating0to10=None removes the rating entirely - Plex's own API
+		semantics for the /:/rate endpoint when the "rating" parameter is
+		omitted, used by the FAV panel's RED/BLUE "clear vote" action."""
+		printl("", self, "S")
+
+		url = self.http + "://" + str(server) + "/:/rate?key=" + str(ratingKey) + "&identifier=com.plexapp.plugins.library"
+		if rating0to10 is not None:
+			url += "&rating=" + str(rating0to10)
+		result = self.doRequest(url, myType="PUT")
+
+		printl("", self, "C")
+		return result
+
+	#========================================================================
+	# Tells Plex where playback stopped - DP_Player.handleProgress() calls
+	# this the same way for every backend now, instead of branching on
+	# server type. Folds in what used to be handleProgress()'s own
+	# Plex-specific logic: the "legacy PMS <0.9.8.0 / not connected via
+	# plex.tv" :progress//:scrobble fallback is kept for that rare case, but
+	# in practice DP_Player.startTimelineWatcher() is called unconditionally
+	# before any playback begins (see play()/resumePlayerData()), so the
+	# modern /:/timeline report below is what actually runs essentially
+	# always.
+	#========================================================================
+	def reportPlaybackProgress(self, server, itemId, currentTimeSec, totalTimeSec, stopped=False):
+		"""DP_Player.startTimelineWatcher() is called unconditionally before
+		any playback begins (see play()/resumePlayerData()), so this is
+		always reached with a live timeline session - the older ":progress"/
+		":scrobble" fallback (for a "legacy PMS <0.9.8.0 / not connected via
+		plex.tv" server, from when this call site used to branch on
+		self.timelineWatcher being None) is dead code under the current
+		player and was dropped rather than carried into the shared
+		DP_MediaLibrary interface.
+		"""
+		printl("", self, "S")
+
+		try:
+			urlPath = server + "/:/timeline?containerKey=/library/sections/onDeck&key=/library/metadata/" + str(itemId) + "&ratingKey=" + str(itemId)
+			urlPath += "&state=stopped&time=" + str(int(currentTimeSec) * 1000) + "&duration=" + str(int(totalTimeSec) * 1000)
+			self.doRequest(urlPath)
+		except Exception as e:
+			printl("could not report playback progress: " + str(e), self, "W")
+
+		printl("", self, "C")
+
 	#========================================================================
 	#
 	#========================================================================
@@ -1548,9 +1945,9 @@ class PlexLibrary(Screen):
 			#check if the file can be found locally
 			if myType == "unixfile" or myType == "winfile" or myType == "UNC":
 
-				tree = getXmlContent(config.plugins.dreamplex.configfolderpath.value + "mountMappings")
+				tree = getXmlContent(self.settings.configFolderPath.getValue() + "mountMappings")
 
-				self.serverID = str(self.g_serverConfig.id.value)
+				self.serverID = str(self.g_serverConfig.id().getValue())
 				printl("serverID: " + str(self.serverID), self, "D")
 
 				if tree:
@@ -1677,7 +2074,7 @@ class PlexLibrary(Screen):
 
 			printl("", self, "C")
 			return "file:" + myFile
-		except:
+		except Exception:
 			self.locations += str(myFile) + "\n"
 			printl("", self, "C")
 			return False
@@ -1731,7 +2128,7 @@ class PlexLibrary(Screen):
 		for part in fromParts:
 			try:
 				partitem = part.get('id'), part.get('file')
-			except:
+			except Exception:
 				pass
 
 		tags = tree.getiterator('Stream') if PY2 else tree.iter('Stream')
@@ -1774,7 +2171,7 @@ class PlexLibrary(Screen):
 									'partid': partitem[0]
 							}
 						printl("selectedSubtitle = " + str(selectedSubtitle), self, "D")
-				except:
+				except Exception:
 					printl("Unable to read subtitles due to XML parsing error", self, "E")
 
 		printl("", self, "C")
@@ -1804,7 +2201,7 @@ class PlexLibrary(Screen):
 		for part in fromParts:
 			try:
 				partitem = part.get('id'), part.get('file')
-			except:
+			except Exception:
 				pass
 
 		tags = tree.getiterator('Stream') if PY2 else tree.iter('Stream')
@@ -1853,7 +2250,7 @@ class PlexLibrary(Screen):
 					printl("subtitle = " + str(subtitle), self, "D")
 
 					subtitlesList.append(subtitle)
-				except:
+				except Exception:
 					printl("Unable to set subtitles due to XML parsing error", self, "E")
 					pass
 
@@ -1886,7 +2283,7 @@ class PlexLibrary(Screen):
 		for part in fromParts:
 			try:
 				partitem = part.get('id'), part.get('file')
-			except:
+			except Exception:
 				pass
 
 		tags = tree.getiterator('Stream') if PY2 else tree.iter('Stream')
@@ -1905,7 +2302,7 @@ class PlexLibrary(Screen):
 								}
 
 					audioList.append(audio)
-				except:
+				except Exception:
 					printl("Unable to set audio due to XML parsing error", self, "E")
 					pass
 
@@ -1984,6 +2381,11 @@ class PlexLibrary(Screen):
 			videoData['viewOffset'] = fromVideo.get('viewOffset', 0)
 			videoData['duration'] = fromVideo.get('duration', 0)
 			videoData['contentRating'] = fromVideo.get('contentRating', "")
+			videoData['rating'] = fromVideo.get('rating', "")
+			videoData['personalRating'] = fromVideo.get('userRating', "")
+			videoData['genre'] = " / ".join(self.getListFromTag(fromVideo, "Genre"))
+			videoData['director'] = " / ".join(self.getListFromTag(fromVideo, "Director"))
+			videoData['cast'] = " / ".join(self.getListFromTag(fromVideo, "Role"))
 
 			mediaData['audioCodec'] = fromVideo.get('audioCodec', "")
 			mediaData['videoCodec'] = fromVideo.get('videoCodec', "")
@@ -2002,7 +2404,7 @@ class PlexLibrary(Screen):
 									bits = part.get('key'), video.get("type") + ": " + video.get("title") + " (" + media.get("width") + "x" + media.get("height") + ")", part.get('container'), video.get("type"), video.get("duration")
 									parts.append(bits)
 									partsCount += 1
-								except:
+								except Exception:
 									pass
 				except Exception:
 					pass
@@ -2016,7 +2418,7 @@ class PlexLibrary(Screen):
 						bits = part.get('key'), part.get('file'), part.get('container'), part.get('size'), part.get('duration')
 						parts.append(bits)
 						partsCount += 1
-					except:
+					except Exception:
 						pass
 
 					if myType == "Video":
@@ -2039,7 +2441,7 @@ class PlexLibrary(Screen):
 											printl("Found preferred audio id: " + str(stream['id']), self, "I")
 											audio = stream
 											selectedAudioOffset = audioOffset
-									except:
+									except Exception:
 										pass
 
 								elif stream['streamType'] == '3':  # subtitle
@@ -2049,7 +2451,7 @@ class PlexLibrary(Screen):
 											printl("Found external subtitles id : " + str(stream['id']), self, "I")
 											external = stream
 											external['key'] = "%s://%s%s" % (self.http, server, external['key'])
-									except:
+									except Exception:
 										#Otherwise it's probably embedded
 										try:
 											if stream['selected'] == "1":
@@ -2057,7 +2459,7 @@ class PlexLibrary(Screen):
 												subCount += 1
 												subtitle = stream
 												selectedSubOffset = subOffset
-										except:
+										except Exception:
 											pass
 						else:
 								printl("Stream selection is set OFF", self, "I")
@@ -2136,6 +2538,11 @@ class PlexLibrary(Screen):
 			videoData['viewOffset'] = fromVideo.get('viewOffset', 0)
 			videoData['duration'] = fromVideo.get('duration', 0)
 			videoData['contentRating'] = fromVideo.get('contentRating', "")
+			videoData['rating'] = fromVideo.get('rating', "")
+			videoData['personalRating'] = fromVideo.get('userRating', "")
+			videoData['genre'] = " / ".join(self.getListFromTag(fromVideo, "Genre"))
+			videoData['director'] = " / ".join(self.getListFromTag(fromVideo, "Director"))
+			videoData['cast'] = " / ".join(self.getListFromTag(fromVideo, "Role"))
 
 			mediaData['audioCodec'] = fromVideo.get('audioCodec', "")
 			mediaData['videoCodec'] = fromVideo.get('videoCodec', "")
@@ -2155,7 +2562,7 @@ class PlexLibrary(Screen):
 								bits = part.get('key'), video.get("type") + ": " + video.get("title") + " (" + media.get("width") + "x" + media.get("height") + ")", part.get('container'), video.get("type"), video.get("duration"), video.get("ratingKey")
 								parts.append(bits)
 								partsCount += 1
-							except:
+							except Exception:
 								pass
 			else:
 				mainContent = tree.find(myType + '/Media')  # main content
@@ -2235,9 +2642,9 @@ class PlexLibrary(Screen):
 													printl("mh: default selectedSubtitle=" + str(self.selectedSubtitle), self, "D")
 
 													printl("mh: stream.forced=" + str(stream['forced']), self, "D")
-													printl("mh: g_serverConfig.useForcedSubtitles=" + str(self.g_serverConfig.useForcedSubtitles.value), self, "D")
+													printl("mh: g_serverConfig.useForcedSubtitles=" + str(self.g_serverConfig.useForcedSubtitles().getValue()), self, "D")
 
-													if self.g_serverConfig.useForcedSubtitles.value:
+													if self.g_serverConfig.useForcedSubtitles().getValue():
 														if stream['forced'] == '1':
 															printl("mh: setting forced g_SelectedEmbeddedSubtitleData", self, "D")
 															self.g_SelectedEmbeddedSubtitleData = self.selectedSubtitle
@@ -2318,12 +2725,12 @@ class PlexLibrary(Screen):
 			printl("We are playing a local file", self, "D")
 			playurl = url.split(':', 1)[1]
 
-			if self.g_serverConfig.srtRenamingForDirectLocal.value:
+			if self.g_serverConfig.srtRenamingForDirectLocal().getValue():
 				myFile = url.split('/')[-1]
 				myFileWoExtension = myFile[:-4]
 				extension = myFile[-3:]
 				path = playurl[:-len(myFile)]
-				language = self.g_serverConfig.subtitlesLanguage.value
+				language = self.g_serverConfig.subtitlesLanguage().getValue()
 
 				printl("path " + str(path), self, "D")
 				printl("myFileWoExtension " + str(myFileWoExtension), self, "D")
@@ -2365,7 +2772,7 @@ class PlexLibrary(Screen):
 
 		try:
 			resume = int(int(self.streams['videoData']['viewOffset']))
-		except:
+		except Exception:
 			resume = 0
 
 		printl("Resume has been set to " + str(resume), self, "I")
@@ -2423,7 +2830,7 @@ class PlexLibrary(Screen):
 				playerData["subtitleFileTemp"] = subtitleFileTemp
 			printl("mh: subtitleFileTemp=" + str(subtitleFileTemp), self, "D")
 
-		playerData["universalTranscoder"] = self.g_serverConfig.universalTranscoder.value
+		playerData["universalTranscoder"] = self.g_serverConfig.universalTranscoder().getValue()
 
 		printl("mh: playerData=" + str(playerData), self, "D")
 
@@ -2458,7 +2865,7 @@ class PlexLibrary(Screen):
 					if audio['selected'] == "1":
 						printl("Found preferred language at index " + str(stream['audioOffset']), self, "I")
 						printl("Audio set", self, "I")
-				except:
+				except Exception:
 					pass
 
 		#Try and set embedded subtitles
@@ -2473,7 +2880,7 @@ class PlexLibrary(Screen):
 					return True
 				else:
 					printl("No embedded subtitles to set", self, "I")
-			except:
+			except Exception:
 				printl("Unable to set subtitles", self, "I")
 
 		if self.g_streamControl == "1" or self.g_streamControl == "2":
@@ -2494,12 +2901,12 @@ class PlexLibrary(Screen):
 							printl("mh: setting external", self, "D")
 							printl("", self, "C")
 							return True
-					except:
+					except Exception:
 						#printl("mh: 333", self , "D")
 						pass
 				else:
 					printl("No external subtitles available. Will turn off subs", self, "I")
-			except:
+			except Exception:
 				printl("No External subs to set", self, "I")
 
 		printl("", self, "C")
@@ -2522,7 +2929,7 @@ class PlexLibrary(Screen):
 		myplex_header = getPlexHeader(self.g_sessionID)
 		myplex_header['X-Plex-Token'] = str(self.serverConfig_myplexToken)
 
-		conn = HTTPSConnection(PLEXTV_SERVER, timeout=30, port=443, context=ssl._create_unverified_context())
+		conn = HTTPSConnection(PLEXTV_SERVER, timeout=30, port=443, context=getPlexTvSslContext())
 		conn.request(url=url, method=requestType, headers=myplex_header)
 		data = conn.getresponse()
 		response = data.read()
@@ -2736,7 +3143,7 @@ class PlexLibrary(Screen):
 		#===========================================================================
 	#
 	#===========================================================================
-	def getServerFromURL(self, url):
+	def getServerFromURL(self, url) -> str:
 		"""
 		Simply split the URL up and get the server portion, sans port
 		@ input: url, woth or without protocol
@@ -2838,15 +3245,15 @@ class PlexLibrary(Screen):
 	#===========================================================================
 	#
 	#===========================================================================
-	def get_hTokenForServer(self, server):
+	def get_hTokenForServer(self, server) -> dict[str, str]:
 		printl("", self, "S")
 
 		printl("", self, "C")
 		try:
-			return self.g_myplex_accessTokenDict[server]["hToken"]
-		except:
+			return {"X-Plex-Token": self.g_myplex_accessTokenDict[server]["hToken"]["X-Plex-Token"]}
+		except Exception:
 			revokeCacheFiles()
-			return None
+			return {}
 
 	#===========================================================================
 	#
@@ -2857,7 +3264,7 @@ class PlexLibrary(Screen):
 		printl("", self, "C")
 		try:
 			return self.g_myplex_accessTokenDict[server]["aToken"]
-		except:
+		except Exception:
 			revokeCacheFiles()
 			return None
 
@@ -2870,7 +3277,7 @@ class PlexLibrary(Screen):
 		printl("", self, "C")
 		try:
 			return self.g_myplex_accessTokenDict[server]["uToken"]
-		except:
+		except Exception:
 			revokeCacheFiles()
 			return None
 
@@ -2912,7 +3319,7 @@ class PlexLibrary(Screen):
 	def getUniversalTranscoderSettings(self):
 		printl("", self, "S")
 
-		quality = int(self.g_serverConfig.uniQuality.value)
+		quality = int(self.g_serverConfig.uniQuality().getValue())
 
 		if quality == 0:
 			#420x240, 320kbps
@@ -2995,7 +3402,7 @@ class PlexLibrary(Screen):
 		streamURL = ""
 		transcode = []
 		ts = int(time())
-		if self.g_serverConfig.universalTranscoder.value:
+		if self.g_serverConfig.universalTranscoder().getValue():
 			videoQuality, videoResolution, maxVideoBitrate = self.getUniversalTranscoderSettings()
 			printl("Setting up HTTP Stream with universal transcoder", self, "I")
 			streamPath = "video/:/transcode/universal"

@@ -26,10 +26,11 @@ You should have received a copy of the GNU General Public License
 #===============================================================================
 from enigma import ePythonMessagePump
 
-from BaseHTTPServer import HTTPServer
+from http.server import HTTPServer
 from threading import Thread
 
 from Components.config import config
+from . import Singleton
 
 from .DPH_PlexGdm import PlexGdm
 from .DPH_RemoteHandler import RemoteHandler
@@ -43,11 +44,11 @@ from .__common__ import printl2 as printl, getMyIp
 #===============================================================================
 
 
-class HttpDeamon(Thread):
+class HttpDaemon(Thread):
 
 	session = None
 	httpd = None
-	deamonState = None
+	daemonState = None
 
 	#===========================================================================
 	#
@@ -122,7 +123,7 @@ class HttpDeamon(Thread):
 	#===========================================================================
 	#
 	#===========================================================================
-	def prepareDeamon(self):
+	def prepareDaemon(self):
 		printl("", self, "S")
 
 		Thread.__init__(self)
@@ -133,7 +134,7 @@ class HttpDeamon(Thread):
 		self.myIp = getMyIp()
 
 		if not self.myIp:
-			self.deamonState = False
+			self.daemonState = False
 			self.registered = False
 			return
 
@@ -142,8 +143,8 @@ class HttpDeamon(Thread):
 			self.client = PlexGdm()
 			self.client.setClientDetails()
 			self.client.start_registration()
-		except:
-			self.deamonState = False
+		except Exception:
+			self.daemonState = False
 			return
 
 		if self.client.check_client_registration():
@@ -153,23 +154,23 @@ class HttpDeamon(Thread):
 			self.registered = False
 			printl("Unsuccessfully registered", self, "D")
 
-		self.deamonState = True
+		self.daemonState = True
 
 		printl("", self, "C")
 
 	#===========================================================================
 	#
 	#===========================================================================
-	def getDeamonState(self):
+	def getDaemonState(self):
 		printl("", self, "S")
 
 		printl("", self, "C")
-		return self.registered, self.deamonState
+		return self.registered, self.daemonState
 
 	#===========================================================================
 	#
 	#===========================================================================
-	def stopRemoteDeamon(self):
+	def stopRemoteDaemon(self):
 		printl("", self, "S")
 
 		self.client.stop_all()
@@ -184,7 +185,7 @@ class HttpDeamon(Thread):
 	#def runHttp(session, playerCallback, HandlerClass = MyHandler,ServerClass = HTTPServer, protocol="HTTP/1.0"):
 	def run(self):
 		printl("", __name__, "S")
-		server_address = ("", config.plugins.dreamplex.remotePort.value)
+		server_address = ("", Singleton().getSettingsInstance().remotePort.getValue())
 
 		self.HandlerClass.protocol_version = self.protocol
 		self.HandlerClass.session = self.session

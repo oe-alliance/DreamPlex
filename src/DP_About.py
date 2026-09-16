@@ -6,7 +6,7 @@ and jbleyel 2021
 Original -> https://github.com/oe-alliance/DreamPlex
 Fork -> https://github.com/oe-alliance/DreamPlex
 
-Some of the code is from other plugins:
+Some code is from other plugins:
 all credits to the coders :-)
 
 DreamPlex Plugin is free software: you can redistribute it and/or modify
@@ -26,13 +26,13 @@ You should have received a copy of the GNU General Public License
 #=================================
 from Components.ActionMap import ActionMap
 from Components.Label import Label
-from Components.config import config
 
 from Screens.Screen import Screen
+from . import Singleton
 
 from .__common__ import printl2 as printl, getVersion, getSkinAuthors
-from .__init__ import _  # _ is translation
-from .plugin import getHttpDeamonInformation
+from . import _  # _ is translation
+from .plugin import getHttpDaemonInformation
 
 #===============================================================================
 #
@@ -90,8 +90,11 @@ class DPS_About(Screen):
 	def getLeftText(self):
 		printl("", self, "S")
 
-		if config.plugins.dreamplex.remoteAgent.value:
-			state, information = getHttpDeamonInformation()
+		remoteAgent : bool = Singleton().getSettingsInstance().remoteAgent.getValue()
+
+		information: bool = False
+		if remoteAgent:
+			state, information = getHttpDaemonInformation()
 
 		content = ""
 		content += "Information\n\n"
@@ -107,7 +110,7 @@ class DPS_About(Screen):
 		content += "\t jbleyel \n"
 		content += "\n\nIf you like my work you can buy me a beer :-) \n\ndondavici@gmail.com"
 
-		if config.plugins.dreamplex.remoteAgent.value:
+		if remoteAgent:
 			content += "\n\nRemotePlayer: " + str(information)
 
 		printl("", self, "C")

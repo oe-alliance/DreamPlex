@@ -24,7 +24,6 @@ You should have received a copy of the GNU General Public License
 #===============================================================================
 # IMPORT
 #===============================================================================
-import threading
 
 from os import remove
 from time import sleep, localtime, time, strftime
@@ -44,10 +43,9 @@ from Tools.Directories import fileExists
 
 from Components.VolumeControl import VolumeControl
 from Components.AVSwitch import AVSwitch
-from Components.config import config
 from Components.Pixmap import Pixmap
 from Components.Label import Label
-from Components.ActionMap import ActionMap
+from Components.ActionMap import ActionMap, HelpableActionMap
 from Components.Slider import Slider
 from Components.Sources.StaticText import StaticText
 from Components.Language import language
@@ -59,13 +57,18 @@ from Screens.InfoBarGenerics import InfoBarShowHide, \
 	InfoBarServiceNotifications, InfoBarSimpleEventView, \
 	InfoBarExtensions, InfoBarNotifications, \
 	InfoBarSubtitleSupport, InfoBarServiceErrorPopupSupport, InfoBarCueSheetSupport, InfoBarMoviePlayerSummary
+from . import SettingsStorage
 
 from .DPH_Singleton import Singleton
 #from .DP_Summary import DreamplexPlayerSummary
 from .DPH_ScreenHelper import DPH_ScreenHelper
+from .DPH_NextEpisode import DPH_NextEpisode
+from .DPH_PlaybackInfo import DPH_PlaybackInfo
+from .DPH_RatingPanel import DPH_RatingPanel
+from .DP_MediaLibrary import RATING_KIND_NONE, RATING_KIND_FAVORITE, RATING_KIND_STARS
 
 from .__common__ import printl2 as printl, convertSize, encodeThat
-from .__init__ import _  # _ is translation
+from . import _  # _ is translation
 
 
 # we need this to see the states for subtitles also in audioselction with yellow button
@@ -111,6 +114,24 @@ class myAudioSelection(AudioSelection):
 #===============================================================================
 #
 #===============================================================================
+
+
+def _nextPlexStarRating(prevDigit, prevIsFull, digit):
+	"""Pure logic behind the Plex star-rating panel's digit keys (1-5): each
+	digit selects which star to fill up to, alternating half/full on
+	repeated presses of that same digit; pressing a different digit always
+	starts that new position at half. Returns (newDigit, newIsFull,
+	newValue), where newValue is the resulting 0-10 rating (half-star
+	steps). Kept standalone from DP_Player so it can be unit-tested without
+	a live player instance.
+	"""
+	if prevDigit == digit:
+		newIsFull = not prevIsFull
+	else:
+		newIsFull = False
+
+	newValue = digit * 2 - (0 if newIsFull else 1)
+	return digit, newIsFull, newValue
 
 
 class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
@@ -166,7 +187,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	#
 	#===========================================================================
 
-	def __init__(self, session, listViewList, currentIndex, libraryName, autoPlayMode, resumeMode, playbackMode, forceResume=False, isExtraData=False, sessionData=None, subtitleData=None, startedByRemotePlayer=False):
+	def __init__(self, session, listViewList, currentIndex, libraryName, autoPlayMode, resumeMode, playbackMode, forceResume=False, isExtraData=False, sessionData=None, subtitleData=None, startedByRemotePlayer=False, autoSelectFirstMedia=False):
 		printl("", self, "S")
 		Screen.__init__(self, session)
 
@@ -185,6 +206,8 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 			x.__init__(self)
 		printl("currentIndex: " + str(currentIndex), self, "D")
 
+		self.settings: SettingsStorage = Singleton().getSettingsInstance()
+
 		self.listViewList = listViewList
 		self.currentIndex = currentIndex
 		self.listCount = len(self.listViewList) - 1  # list starts counting with 0
@@ -197,6 +220,14 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		self.sessionData = sessionData
 		self.subtitleData = subtitleData
 		self.startedByRemotePlayer = startedByRemotePlayer
+		# The Carousel hero's BLUE-key shortcut promises "play now" -
+		# stopping at an unlabeled ChoiceBox for a multi-version item (see
+		# selectMedia()) instead reads as "nothing happened": the poster/
+		# title are already on screen from the constructor args below, the
+		# ChoiceBox itself is easy to miss, and STOP from there abandons
+		# playback entirely (see DP_ServerMenu._playHeroItem()). Set only by
+		# that one caller - every other entry point keeps the picker.
+		self.autoSelectFirstMedia = autoSelectFirstMedia
 		self.onChangedEntry = []
 
 		printl("mh: subtitleData=" + str(subtitleData), self, "D")
@@ -206,7 +237,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 		self.libraryName = libraryName
 
-		self.plexInstance = Singleton().getPlexInstance()
+		self.plexInstance = Singleton().getMediaLibrary()
 
 		self.initScreen(self.skinName)
 
@@ -219,17 +250,96 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		self.bitrate = 0
 		self.endReached = False
 
-		self["actions"] = ActionMap(["DPS_Player"],
+		# HelpableActionMap (not plain ActionMap): descriptions below feed
+		# the native Help-key legend. HelpMenu only lists an action if its
+		# description is a non-empty string, so this is what makes these
+		# bindings show up under Help at all - every other HelpableActionMap
+		# in this codebase (DP_View, DP_MainMenu, ...) was left with all-""
+		# descriptions and so contributes nothing to Help either.
+		self["actions"] = HelpableActionMap(self, ["DPS_Player"],
 		{
-		#"ok": self.ok,
-		"cancel": self.hide,
-		"exitFunction": self.exitFunction,
-		"keyTv": self.leavePlayer,
-		"stop": self.leavePlayer,
-		"seekManual": self.seekManual,
-		"playNext": self.playNextEntry,
-		"playPrevious": self.playPreviousEntry,
+		# keymap.xml maps KEY_OK to "ok" within the "DPS_Player" context,
+		# which shadows the system-wide "InfobarActions" context (KEY_OK ->
+		# "toggleShow") that InfoBarShowHide's own ActionMap listens on - so
+		# without a handler here OK does nothing at all, instead of falling
+		# through to the native show/hide toggle. This map's priority (-2)
+		# is higher than nextEpisodeActions' (-1), so _onKeyOk has to defer
+		# to acceptNextEpisode itself while that prompt is up, or it would
+		# permanently shadow "OK accepts the next episode" instead.
+		"ok": (self._onKeyOk, _("Confirm rating / accept suggested title")),
+		"cancel": (self._onKeyCancel, _("Cancel rating / dismiss suggestion")),
+		"exitFunction": (self.exitFunction, _("Exit player")),
+		"keyTv": (self.leavePlayer, _("Stop and return")),
+		"stop": (self.leavePlayer, _("Stop and return")),
+		# RED/BLUE both map to "seekManual" - while the rating panel is up,
+		# RED/BLUE clear the pending vote instead (same reasoning as
+		# _onKeyOk/_onKeyCancel: this map's priority (-2) beats ratingActions'
+		# (-1), so the panel-aware check has to live in the handler that
+		# actually runs).
+		"seekManual": (self._onKeyRed, _("Manual seek / clear rating")),
+		"playNext": (self.playNextEntry, _("Play next episode")),
+		"playPrevious": (self.playPreviousEntry, _("Play previous episode")),
+		"info": (self.showPlaybackInfo, _("Show playback info (long press: rate/favorite)")),
+		"favorite": (self.showRatingPanel, _("Rate / mark as favorite")),
+		# LEFT/RIGHT browse the "you might also like" carousel while it is
+		# up, same reasoning as seekManual/_onKeyRed above - keymap.xml has
+		# no LEFT/RIGHT binding at all in the DPS_Player context otherwise
+		# (InfoBarSeek's own seekBack/seekFwd come from a *different*
+		# context, "InfobarSeekActions", so normal arrow-key seeking outside
+		# the carousel is untouched by adding this here).
+		"left": (self._onKeyLeft, _("Seek back / previous suggestion")),
+		"right": (self._onKeyRight, _("Seek forward / next suggestion")),
+		# UP/DOWN scroll the carousel's summary text when it does not fit
+		# the widget - a no-op outside the carousel (nothing else in
+		# DP_Player used these keys before).
+		"up": (self._onKeyUp, _("Scroll suggestion text up")),
+		"down": (self._onKeyDown, _("Scroll suggestion text down")),
 		}, -2)
+
+		# Second trigger for the same Help screen, on LIST - see
+		# DPH_ScreenHelper.DPH_Screen for why (remotes whose HELP button
+		# does not reach the box as KEY_HELP).
+		self["helpShortcut"] = HelpableActionMap(self, "DP_HelpShortcut",
+		{
+		"helpAlt": (self.showHelp, _("Show help")),
+		}, -2)
+
+		self.playbackInfoDialog = None
+		self.playbackInfoShown = False
+
+		# --- FAV-key rating/favorite panel (see DPH_RatingPanel) ---
+		self.ratingPanelDialog = None
+		self.ratingPanelShown = False
+		self.ratingKind = None
+		self.pendingFavorite = None        # Jellyfin: True/False while the panel is open
+		self.pendingRatingDigit = None     # Plex: last star digit (1-5) pressed
+		self.pendingRatingIsFull = False   # Plex: half/full toggle for that digit
+		self.pendingRatingValue = None     # Plex: resulting 0-10 rating
+		self.pendingRatingClear = False    # Plex: RED/BLUE was pressed - remove the rating entirely on confirm
+
+		# InfoBarSeek's own "SeekActions" map (context "InfobarSeekActions",
+		# prio -1) claims KEY_1/3/4/6/7/9 for the configurable manual-skip
+		# feature ("seekdef:N") and, being registered first, wins ties at
+		# the same priority - so 1/3/4/6/7/9 never reached this map while it
+		# sat at -1 too (0/2/5/8, which "seekdef:" does not use, worked
+		# fine). Enigma2 resolves one physical keypress to a single winner
+		# across every bound context, by priority, not per-context
+		# independently - so beating that map means a lower (more negative)
+		# number here, not a different context name.
+		# Kept disabled until showRatingPanel()/hideRatingPanel() toggle it -
+		# HelpableActionMap only contributes to Help while enabled, so these
+		# entries correctly appear in Help only while the rating panel is
+		# actually on screen.
+		self["ratingActions"] = HelpableActionMap(self, ["DPS_Player"],
+		{
+		"1": (lambda: self._onRatingDigit(1), _("Rate 1 star / mark favorite")),
+		"2": (lambda: self._onRatingDigit(2), _("Rate 2 stars")),
+		"3": (lambda: self._onRatingDigit(3), _("Rate 3 stars")),
+		"4": (lambda: self._onRatingDigit(4), _("Rate 4 stars")),
+		"5": (lambda: self._onRatingDigit(5), _("Rate 5 stars")),
+		"0": (self._onRatingZero, _("Unmark favorite")),
+		}, -2)
+		self["ratingActions"].setEnabled(False)
 
 		self["poster"] = Pixmap()
 		self["shortDescription"] = Label()
@@ -241,11 +351,17 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		# only images >= 05.08.2010, must use try/except
 		try:
 			self.volumeControlInstance = VolumeControl.instance
-		except:
+		except Exception:
 			pass
 
 		# Poster
 		self.EXpicloadPoster = ePicLoad()
+
+		# Separate decoder for the carousel's currently-highlighted
+		# suggestion poster - it shows a different movie than the one
+		# actually playing, so it cannot share EXpicloadPoster/self.ptr
+		# above without clobbering the real poster.
+		self.similarPicLoad = ePicLoad()
 
 		# it will stop up/down/movielist buttons opening standard movielist whilst playing movie in plex
 		if "MovieListActions" in self:
@@ -261,6 +377,40 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		})
 
 		self.resume = False
+
+		# --- next episode prompt (see checkNextEpisodePrompt) ---
+		self.nextEpisodeDialog = None
+		self.nextEpisodeShown = False
+		self.nextEpisodeDismissed = False
+		self.nextEpisodeWatcher = None
+
+		# A standalone movie has no "next" playlist entry to offer through
+		# the same prompt (nextEpisodeSupported() requires isShow) - this
+		# holds a "you might also like" carousel instead: 0+ 5-tuple
+		# listing-row entries fetched once per movie via
+		# DP_MediaLibrary.getSimilarItems() and cached here. isSimilarSuggestion
+		# tells the shared ok/exitFunction/acceptNextEpisode handlers which
+		# of the two (real next episode vs. this) is currently on screen.
+		self.similarSuggestionEntries = []
+		self.similarSuggestionIndex = 0
+		self.isSimilarSuggestion = False
+
+		# Same Help-only-while-enabled reasoning as ratingActions above. Note
+		# these handlers never actually win the key dispatch (self["actions"]
+		# sits at a lower/stronger priority and "ok"/"exitFunction" there
+		# defer to acceptNextEpisode/dismissNextEpisode themselves while
+		# this prompt is shown) - this map exists to hold the enabled state
+		# Help reads, not to receive the keypress.
+		self["nextEpisodeActions"] = HelpableActionMap(self, ["DPS_Player"],
+		{
+		"ok": (self.acceptNextEpisode, _("Accept / play now")),
+		"exitFunction": (self.dismissNextEpisode, _("Dismiss")),
+		}, -1)
+		self["nextEpisodeActions"].setEnabled(False)
+
+		self.onClose.append(self.cleanupNextEpisode)
+		self.onClose.append(self.cleanupPlaybackInfo)
+		self.onClose.append(self.cleanupRatingPanel)
 
 		if not sessionData:
 			if self.isExtraData:
@@ -303,6 +453,8 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 		if self.timelineWatcher is not None:
 			self.timelineWatcher.start(5000, False)
+
+		self.startNextEpisodeWatcher()
 
 		printl("", self, "C")
 
@@ -352,7 +504,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		selection = self.listViewList[self.currentIndex]
 		printl("selection: " + str(selection), self, "D")
 
-		if "parentRatingKey" in selection[1]:  # this is the case with shows
+		if selection[1].get('parentRatingKey'):  # this is the case with shows
 			self.show_id = selection[1]['parentRatingKey']
 			self.isShow = True
 		else:
@@ -362,11 +514,26 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		self.selection = selection
 		server = selection[1]['server']
 
+		# whatever was cached belongs to the item we are leaving. whatPoster
+		# in particular: setPoster() only (re)builds it when None, which is
+		# harmless for a show (buildPosterData() keys it on show_id, the
+		# same for every episode of the same series) but was stale for a
+		# movie starting a *different* movie within the same DP_Player
+		# instance - e.g. accepting a "you might also like" suggestion -
+		# since the old file path/pointer would otherwise still be there.
+		self.whatPoster = None
+		self.similarSuggestionEntries = []
+		self.similarSuggestionIndex = 0
+
 		self.setPoster()
 
-		self.count, self.options, self.server = Singleton().getPlexInstance().getMediaOptionsToPlay(self.media_id, server, False, myType=selection[1]['tagType'])
+		self.count, self.options, self.server = Singleton().getMediaLibrary().getMediaOptionsToPlay(self.media_id, server, False, myType=selection[1]['tagType'])
 
 		self.selectMedia(self.count, self.options, self.server)
+
+		# it has to be restarted for every episode: the "already offered" and
+		# "dismissed by the user" states apply to a single episode
+		self.startNextEpisodeWatcher()
 
 		printl("", self, "C")
 
@@ -382,10 +549,10 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		self.dvdplayback = False
 
 		if not self.options:
-			response = Singleton().getPlexInstance().getLastResponse()
+			response = Singleton().getMediaLibrary().getLastResponse()
 			self.session.open(MessageBox, (_("Error:") + "\n%s") % response, MessageBox.TYPE_INFO)
 		else:
-			if count > 1:
+			if count > 1 and not self.autoSelectFirstMedia:
 				printl("we have more than one playable part ...", self, "I")
 				indexCount = 0
 				functionList = []
@@ -424,9 +591,9 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 		printl("result: " + str(result), self, "D")
 
-		Singleton().getPlexInstance().setPlaybackType(str(self.playbackMode))
+		Singleton().getMediaLibrary().setPlaybackType(str(self.playbackMode))
 
-		mediaFileUrl = Singleton().getPlexInstance().mediaType({'key': self.options[result][0], 'file': self.options[result][1]}, self.server)
+		mediaFileUrl = Singleton().getMediaLibrary().mediaType({'key': self.options[result][0], 'file': self.options[result][1]}, self.server)
 		printl("We have selected media at " + mediaFileUrl, self, "I")
 
 		self.buildPlayerData(mediaFileUrl)
@@ -439,7 +606,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	def buildPlayerData(self, mediaFileUrl, isExtraData=False):
 		printl("", self, "S")
 
-		self.playerData[self.currentIndex] = Singleton().getPlexInstance().playLibraryMedia(self.media_id, mediaFileUrl, isExtraData=isExtraData)
+		self.playerData[self.currentIndex] = Singleton().getMediaLibrary().playLibraryMedia(self.media_id, mediaFileUrl, isExtraData=isExtraData)
 
 		# populate addional data
 		self.setPlayerData()
@@ -540,7 +707,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 		try:
 			self["poster"].instance.setPixmap(self.ptr)
-		except:
+		except Exception:
 			pass
 
 		printl("", self, "C")
@@ -593,6 +760,11 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	#===========================================================================
 	def playNextEntry(self):
 		printl("", self, "S")
+
+		# this also covers the "next" key: the prompt belongs to the episode we
+		# are leaving and must be closed before switching
+		self.hideNextEpisodePrompt()
+
 		# first we write back the state of the current file to the plex server
 		self.handleProgress()
 
@@ -622,6 +794,9 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	#===========================================================================
 	def playPreviousEntry(self):
 		printl("", self, "S")
+
+		self.hideNextEpisodePrompt()
+
 		# first we write back the state of the current file to the plex server
 		self.handleProgress()
 
@@ -776,7 +951,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 						#mh : external force subs are first in list and are undefined
 						forceMatch = False
-						if self.plexInstance.getServerConfig().useForcedSubtitles.value:
+						if self.plexInstance.getServerConfig().useForcedSubtitles().getValue():
 							if foundDefined == False:
 								if myLanguage == "<unknown>":
 									if description == "UTF-8 text":
@@ -1011,6 +1186,260 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	#===========================================================================
 	#
 	#===========================================================================
+	def _onKeyOk(self):
+		if self.ratingPanelShown:
+			self._confirmRating()
+		elif self.nextEpisodeShown:
+			self.acceptNextEpisode()
+		else:
+			self.toggleShow()
+
+	#===========================================================================
+	# ESC also has to close the rating panel / playback info panel first,
+	# since both are separate dialogs (see DPH_RatingPanel/DPH_PlaybackInfo)
+	# that InfoBarShowHide's own hide() - bound here the rest of the time -
+	# knows nothing about.
+	#===========================================================================
+	def _onKeyCancel(self):
+		printl("ratingPanelShown=%s playbackInfoShown=%s" % (self.ratingPanelShown, self.playbackInfoShown), self, "D")
+		if self.ratingPanelShown:
+			self._cancelRating()
+		elif self.playbackInfoShown:
+			self.hidePlaybackInfo()
+		else:
+			self.hide()
+
+	#===========================================================================
+	# INFO/Guide key: a richer overview than the plain OK progress overlay -
+	# poster, title, plot and metadata (year/genre/rating/duration/cast) -
+	# shown for a fixed time or until ESC. self.ptr (the already-decoded
+	# poster pixmap set up by setPoster()/renderPoster()) is reused as-is,
+	# no second image decode.
+	#===========================================================================
+	def showPlaybackInfo(self):
+		printl("", self, "S")
+
+		if self.playbackInfoDialog is None:
+			self.playbackInfoDialog = self.session.instantiateDialog(DPH_PlaybackInfo)
+			self.playbackInfoDialog.onDismiss = self._onPlaybackInfoAutoDismissed
+
+		parts = []
+		year = self.videoData.get('year')
+		if year:
+			parts.append(str(year))
+		genre = self.videoData.get('genre')
+		if genre:
+			parts.append(str(genre))
+		duration = self.videoData.get('duration')
+		try:
+			totalMinutes = int(duration) // 60000  # duration is stored in ms
+		except (TypeError, ValueError):
+			totalMinutes = 0
+		if totalMinutes > 0:
+			parts.append(_("%d min") % totalMinutes)
+		contentRating = self.videoData.get('contentRating')
+		if contentRating:
+			parts.append(str(contentRating))
+		rating = self.videoData.get('rating')
+		try:
+			if rating:
+				parts.append("★ %.1f" % float(rating))
+		except (TypeError, ValueError):
+			pass
+		metaLine = "   •   ".join(parts)
+
+		extra = []
+		director = self.videoData.get('director')
+		if director:
+			extra.append(_("Director: %s") % director)
+		cast = self.videoData.get('cast')
+		if cast:
+			extra.append(_("Cast: %s") % cast)
+		summary = self.shortDescription or ""
+		if extra:
+			summary = (summary + "\n\n" if summary else "") + "\n".join(extra)
+
+		self.playbackInfoShown = True
+		self.playbackInfoDialog.showInfo(self.title, summary, metaLine, getattr(self, 'ptr', None))
+
+		printl("", self, "C")
+
+	def hidePlaybackInfo(self):
+		self.playbackInfoShown = False
+		if self.playbackInfoDialog is not None:
+			self.playbackInfoDialog.hideInfo()
+
+	def _onPlaybackInfoAutoDismissed(self):
+		self.playbackInfoShown = False
+
+	def cleanupPlaybackInfo(self):
+		if self.playbackInfoDialog is not None:
+			self.playbackInfoDialog.hideInfo()
+			self.session.deleteDialog(self.playbackInfoDialog)
+			self.playbackInfoDialog = None
+
+	#===========================================================================
+	# FAV key: opens the rating/favorite panel (see DPH_RatingPanel), seeded
+	# with the item's current favorite/rating state (videoData['isFavorite']/
+	# ['personalRating'], read alongside the rest of the metadata) so
+	# reopening the panel shows what is actually saved, not a blank slate -
+	# OK re-submits whatever is displayed, whether or not it was touched.
+	#===========================================================================
+	def showRatingPanel(self):
+		printl("", self, "S")
+
+		# No server-type check: the backend declares what kind of rating it
+		# supports (see DP_MediaLibrary.RATING_KIND_*), and this only
+		# chooses which widget matches that - a third backend reusing either
+		# kind needs no changes here at all.
+		ratingKind = self.plexInstance.getRatingKind()
+		if ratingKind == RATING_KIND_NONE:
+			printl("", self, "C")
+			return
+
+		# A long INFO/EPG press fires "info" (short-press flag) before the
+		# "favorite" long-press flag, so the Guide panel may already be up -
+		# close it rather than stacking both overlays.
+		if self.playbackInfoShown:
+			self.hidePlaybackInfo()
+
+		self.ratingKind = ratingKind
+		if self.ratingPanelDialog is None:
+			self.ratingPanelDialog = self.session.instantiateDialog(DPH_RatingPanel)
+			self.ratingPanelDialog.onDismiss = self._onRatingPanelAutoDismissed
+
+		if ratingKind == RATING_KIND_FAVORITE:
+			self.pendingFavorite = bool(self.videoData.get('isFavorite'))
+			self.ratingPanelDialog.showFavorite(self.pendingFavorite)
+		else:
+			currentRating = self.videoData.get('personalRating')
+			try:
+				currentValue = int(round(float(currentRating))) if currentRating not in (None, "") else None
+			except (TypeError, ValueError):
+				currentValue = None
+			self.pendingRatingDigit = None
+			self.pendingRatingIsFull = False
+			self.pendingRatingValue = currentValue
+			self.pendingRatingClear = False
+			self.ratingPanelDialog.showStars(currentValue)
+
+		self.ratingPanelShown = True
+		self["ratingActions"].setEnabled(True)
+
+		printl("", self, "C")
+
+	#===========================================================================
+	# Jellyfin: "1" marks favorite. Plex: digits 1-5 pick the star to fill up
+	# to, alternating half/full on repeated presses of the same digit -
+	# pressing a different digit always starts that new position at half.
+	#===========================================================================
+	def _onRatingDigit(self, digit):
+		printl("digit %d, ratingPanelShown=%s" % (digit, self.ratingPanelShown), self, "D")
+		if not self.ratingPanelShown:
+			return
+
+		if self.ratingKind == RATING_KIND_FAVORITE:
+			if digit == 1:
+				self.pendingFavorite = True
+				self.ratingPanelDialog.showFavorite(True)
+			return
+
+		self.pendingRatingDigit, self.pendingRatingIsFull, self.pendingRatingValue = \
+			_nextPlexStarRating(self.pendingRatingDigit, self.pendingRatingIsFull, digit)
+		self.pendingRatingClear = False
+		self.ratingPanelDialog.showStars(self.pendingRatingValue)
+
+	#===========================================================================
+	# RED/BLUE (Plex only): clear the rating entirely on confirm, rather than
+	# setting it to a value - "no rating" is a different server-side state
+	# from "1 star" for Plex, and there was previously no way to get back to
+	# it once you had rated something.
+	#===========================================================================
+	def _onKeyRed(self):
+		if self.ratingPanelShown:
+			if self.ratingKind == RATING_KIND_STARS:
+				self._clearRating()
+			else:
+				self._onRatingZero()
+		else:
+			self.seekManual()
+
+	def _clearRating(self):
+		if not self.ratingPanelShown or self.ratingKind != RATING_KIND_STARS:
+			return
+
+		self.pendingRatingDigit = None
+		self.pendingRatingIsFull = False
+		self.pendingRatingValue = None
+		self.pendingRatingClear = True
+		self.ratingPanelDialog.showStars(None, cleared=True)
+
+	#===========================================================================
+	# Jellyfin only: "0" unmarks favorite.
+	#===========================================================================
+	def _onRatingZero(self):
+		if not self.ratingPanelShown or self.ratingKind != RATING_KIND_FAVORITE:
+			return
+
+		self.pendingFavorite = False
+		self.ratingPanelDialog.showFavorite(False)
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def _confirmRating(self):
+		printl("", self, "S")
+
+		try:
+			# submitRating()'s value meaning depends entirely on ratingKind
+			# (see DP_MediaLibrary.submitRating) - DP_Player never calls a
+			# backend-specific method (setFavorite/rateItem) directly.
+			#
+			# videoData was read once, when playback started - it is not
+			# re-fetched from the server after this, so it has to be updated
+			# here too or a re-opened panel (showRatingPanel() seeds itself
+			# from videoData) would keep showing the pre-edit value for the
+			# rest of this playback session even though the server-side
+			# value did change.
+			if self.ratingKind == RATING_KIND_FAVORITE and self.pendingFavorite is not None:
+				self.plexInstance.submitRating(self.server, self.id, self.pendingFavorite)
+				self.videoData['isFavorite'] = self.pendingFavorite
+			elif self.ratingKind == RATING_KIND_STARS and self.pendingRatingClear:
+				self.plexInstance.submitRating(self.server, self.id, None)
+				self.videoData['personalRating'] = None
+			elif self.ratingKind == RATING_KIND_STARS and self.pendingRatingValue is not None:
+				self.plexInstance.submitRating(self.server, self.id, self.pendingRatingValue)
+				self.videoData['personalRating'] = self.pendingRatingValue
+		except Exception as e:
+			printl("could not submit rating: " + str(e), self, "W")
+
+		self.hideRatingPanel()
+
+		printl("", self, "C")
+
+	def _cancelRating(self):
+		self.hideRatingPanel()
+
+	def hideRatingPanel(self):
+		self.ratingPanelShown = False
+		self["ratingActions"].setEnabled(False)
+		if self.ratingPanelDialog is not None:
+			self.ratingPanelDialog.hideRating()
+
+	def _onRatingPanelAutoDismissed(self):
+		printl("rating panel dismissed (explicit close or its own display timer)", self, "D")
+		self.ratingPanelShown = False
+		self["ratingActions"].setEnabled(False)
+
+	def cleanupRatingPanel(self):
+		if self.ratingPanelDialog is not None:
+			self.ratingPanelDialog.hideRating()
+			self.session.deleteDialog(self.ratingPanelDialog)
+			self.ratingPanelDialog = None
+
+	#===========================================================================
+	#
+	#===========================================================================
 	def toggleShow(self):
 		#printl("", self, "S")
 
@@ -1047,7 +1476,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 			if self.bufferPercent == 0 and not self.endReached and (bufferInfo[1] != 0 and bufferInfo[2] != 0):
 				self.bufferEmpty()
-		except:
+		except Exception:
 			pass
 
 		#printl("", self, "C")
@@ -1159,6 +1588,16 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 							printl("duration 0", self, "D")
 							return
 						length = r[1]
+					else:
+						# service.seek().getLength() reported an error (r[0]
+						# truthy) instead of a duration - length never gets
+						# set, so if this falls through to the seek below it
+						# would crash on an undefined name. Logged so a
+						# streamed-URL seek failure is diagnosable instead of
+						# silently doing nothing.
+						printl("getLength() failed, r=" + str(r), self, "W")
+						printl("", self, "C")
+						return
 
 					r = seek.getPlayPosition()
 					if not r[0]:
@@ -1175,11 +1614,14 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 							self.mhSeekHack = 0
 					else:
+						# this was the previously-silent exit: getPlayPosition()
+						# reporting an error here aborts the seek with no clue
+						# why - now logged with the raw (error, value) tuple.
+						printl("getPlayPosition() failed, r=" + str(r), self, "W")
 						printl("", self, "C")
 						return
-
 					elapsed = self.resumeStamp * 90000
-					printl("seeking to " + str(time) + " length " + str(length) + " ", self, "D")
+					printl("seeking to " + str(elapsed) + " length " + str(length) + " ", self, "D")
 
 					#mh //if elapsed < 90000:
 					#mh //	printl("skip seeking < 10s", self, "D")
@@ -1188,6 +1630,8 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 					self.doSeek(int(elapsed))
 					self.resumeStamp = None
+				else:
+					printl("service.seek() returned None - service does not support seeking", self, "W")
 
 		except Exception as e:
 			printl("exception: " + str(e), self, "W")
@@ -1237,10 +1681,31 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	def exitFunction(self):
 		printl("", self, "S")
 
-		if config.plugins.dreamplex.exitFunction.value == "2":
+		# "exitFunction" is bound here at priority -2, ahead of
+		# nextEpisodeActions' own "exitFunction" (-1) - on a remote whose
+		# EXIT/ESC button generates KEY_EXIT rather than KEY_ESC (common),
+		# this ran unconditionally and left the player instead of just
+		# closing whatever overlay is currently up, exactly the same class
+		# of bug _onKeyCancel already guards against for KEY_ESC.
+		if self.ratingPanelShown:
+			self._cancelRating()
+			printl("", self, "C")
+			return
+
+		if self.playbackInfoShown:
+			self.hidePlaybackInfo()
+			printl("", self, "C")
+			return
+
+		if self.nextEpisodeShown:
+			self.dismissNextEpisode()
+			printl("", self, "C")
+			return
+
+		if self.settings.exitFunction.getValue() == "2":
 			self.close((True, (self.playerData, self.ptr, self.id, self.currentIndex)))
 
-		elif config.plugins.dreamplex.exitFunction.value == "1":
+		elif self.settings.exitFunction.getValue() == "1":
 			self.leavePlayer()
 
 		printl("", self, "C")
@@ -1260,8 +1725,15 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		if self.playbackType == "1":
 			self.stopTranscoding()
 
-		if config.plugins.dreamplex.lcd4linux.value:
-			remove(self.tempPoster)
+		if self.settings.lcd4linux.getValue():
+			# preparePosterForExternalUsage() always sets self.tempPoster to
+			# the intended path, even when the copy2() inside it silently
+			# failed (e.g. no poster was ever downloaded for this item) - so
+			# the file is not guaranteed to exist here.
+			try:
+				remove(self.tempPoster)
+			except OSError as e:
+				printl("could not remove tempPoster: " + str(e), self, "D")
 
 		# we destroy here all variables to be sure that they are away
 		if self.timelineWatcher is not None:
@@ -1283,6 +1755,27 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	def doEofInternal(self, playing):
 		printl("", self, "S")
 
+		# The "you might also like" carousel is not something the user
+		# already committed to (unlike the next-episode prompt below, which
+		# a running countdown always resolves one way or another before EOF
+		# can even arrive) - reaching the actual end of the movie must not
+		# yank it off screen and dump the user back at the home screen while
+		# they were still deciding. Report progress now regardless (the same
+		# call the exit path would otherwise have made) so the watched state
+		# is not left pending on however long they take to decide.
+		if self.isSimilarSuggestion:
+			self.handleProgress(EOF=True)
+			if self.settings.similarSuggestionAutoplay.getValue():
+				self.acceptNextEpisode()
+			# else: stay put, frozen on the last frame, carousel still up
+			printl("", self, "C")
+			return
+
+		# If EOF arrives while the prompt is still on screen, the countdown
+		# would fire after the advance already done here, skipping two
+		# episodes: it must be stopped before moving on.
+		self.hideNextEpisodePrompt()
+
 		if self.autoPlayMode:
 			if not self.nextPlaylistEntryAvailable():
 				self.leavePlayerConfirmed("EOF")
@@ -1297,17 +1790,358 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	#===========================================================================
 	#
 	#===========================================================================
+	#===========================================================================
+	# Next episode prompt
+	#
+	# Towards the end of an episode a panel with a countdown appears in the
+	# bottom right corner: OK plays the next episode straight away, EXIT
+	# dismisses the prompt, and if nothing happens playback moves on when the
+	# countdown expires. Both the window in which it shows up and the length
+	# of the countdown are configurable, and the feature can be turned off.
+	#
+	# The panel is a separate dialog because DP_Player inherits
+	# InfoBarShowHide: a widget of the player skin would disappear along with
+	# the infobar when the user hides it.
+	#===========================================================================
+	def startNextEpisodeWatcher(self):
+		printl("", self, "S")
+
+		self.nextEpisodeShown = False
+		self.nextEpisodeDismissed = False
+
+		if not self.nextEpisodeSupported():
+			printl("not supported for this content", self, "D")
+			printl("", self, "C")
+			return
+
+		if self.nextEpisodeWatcher is None:
+			self.nextEpisodeWatcher = eTimer()
+			self.nextEpisodeWatcher.callback.append(self.checkNextEpisodePrompt)
+
+		# one second resolution: updateTimeline runs at 5s, or 30s depending on
+		# the state, too coarse to catch the window in which to show up
+		self.nextEpisodeWatcher.start(1000, False)
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def nextEpisodeSupported(self):
+		"""A show needs a next episode to follow; a standalone movie instead
+		falls back to the "you might also like" carousel (_fetchSimilarSuggestions())."""
+		if not self.settings.showNextEpisode.getValue():
+			return False
+
+		# isShow is set by playMedia from the metadata of the item and holds
+		# for mixed libraries too; on the resume path it is not known yet, and
+		# there the library type applies
+		isShow = getattr(self, "isShow", None)
+		if isShow is None:
+			isShow = self.libraryName == "shows"
+
+		if isShow:
+			return self.nextPlaylistEntryAvailable()
+
+		return self._fetchSimilarSuggestions()
+
+	#===========================================================================
+	# Fetches (once per movie - cached in similarSuggestionEntries) the
+	# "you might also like" carousel entries for the current movie.
+	#===========================================================================
+	def _fetchSimilarSuggestions(self):
+		if self.similarSuggestionEntries:
+			return True
+
+		try:
+			self.similarSuggestionEntries = self.plexInstance.getSimilarItems(self.server, self.media_id)
+		except Exception as e:
+			printl("could not fetch similar-title suggestions: " + str(e), self, "W")
+			self.similarSuggestionEntries = []
+
+		self.similarSuggestionIndex = 0
+		return bool(self.similarSuggestionEntries)
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def checkNextEpisodePrompt(self):
+		if self.nextEpisodeShown or self.nextEpisodeDismissed:
+			return
+
+		try:
+			currentTime = int(self.getPlayPosition()[1] / 90000)
+			totalTime = int(self.getPlayLength()[1] / 90000)
+		except Exception:
+			# position not available yet: we retry on the next tick
+			return
+
+		if totalTime <= 0 or currentTime <= 0:
+			return
+
+		remaining = totalTime - currentTime
+		threshold = int(self.settings.nextEpisodeThreshold.getValue())
+
+		if remaining > threshold or remaining < 0:
+			return
+
+		self.showNextEpisodePrompt(remaining)
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def showNextEpisodePrompt(self, remaining):
+		printl("remaining: " + str(remaining), self, "S")
+
+		self.isSimilarSuggestion = bool(self.similarSuggestionEntries)
+
+		if self.isSimilarSuggestion:
+			# a suggestion is not something the user already committed to
+			# watching, unlike a real next episode - no countdown unless the
+			# user opted into autoplay, and it stays up till EXIT/OK/EOF
+			countdown = int(self.settings.nextEpisodeCountdown.getValue()) if self.settings.similarSuggestionAutoplay.getValue() else 0
+			countdown = min(countdown, max(1, remaining)) if countdown else 0
+			label = _("Suggestion in %d s")
+		else:
+			# there is no point offering to wait longer than what is left
+			countdown = min(int(self.settings.nextEpisodeCountdown.getValue()), max(1, remaining))
+			label = None
+
+		try:
+			nextTitle = self.getNextEpisodeTitle()
+		except Exception as e:
+			printl("exception: " + str(e), self, "W")
+			nextTitle = ""
+
+		if self.nextEpisodeDialog is None:
+			self.nextEpisodeDialog = self.session.instantiateDialog(DPH_NextEpisode)
+
+		self.nextEpisodeShown = True
+		self["nextEpisodeActions"].setEnabled(True)
+
+		hint = None
+		if self.isSimilarSuggestion:
+			hint = (_("LEFT/RIGHT: browse     UP/DOWN: scroll     OK: play now     EXIT: cancel")
+					if len(self.similarSuggestionEntries) > 1
+					else _("UP/DOWN: scroll     OK: play now     EXIT: cancel"))
+
+		self.nextEpisodeDialog.startCountdown(countdown, nextTitle, self.acceptNextEpisode, label=label, hint=hint)
+
+		if self.isSimilarSuggestion:
+			self._updateCarouselDisplay()
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def getNextEpisodeTitle(self):
+		if self.isSimilarSuggestion:
+			return self._similarSuggestionTitle()
+
+		nextEntry = self.listViewList[self.currentIndex + 1]
+		return str(nextEntry[1].get("title", ""))
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def _similarSuggestionTitle(self):
+		entry = self.similarSuggestionEntries[self.similarSuggestionIndex]
+		title = str(entry[1].get("title", ""))
+		total = len(self.similarSuggestionEntries)
+		if total > 1:
+			return "%d/%d   %s" % (self.similarSuggestionIndex + 1, total, title)
+		return title
+
+	#===========================================================================
+	# LEFT/RIGHT dispatch (bound in the main -2 "actions" map, see its
+	# comment on "left"/"right"): browse the carousel while it is up and has
+	# more than one entry, otherwise the native arrow-key seek.
+	#===========================================================================
+	def _onKeyLeft(self):
+		if self.isSimilarSuggestion and len(self.similarSuggestionEntries) > 1:
+			self._onSimilarLeft()
+		else:
+			self.seekBack()
+
+	def _onKeyRight(self):
+		if self.isSimilarSuggestion and len(self.similarSuggestionEntries) > 1:
+			self._onSimilarRight()
+		else:
+			self.seekFwd()
+
+	def _onKeyUp(self):
+		if self.isSimilarSuggestion and self.nextEpisodeDialog is not None:
+			self.nextEpisodeDialog.scrollSummaryUp()
+
+	def _onKeyDown(self):
+		if self.isSimilarSuggestion and self.nextEpisodeDialog is not None:
+			self.nextEpisodeDialog.scrollSummaryDown()
+
+	#===========================================================================
+	# Browsing itself: does not disturb the countdown (or lack of one).
+	#===========================================================================
+	def _onSimilarLeft(self):
+		if not self.similarSuggestionEntries:
+			return
+		self.similarSuggestionIndex = (self.similarSuggestionIndex - 1) % len(self.similarSuggestionEntries)
+		self._updateCarouselDisplay()
+
+	def _onSimilarRight(self):
+		if not self.similarSuggestionEntries:
+			return
+		self.similarSuggestionIndex = (self.similarSuggestionIndex + 1) % len(self.similarSuggestionEntries)
+		self._updateCarouselDisplay()
+
+	#===========================================================================
+	# Pushes the highlighted carousel entry's title/poster/summary to the
+	# dialog - called both for the initial display and every LEFT/RIGHT.
+	#===========================================================================
+	def _updateCarouselDisplay(self):
+		if self.nextEpisodeDialog is None:
+			return
+		entry = self.similarSuggestionEntries[self.similarSuggestionIndex]
+		summary = str(entry[1].get("summary") or entry[1].get("overview") or "")
+		posterPtr = self._loadSimilarSuggestionPoster(entry)
+		self.nextEpisodeDialog.updateTitle(self._similarSuggestionTitle())
+		self.nextEpisodeDialog.updateArt(posterPtr, summary)
+
+	#===========================================================================
+	# Downloads (once per item, cached on disk like the main poster) and
+	# decodes the poster for a single carousel entry - a synchronous, one-off
+	# call per LEFT/RIGHT press, same trade-off buildPosterData()/
+	# downloadPoster() already make for the movie actually playing.
+	#===========================================================================
+	def _loadSimilarSuggestionPoster(self, entry):
+		entryData = entry[1]
+		itemId = entryData.get('ratingKey') or entryData.get('id') or ''
+		downloadUrl = entryData.get('thumb') or ''
+		if not itemId or not downloadUrl or self.nextEpisodeDialog is None:
+			return None
+
+		try:
+			imagePrefix = Singleton().getMediaLibrary().getServerName().lower()
+			posterPath = self.settings.mediaFolderPath.getValue() + imagePrefix + "_suggestion_" + str(itemId) + "_" + self.width + "x" + self.height + "_v2.jpg"
+
+			if not fileExists(posterPath):
+				downloadUrl = downloadUrl.replace('&width=999&height=999', '&width=' + self.width + '&height=' + self.height)
+				response = self.plexInstance.doRequest(downloadUrl)
+				with open(posterPath, "wb") as local_file:
+					local_file.write(response)
+
+			widget = self.nextEpisodeDialog["carouselPoster"]
+			self.similarPicLoad.setPara([widget.instance.size().width(), widget.instance.size().height(), self.EXscale[0], self.EXscale[1], 0, 1, "#002C2C39"])
+			self.similarPicLoad.startDecode(posterPath, 0, 0, False)
+			return self.similarPicLoad.getData()
+		except Exception as e:
+			printl("could not load suggestion poster: " + str(e), self, "W")
+			return None
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def acceptNextEpisode(self):
+		printl("", self, "S")
+
+		if not self.nextEpisodeShown:
+			printl("", self, "C")
+			return
+
+		isSimilarSuggestion = self.isSimilarSuggestion
+		self.hideNextEpisodePrompt()
+
+		if isSimilarSuggestion:
+			self._playSimilarSuggestion()
+		elif self.nextPlaylistEntryAvailable():
+			self.playNextEntry()
+
+		printl("", self, "C")
+
+	#===========================================================================
+	# Replaces the current one-item "playlist" with the highlighted
+	# suggestion and plays it, exactly like starting a movie from a list -
+	# it is not spliced into listViewList (which may be a real, independently
+	# navigable folder listing for a movie that has one) to avoid disturbing
+	# the PREVIOUS/NEXT keys' normal behaviour there.
+	#===========================================================================
+	def _playSimilarSuggestion(self):
+		printl("", self, "S")
+
+		entry = self.similarSuggestionEntries[self.similarSuggestionIndex]
+		self.similarSuggestionEntries = []
+		self.similarSuggestionIndex = 0
+
+		self.handleProgress()
+		self.session.nav.stopService()
+
+		self.listViewList = [entry]
+		self.listCount = 0
+		self.currentIndex = 0
+		self.playMedia()
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def dismissNextEpisode(self):
+		printl("", self, "S")
+
+		if not self.nextEpisodeShown:
+			# no prompt on screen: EXIT falls back to its normal behaviour
+			self.exitFunction()
+			printl("", self, "C")
+			return
+
+		self.nextEpisodeDismissed = True
+		self.hideNextEpisodePrompt()
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def hideNextEpisodePrompt(self):
+		self.nextEpisodeShown = False
+		self.isSimilarSuggestion = False
+		self["nextEpisodeActions"].setEnabled(False)
+
+		if self.nextEpisodeWatcher is not None:
+			self.nextEpisodeWatcher.stop()
+
+		if self.nextEpisodeDialog is not None:
+			self.nextEpisodeDialog.stopCountdown()
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def cleanupNextEpisode(self):
+		printl("", self, "S")
+
+		if self.nextEpisodeWatcher is not None:
+			self.nextEpisodeWatcher.stop()
+			self.nextEpisodeWatcher = None
+
+		if self.nextEpisodeDialog is not None:
+			self.nextEpisodeDialog.stopCountdown()
+			self.session.deleteDialog(self.nextEpisodeDialog)
+			self.nextEpisodeDialog = None
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
 	def nextPlaylistEntryAvailable(self):
 		printl("", self, "S")
 
-		if self.listCount > 1:
-			if (self.currentIndex + 1) < self.listCount:
+		# listCount is the LAST VALID INDEX (len - 1), not the number of
+		# entries: a next entry exists unless we are already on the last one.
+		available = self.currentIndex < self.listCount
 
-				printl("", self, "C")
-				return True
-
+		printl("available: " + str(available), self, "D")
 		printl("", self, "C")
-		return False
+		return available
 
 	#===========================================================================
 	#
@@ -1320,39 +2154,18 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 			totalTime = int(self.getPlayLength()[1] / 90000)
 			printl("progress data available, ...", self, "D")
 
-			if not EOF and currentTime is not None and currentTime > 0 and totalTime is not None and totalTime > 0:
-				progress = currentTime / float(totalTime / 100.0)
-				printl("played time is %s secs of %s @ %s%%" % (currentTime, totalTime, progress), self, "I")
-			else:
-				progress = 100
-				printl("End of file reached", self, "D")
-
 			if self.timelineWatcher is not None:
 				self.timelineWatcher.stop()
 
-				urlPath = self.server + "/:/timeline?containerKey=/library/sections/onDeck&key=/library/metadata/" + self.id + "&ratingKey=" + self.id
-				urlPath += "&state=stopped&time=" + str(currentTime * 1000) + "&duration=" + str(totalTime * 1000)
-				self.plexInstance.doRequest(urlPath)
+			# Every call here (switching episode, leaving the player, EOF) is
+			# a genuine end of that item's playback, not a periodic
+			# heartbeat, so it is always reported as "stopped" - each
+			# backend decides from the position/duration it is given whether
+			# that counts as watched. No server-type check here: both
+			# backends implement DP_MediaLibrary.reportPlaybackProgress().
+			self.plexInstance.reportPlaybackProgress(self.server, self.id, currentTime, totalTime, stopped=True)
 
-			#Legacy PMS Server server support before MultiUser version v0.9.8.0 and if we are not connected via plex.tv
-			else:
-
-				http = self.plexInstance.http
-
-				if currentTime < 30:
-					printl("Less that 30 seconds, will not set resume", self, "I")
-
-				#If we are less than 95% complete, store resume time
-				elif progress < 95:
-					printl("Less than 95% progress, will store resume time", self, "I")
-					self.plexInstance.doRequest(http + "://" + self.server + "/:/progress?key=" + self.id + "&identifier=com.plexapp.plugins.library&time=" + str(currentTime * 1000))
-
-				#Otherwise, mark as watched
-				else:
-					printl("Movie marked as watched. Over 95% complete", self, "I")
-					self.plexInstance.doRequest(http + "://" + self.server + "/:/scrobble?key=" + self.id + "&identifier=com.plexapp.plugins.library")
-
-		except:
+		except Exception:
 			printl("no progress data maybe playback never started, returning ...", self, "D")
 			return
 
@@ -1397,7 +2210,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 				printl("", self, "C")
 				return True
-		except:
+		except Exception:
 
 			printl("", self, "C")
 			return False
@@ -1429,7 +2242,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 			currentTime = int(self.getPlayPosition()[1] / 90000)
 			totalTime = int(self.getPlayLength()[1] / 90000)
 			progress = int((float(currentTime) / float(totalTime)) * 100)
-		except:
+		except Exception:
 			return
 
 		if self.calculateEndingTime:
@@ -1504,7 +2317,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 			printl("", self, "C")
 			return params
 
-		except:
+		except Exception:
 
 			printl("", self, "C")
 			return False
@@ -1558,7 +2371,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 				self.nTracks = True
 				trackList = []
 
-				for i in xrange(nTracks):
+				for i in range(nTracks):
 					audioInfo = tracks.getTrackInfo(i)
 					lang = audioInfo.getLanguage()
 					printl("lang: " + str(lang), self, "D")
@@ -1654,7 +2467,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 		try:
 			position = self.seek.getPlayPosition()
-		except:
+		except Exception:
 			return None
 
 		printl("", self, "C")
@@ -1666,8 +2479,8 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	def buildPosterData(self):
 		printl("", self, "S")
 
-		mediaPath = config.plugins.dreamplex.mediafolderpath.value
-		image_prefix = Singleton().getPlexInstance().getServerName().lower()
+		mediaPath = self.settings.mediaFolderPath.getValue()
+		image_prefix = Singleton().getMediaLibrary().getServerName().lower()
 
 		self.poster_postfix = "_poster_" + self.width + "x" + self.height + "_v2.jpg"
 
@@ -1683,7 +2496,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		if not fileExists(self.whatPoster):
 			self.downloadPoster()
 
-		if config.plugins.dreamplex.lcd4linux.value:
+		if self.settings.lcd4linux.getValue():
 			self.preparePosterForExternalUsage()
 
 		printl("", self, "C")
@@ -1728,7 +2541,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	def preparePosterForExternalUsage(self):
 		printl("", self, "S")
 
-		tempPath = config.plugins.dreamplex.logfolderpath.value
+		tempPath = self.settings.logFolderPath.getValue()
 		self.tempPoster = tempPath + "dreamplex.jpg"
 
 		from shutil import copy2

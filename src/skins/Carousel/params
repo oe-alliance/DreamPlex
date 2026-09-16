@@ -1,0 +1,215 @@
+<?xml version="1.0"?>
+<xml>
+	<!-- debugMode True prevents switching back default skin when raise condition in skin occurs -->
+	<skinParams resolution="HD" compatibility="v2" skinner="Yipman alias Ipman" debugMode="False" highlighted="#e69405" normal="#ffffff"/> <!-- typea => HD, FHD -->
+
+	<!-- MAIN MENU ORIENTATION: Carousel uses a vertical sidebar instead -
+	     omitting the <menuScreen type="horizontal"> entries (present in
+	     default/BlueMod) is what keeps DPS_MainMenu/DPS_ServerMenu's
+	     g_horizontal_menu at its Python default (False), see
+	     DPH_MovingLabel.initMenu(). -->
+	<!-- <menuScreen name="main_menu" type="horizontal" .../> intentionally omitted -->
+	<!-- <menuScreen name="server_menu" type="horizontal" .../> intentionally omitted -->
+
+	<!-- SCREEN OPTIONS -->
+	<!-- if miniTv = False you can delete height and width -->
+	<screen name="main_menu" miniTv="True" height="321" width="555" />
+	<screen name="server_menu" miniTv="True" height="321" width="555" />
+	<screen name="syncer" miniTv="True" height="321" width="555" />
+	<screen name="input_box" miniTv="True" height="321" width="555" />
+	<!-- we use height and width for the poster size here -->
+	<screen name="DPS_MusicPlayer" miniTv="False" usePoster="True" height="268" width="195" />
+	<screen name="DPS_VideoPlayer" miniTv="False" usePoster="True" height="268" width="195" />
+
+	<!-- FONTS SECTION -->
+	<font path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/fonts/OpenSans.ttf" size="100" name="OpenSans" />
+
+	<!-- GUI ELEMENTS -->
+	<guiElement name="seenPic" path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/icons/seen-fs8.png" />
+	<guiElement name="startedPic" path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/icons/started-fs8.png" />
+	<guiElement name="unseenPic" path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/icons/unseen-fs8.png" />
+
+	<guiElement name="key_red" path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/buttons/btn_red-fs8.png" />
+	<guiElement name="key_green" path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/buttons/btn_green-fs8.png" />
+	<guiElement name="key_blue" path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/buttons/btn_blue-fs8.png" />
+	<guiElement name="key_yellow" path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/buttons/btn_yellow-fs8.png"/>
+
+	<guiElement name="musicCase" path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/images/cover-music-fs8.png" />
+	<guiElement name="videoCase" path="/usr/lib/enigma2/python/Plugins/Extensions/DreamPlex/skins/default/images/cover-movie-fs8.png" />
+	
+	<!-- VIEWS -->
+
+	<!-- HOW TO ...
+		Check default values here => /src/DP_ViewFactory.py
+
+		Please note that if you want that a Label of an information should move as well it has to be named like this in skin.xml
+		for example : "sound" if sound has a Label it must be a widget and the name "soundLabel"
+	-->
+
+	<!-- MOVIE VIEWS -->
+	<movieView name="List" type="List" apiLevel="1" itemsPerPage="12" screen="DPS_ViewList" backdropVideos="True" backdropVideoHeight="321" backdropVideoWidth="555" miniTv="True" posterHeight="268" posterWidth="195" backdropHeight="315" backdropWidth="560">
+		<subView name="ShowMovies">
+		<element name="miniTv" xCoord="25" yCoord="86"/>
+		</subView>
+	</movieView>
+
+	<movieView name="Backdrop" type="Backdrop" apiLevel="1" itemsPerPage="12" screen="DPS_ViewBackdrop" backdropVideos="True" backdropVideoHeight="720" backdropVideoWidth="1280" miniTv="True" posterHeight="268" posterWidth="195" backdropHeight="315" backdropWidth="560">
+		<subView name="ShowMovies">
+			<element name="backdrop" visible="True" height="720" width="1280"/>
+			<element name="miniTv" xCoord="0" yCoord="0"/>
+		</subView>
+
+	</movieView>
+	
+	-->
+
+	<!-- SHOW VIEWS -->
+	<showView name="List" type="List" apiLevel="1" itemsPerPage="12" screen="DPS_ViewList" backdropVideos="True" backdropVideoHeight="321" backdropVideoWidth="555" miniTv="True" posterHeight="268" posterWidth="195" backdropHeight="315" backdropWidth="560">
+		<subView name="ShowShows">
+			<element name="grandparentTitle" visible="False"/>
+			<element name="title" xCoord="245" yCoord="473" />
+			<element name="shortDescription" xCoord="245" yCoord="515" visible="True"/>
+			<element name="studio" xCoord="990" yCoord="494"/>
+			<element name="duration" xCoord="990" yCoord="522"/>
+		</subView>
+
+		<subView name="ShowSeasons">
+			<element name="grandparentTitle" visible="True"/>
+			<element name="title" xCoord="245" yCoord="477" />
+			<element name="shortDescription" xCoord="245" yCoord="519"/>
+			<element name="duration" visible="False"/>
+			<element name="childCount" visible="False"/>
+			<element name="studio" xCoord="990" yCoord="494"/>
+			<element name="info" visible="False"/>
+			<element name="btn_yellow" visible="False"/>
+		</subView>
+
+		<subView name="ShowEpisodes">
+			<element name="grandparentTitle" visible="False"/>
+			<element name="title" xCoord="245" yCoord="455" />
+			<element name="shortDescription" xCoord="245" yCoord="489"/>
+			<element name="studio" xCoord="990" yCoord="490"/>
+			<element name="writer" visible="True" xCoord="990" yCoord="516"/>
+			<element name="subtitles" visible="True" xCoord="990" yCoord="594"/>
+			<element name="audio" visible="True" xCoord="990" yCoord="620"/>
+			<element name="duration" visible="True" xCoord="990" yCoord="646"/>
+			<element name="codec" visible="True"/>
+			<element name="aspect" visible="True"/>
+			<element name="resolution" visible="True"/>
+			<element name="sound" visible="True"/>
+			<element name="leafCount" visible="False"/>
+			<element name="viewedLeafCount" visible="False"/>
+			<element name="unviewedLeafCount" visible="False"/>
+			<element name="info" xCoord="990" yCoord="550" visible="True"/>
+			<element name="btn_yellow" visible="True"/>
+		</subView>
+
+		<subView name="ShowEpisodesDirect">
+			<element name="grandparentTitle" visible="False"/>
+			<element name="title" xCoord="245" yCoord="455" />
+			<element name="shortDescription" xCoord="245" yCoord="489"/>
+			<element name="studio" visible="False"/>
+			<element name="genre" visible="False"/>
+			<element name="year" visible="False"/>
+			<element name="writer" visible="True" xCoord="990" yCoord="516"/>
+			<element name="subtitles" visible="True" xCoord="990" yCoord="594"/>
+			<element name="audio" visible="True" xCoord="990" yCoord="620"/>
+			<element name="duration" visible="True" xCoord="990" yCoord="646"/>
+			<element name="codec" visible="True"/>
+			<element name="aspect" visible="True"/>
+			<element name="resolution" visible="True"/>
+			<element name="sound" visible="True"/>
+			<element name="childCount" visible="False"/>
+			<element name="leafCount" visible="False"/>
+			<element name="viewedLeafCount" visible="False"/>
+			<element name="unviewedLeafCount" visible="False"/>
+
+			<element name="info" xCoord="990" yCoord="550" visible="True"/>
+			<element name="btn_yellow" visible="True"/>
+		</subView>
+	</showView>
+
+	
+	<showView name="Backdrop" type="Backdrop" apiLevel="1" itemsPerPage="12" screen="DPS_ViewBackdrop" backdropVideos="True" backdropVideoHeight="720" backdropVideoWidth="1280" miniTv="True" posterHeight="268" posterWidth="195" backdropHeight="315" backdropWidth="560">
+		<subView name="ShowShows">
+			<element name="title" xCoord="793" yCoord="250" />
+			<element name="grandparentTitle" visible="False"/>
+			<element name="studio" xCoord="893" yCoord="338"/>
+			<element name="duration" xCoord="893" yCoord="363"/>
+			<element name="shortDescription" visible="True" xCoord="556" yCoord="530"/>
+			<element name="rated" xCoord="1210" yCoord="455"/>
+		</subView>
+
+		<subView name="ShowSeasons">
+			<element name="title" xCoord="793" yCoord="263" />
+			<element name="grandparentTitle" visible="True"/>
+			
+			<element name="duration" visible="False"/>
+			<element name="childCount" visible="False"/>
+			
+			<element name="info" visible="False"/>
+			<element name="btn_yellow" visible="False"/>
+		</subView>
+
+		<subView name="ShowEpisodes">
+			<element name="title" xCoord="793" yCoord="240" />
+			<element name="grandparentTitle" visible="False"/>
+			<element name="duration" xCoord="893" yCoord="464" visible="True"/>
+			<element name="audio" visible="True"/>
+			<element name="subtitles" visible="True"/>
+			<element name="codec" visible="True"/>
+			<element name="aspect" visible="True"/>
+			<element name="resolution" visible="True"/>
+			<element name="sound" visible="True"/>
+			<element name="writer" visible="True"/>
+			<element name="rated" xCoord="1210" yCoord="474"/>
+			
+			<element name="leafCount" visible="False"/>
+			<element name="viewedLeafCount" visible="False"/>
+			<element name="unviewedLeafCount" visible="False"/>
+			
+			<element name="info" visible="True"/>
+			<element name="btn_yellow" visible="True"/>
+		</subView>
+
+		<subView name="ShowEpisodesDirect">
+			<element name="title" xCoord="793" yCoord="240" />
+			<element name="grandparentTitle" visible="False"/>
+			<element name="duration" xCoord="893" yCoord="464" visible="True"/>
+			<element name="audio" visible="True"/>
+			<element name="subtitles" visible="True"/>
+			<element name="codec" visible="True"/>
+			<element name="aspect" visible="True"/>
+			<element name="resolution" visible="True"/>
+			<element name="sound" visible="True"/>
+			<element name="writer" visible="True"/>
+			<element name="rated" xCoord="1210" yCoord="474"/>
+
+			<element name="leafCount" visible="False"/>
+			<element name="viewedLeafCount" visible="False"/>
+			<element name="unviewedLeafCount" visible="False"/>
+
+			<element name="info" visible="True"/>
+			<element name="btn_yellow" visible="True"/>
+		</subView>
+	</showView>
+	-->
+
+	<!-- MUSIC VIEWS -->
+	<musicView name="List" type="List" apiLevel="1" itemsPerPage="12" screen="DPS_ViewList" backdropVideos="True" backdropVideoHeight="321" backdropVideoWidth="555" miniTv="True" posterHeight="268" posterWidth="195" backdropHeight="315" backdropWidth="560">
+		<subView name="ShowArtists">
+
+		</subView>
+
+		<subView name="ShowAlbums">
+			<element name="info" visible="True"/>
+			<element name="leafCount" visible="True"/>
+		</subView>
+
+		<subView name="ShowTracks">
+			<element name="duration" visible="True" xCoord="620" yCoord="340"/>
+			<element name="leafCount" visible="False" />
+			<element name="duration" visible="True" />
+		</subView>
+	</musicView>
+</xml>

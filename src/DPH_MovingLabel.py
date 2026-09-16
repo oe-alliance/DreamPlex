@@ -27,6 +27,7 @@ from enigma import eTimer
 from Components.Label import MultiColorLabel
 from skin import parseColor
 from .__common__ import printl2 as printl
+from . import _  # _ is translation
 from .DPH_Singleton import Singleton
 
 

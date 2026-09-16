@@ -28,7 +28,6 @@ from enigma import eListboxPythonMultiContent, gFont, RT_HALIGN_LEFT, RT_VALIGN_
 
 from Components.ActionMap import ActionMap
 from Components.MenuList import MenuList
-from Components.config import config
 from Components.Pixmap import Pixmap
 from Components.Label import Label
 
@@ -36,9 +35,11 @@ from Screens.ChoiceBox import ChoiceBox
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Screens.VirtualKeyBoard import VirtualKeyBoard
+from . import AbstractServerSettings, ServerSettings, ServerSettingsData
+from .DP_SettingsStorage import AbstractMappingSettings
 
-from .__common__ import printl2 as printl, checkXmlFile, getXmlContent, writeXmlContent
-from .__init__ import _  # _ is translation
+from .__common__ import printl2 as printl
+from . import _  # _ is translation
 
 from .DP_PathSelector import DPS_PathSelector
 from .DP_ViewFactory import getGuiElements
@@ -47,18 +48,18 @@ from .DP_ViewFactory import getGuiElements
 # import cProfile
 #===============================================================================
 try:
-# Python 2.5
+	# Python 2.5
 	import xml.etree.cElementTree as etree
-	#printl2("running with cElementTree on Python 2.5+", __name__, "D")
+#printl2("running with cElementTree on Python 2.5+", __name__, "D")
 except ImportError:
 	try:
 		# Python 2.5
 		import xml.etree.ElementTree as etree
-		#printl2("running with ElementTree on Python 2.5+", __name__, "D")
+	#printl2("running with ElementTree on Python 2.5+", __name__, "D")
 	except ImportError:
 		etree = None
 		raise Exception
-		#printl2("something weng wrong during xml parsing" + str(e), self, "E")
+	#printl2("something weng wrong during xml parsing" + str(e), self, "E")
 
 
 #===============================================================================
@@ -69,29 +70,23 @@ class DPS_Mappings(Screen):
 	remotePath = None
 	localPath = None
 
-	def __init__(self, session, serverID, serverpaths):
+	def __init__(self, session, server: AbstractServerSettings):
 		printl("", self, "S")
 
 		Screen.__init__(self, session)
 		self["actions"] = ActionMap(["ColorActions", "SetupActions"],
-		{
-		"cancel": self.cancel,
-		"red": self.redKey,
-		"green": self.greenKey,
-		}, -1)
+									{
+										"cancel": self.cancel,
+										"red": self.redKey,
+										"green": self.greenKey,
+									}, -1)
 
 		self.guiElements = getGuiElements()
-		self.serverpaths = serverpaths
+		self.serverpaths = server.listSupportedServerMappings(self.session)
 		self.choice = None
 
-		self.location = config.plugins.dreamplex.configfolderpath.value + "mountMappings"
-
-		checkXmlFile(self.location)
-
-		tree = getXmlContent(self.location)
-
-		if tree is not None:
-			self["content"] = DPS_MappingsEntryList([], serverID, tree)
+		if server.supportServerMapping():
+			self["content"] = DPS_MappingsEntryList([], session, server)
 			self.updateList()
 			self.error = False
 		else:
@@ -160,8 +155,8 @@ class DPS_Mappings(Screen):
 			functionList.append((serverpaths, serverpaths, indexCount, ))
 			indexCount += 1
 
-		self.session.openWithCallback(self.setSelectedRemotePath, ChoiceBox, title=_("Select plex folder"), list=functionList)
-#		self.session.openWithCallback(self.setLocalPathCallback, DPS_PathSelector, "/", "mapping")
+		self.session.openWithCallback(self.setSelectedRemotePath, ChoiceBox, title=_("Select server folder"), list=functionList)
+		#        self.session.openWithCallback(self.setLocalPathCallback, DPS_PathSelector, "/", "mapping")
 
 		printl("", self, "C")
 
@@ -193,7 +188,7 @@ class DPS_Mappings(Screen):
 			if self.choice:
 				self.setRemotePathCallback(self.choice)
 			else:
-				self.session.openWithCallback(self.setRemotePathCallback, VirtualKeyBoard, title=(_("Enter your remote path segment here:")), text="C:\Videos or /volume1/videos or \\\\SERVER\\Videos\\")
+				self.session.openWithCallback(self.setRemotePathCallback, VirtualKeyBoard, title=(_("Enter your remote path segment here:")), text="C:\\Videos or /volume1/videos or \\\\SERVER\\Videos\\")
 		else:
 			self.session.open(MessageBox, _("Adding new mapping was not completed"), MessageBox.TYPE_INFO)
 			self.close()
@@ -239,17 +234,14 @@ class DPS_Mappings(Screen):
 class DPS_MappingsEntryList(MenuList):
 
 	lastMappingId = 0  # we use this to find the next id if we add a new element
-	location = None
 
-	def __init__(self, menuList, serverID, tree, enableWrapAround=True):
+	def __init__(self, menuList, session, server: AbstractServerSettings,enableWrapAround=True):
 		printl("", self, "S")
-		self.serverID = serverID
-		self.tree = tree
+		self.server = server
+		self.session = session
 		MenuList.__init__(self, menuList, enableWrapAround, eListboxPythonMultiContent)
 		self.l.setFont(0, gFont("Regular", 20))
 		self.l.setFont(1, gFont("Regular", 18))
-
-		self.location = config.plugins.dreamplex.configfolderpath.value + "mountMappings"
 
 		printl("", self, "C")
 
@@ -272,24 +264,27 @@ class DPS_MappingsEntryList(MenuList):
 
 		self.list = []
 
-		printl("serverID: " + str(self.serverID), self, "D")
-		for server in self.tree.findall("server"):
-			printl("servername: " + str(server.get('id')), self, "D")
-			if str(server.get('id')) == str(self.serverID):
+		printl("serverID: " + str(self.server.getIndex()), self, "D")
+		printl("servername: " + str(self.server.getName()), self, "D")
 
-				for mapping in server.findall('mapping'):
-					self.lastMappingId = mapping.attrib.get("id")
-					remotePathPart = mapping.attrib.get("remotePathPart")
-					localPathPart = mapping.attrib.get("localPathPart")
-					printl("self.lastMappingId: " + str(self.lastMappingId), self, "D")
-					printl("remotePathPart: " + str(remotePathPart), self, "D")
-					printl("localPathPart: " + str(localPathPart), self, "D")
+		for mapping in self.server.listMappings():
+			self.lastMappingId = mapping.id.getValue() if mapping.id.getValue() > self.lastMappingId else self.lastMappingId
+			remotePathPart = mapping.remotePath.getValue()
+			localPathPart = mapping.localPath.getValue()
+			printl("self.lastMappingId: " + str(self.lastMappingId), self, "D")
+			printl("remotePathPart: " + str(remotePathPart), self, "D")
+			printl("localPathPart: " + str(localPathPart), self, "D")
 
-					res = [mapping]
-					res.append((eListboxPythonMultiContent.TYPE_TEXT, 5, 0, 200, 20, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, str(self.lastMappingId)))
-					res.append((eListboxPythonMultiContent.TYPE_TEXT, 50, 0, 300, 20, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, str(localPathPart)))
-					res.append((eListboxPythonMultiContent.TYPE_TEXT, 355, 0, 300, 20, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, str(remotePathPart)))
-					self.list.append(res)
+			el: etree.Element = etree.Element("mapping")
+			el.set("id", str(mapping.id.getValue()))
+			el.set("remotePathPart", str(mapping.remotePath.getValue()))
+			el.set("localPathPart", str(mapping.localPath.getValue()))
+
+			res = [el,
+				   (eListboxPythonMultiContent.TYPE_TEXT, 5, 0, 200, 20, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, str(self.lastMappingId)),
+				   (eListboxPythonMultiContent.TYPE_TEXT, 50, 0, 300, 20, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, str(localPathPart)),
+				   (eListboxPythonMultiContent.TYPE_TEXT, 355, 0, 300, 20, 1, RT_HALIGN_LEFT | RT_VALIGN_CENTER, str(remotePathPart))]
+			self.list.append(res)
 
 		self.l.setList(self.list)
 		self.moveToIndex(0)
@@ -299,19 +294,15 @@ class DPS_MappingsEntryList(MenuList):
 	#===========================================================================
 	#
 	#===========================================================================
-	def deleteSelectedMapping(self, mappingId):
+	def deleteSelectedMapping(self, mappingId: str):
 		printl("", self, "S")
-		tree = getXmlContent(self.location)
-		printl("serverID: " + str(self.serverID), self, "D")
-		for server in tree.findall("server"):
-			printl("servername: " + str(server.get('id')), self, "D")
-			if str(server.get('id')) == str(self.serverID):
-
-				for mapping in server.findall('mapping'):
-					printl("mapping: " + str(mapping.get('id')), self, "D")
-					if str(mapping.get('id')) == str(mappingId):
-						server.remove(mapping)
-						writeXmlContent(tree, self.location)
+		printl("serverID: " + str(self.server.getIndex()), self, "D")
+		printl("servername: " + str(self.server.getName()), self, "D")
+		for mapping in self.server.listMappings():
+			printl("mapping: " + str(mapping.id.getValue()), self, "D")
+			if mapping.id.getValue() == mappingId:
+				self.server.listMappings().remove(mapping)
+				self.server.saveChanges()
 		printl("", self, "C")
 
 	#===========================================================================
@@ -320,30 +311,19 @@ class DPS_MappingsEntryList(MenuList):
 	def addNewMapping(self, remotePath, localPath):
 		printl("", self, "S")
 
-		tree = getXmlContent(self.location)
-
 		newId = int(self.lastMappingId) + 1
 
 		printl("newId: " + str(newId), self, "D")
 		printl("remotePath: " + str(remotePath), self, "D")
 		printl("localPath: " + str(localPath), self, "D")
 
-		existingServer = False
-
-		for server in tree.findall("server"):
-			printl("servername: " + str(server.get('id')), self, "D")
-			if str(server.get('id')) == str(self.serverID):
-				existingServer = True
-
-				server.append(etree.Element('mapping id="' + str(newId) + '" remotePathPart="' + remotePath + '" localPathPart="' + localPath + '"'))
-				writeXmlContent(tree, self.location)
-
-		if not existingServer:  # this server has no node in the xml
-			printl("expanding server list", self, "D")
-			tree.append(etree.Element('server id="' + str(self.serverID) + '"'))
-			writeXmlContent(tree, self.location)
-
-			# now lets go through the xml again to add the mapping to the server
-			self.addNewMapping(remotePath, localPath)
+		s: ServerSettingsData = ServerSettings[self.server.getType()]
+		map: AbstractMappingSettings | None = None
+		if s:
+			map = s.factoryClass().createNewMapping(str(newId), remotePath, localPath, )
+			self.server.listMappings().append(map)
+			self.server.saveChanges()
+		else: # this server has no node in the xml
+			self.session.open(MessageBox, (_("Error:") + "\n%s \n" + _("unsupported mapping:")) % (_("Unsupported mapping for this server")), MessageBox.TYPE_ERROR)
 
 		printl("", self, "C")

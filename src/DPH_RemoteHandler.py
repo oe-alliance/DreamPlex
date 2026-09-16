@@ -28,16 +28,15 @@ import re
 import traceback
 
 from time import sleep
-from urlparse import urlparse, parse_qs
-from BaseHTTPServer import BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
+from http.server import BaseHTTPRequestHandler
 
-from Components.config import config
-
+from . import SettingsStorage, ServerSettings
 from .DPH_Singleton import Singleton
-from .DP_PlexLibrary import PlexLibrary
+from .DP_MediaLibrary import DP_MediaLibrary
 from .DPH_SubscriptionManager import SubscriptionManager
 
-from .__common__ import printl2 as printl, getUUID, getVersion, getMyIp, getPlexHeaders, getOKMsg, getXMLHeader
+from .__common__ import printl2 as printl, getServerHeaders, getOKMsg, getXMLHeader
 
 #===============================================================================
 #
@@ -46,13 +45,33 @@ from .__common__ import printl2 as printl, getUUID, getVersion, getMyIp, getPlex
 
 class RemoteHandler(BaseHTTPRequestHandler):
 	"""
-	Serves a HEAD request
-	"""
+    Serves a HEAD request
+    """
 	session = None
 	playerCallback = None
 	progress = None
 	currentCommandId = 0
 	protocol_version = 'HTTP/1.1'
+	mediaLibrary: DP_MediaLibrary = None
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def getServerType(self):
+		"""Get the server type for the current request"""
+		return self.g_serverConfig.getType() if hasattr(self, 'g_serverConfig') and self.g_serverConfig else None
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def getClientIdentifier(self, default=None):
+		"""Get the client identifier based on server type"""
+		result = default
+		for headerName in Singleton().getMediaLibrary().getRemoteClientIdentifierHeaderNames():
+			result = self.headers.get(headerName, result)
+			if result != default:
+				break
+		return result
 
 	#===========================================================================
 	#
@@ -113,7 +132,7 @@ class RemoteHandler(BaseHTTPRequestHandler):
 			self.end_headers()
 			self.wfile.write(body)
 			self.wfile.close()
-		except:
+		except Exception:
 			pass
 
 		printl("", self, "C")
@@ -133,17 +152,17 @@ class RemoteHandler(BaseHTTPRequestHandler):
 			# first we get all params form url
 			params = self.getParams()
 
-			data = {"command": "updateCommandId", "uuid": self.headers.get('X-Plex-Client-Identifier', self.client_address[0]), "commandID": params.get('commandID', False)}
+			data = {"command": "updateCommandId", "uuid": self.getClientIdentifier(self.client_address[0]), "commandID": params.get('commandID', False)}
 			self.playerCallback(data)
 			self.resetCallback()
 
 			if request_path == "player/timeline/subscribe":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 
 				protocol = params.get('protocol', False)
 				host = self.client_address[0]
 				port = params.get('port', False)
-				uuid = self.headers.get('X-Plex-Client-Identifier', "")
+				uuid = self.getClientIdentifier("")
 				commandID = params.get('commandID', 0)
 
 				printl("host: " + str(host), self, "D")
@@ -158,8 +177,8 @@ class RemoteHandler(BaseHTTPRequestHandler):
 				self.resetCallback()
 
 			elif "player/timeline/unsubscribe" in request_path:
-				self.response(getOKMsg(), getPlexHeaders())
-				uuid = self.headers.get('X-Plex-Client-Identifier', False) or self.client_address[0]
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
+				uuid = self.getClientIdentifier(self.client_address[0])
 				data = {"command": "removeSubscriber", "uuid": uuid}
 				#subMgr.removeSubscriber(uuid)
 				self.playerCallback(data)
@@ -168,7 +187,7 @@ class RemoteHandler(BaseHTTPRequestHandler):
 			elif request_path == "resources":
 				responseContent = getXMLHeader()
 				responseContent += str(self.getResourceXml())
-				self.response(responseContent, getPlexHeaders())
+				self.response(responseContent, getServerHeaders(self.getServerType()))
 
 			elif request_path == "player/timeline/poll":
 				commandID = params.get('commandID', 0)
@@ -183,7 +202,7 @@ class RemoteHandler(BaseHTTPRequestHandler):
 
 					self.answerPoll(commandID)
 					sleep(1)
-				except:
+				except Exception:
 					print("no params")
 					self.answerPoll(commandID)
 					sleep(1)
@@ -196,55 +215,55 @@ class RemoteHandler(BaseHTTPRequestHandler):
 				self.resetCallback()
 
 			elif request_path == "player/playback/pause":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 				data = {"command": "pause"}
 
 				self.playerCallback(data)
 				self.resetCallback()
 
 			elif request_path == "player/playback/play":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 				data = {"command": "play"}
 
 				self.playerCallback(data)
 				self.resetCallback()
 
 			elif request_path == "player/playback/stop":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 				data = {"command": "stop"}
 
 				self.playerCallback(data)
 				self.resetCallback()
 
 			elif request_path == "player/playback/skipNext":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 				data = {"command": "skipNext"}
 				self.playerCallback(data)
 				self.resetCallback()
 
 			elif request_path == "player/playback/skipPrevious":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 				data = {"command": "skipPrevious"}
 
 				self.playerCallback(data)
 				self.resetCallback()
 
 			elif request_path == "player/playback/stepForward":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 				data = {"command": "stepForward"}
 
 				self.playerCallback(data)
 				self.resetCallback()
 
 			elif request_path == "player/playback/stepBack":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 				data = {"command": "stepBack"}
 
 				self.playerCallback(data)
 				self.resetCallback()
 
 			elif request_path == "player/playback/seekTo":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 				offset = params["offset"]
 				data = {"command": "seekTo", "offset": offset}
 
@@ -252,7 +271,7 @@ class RemoteHandler(BaseHTTPRequestHandler):
 				self.resetCallback()
 
 			elif request_path == "player/playback/playMedia":
-				self.response(getOKMsg(), getPlexHeaders())
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
 
 				self.currentAddress = params.get('address', self.client_address[0])
 				self.currentKey = params['key']
@@ -268,17 +287,21 @@ class RemoteHandler(BaseHTTPRequestHandler):
 				machineIdentifier = params["machineIdentifier"]
 				printl("target machineIdentifier: " + str(machineIdentifier), self, "D")
 
-				for serverConfig in config.plugins.dreamplex.Entries:
-					printl("current machineIdentifier: " + str(serverConfig.machineIdentifier.value), self, "D")
+				settings: SettingsStorage = Singleton().getSettingsInstance()
 
-					if machineIdentifier in serverConfig.machineIdentifier.value:
+				for serverConfig in settings.serverConfigs:
+					printl("current machineIdentifier: " + str(serverConfig.machineIdentifier().getValue()), self, "D")
+
+					if machineIdentifier in serverConfig.machineIdentifier().getValue():
 
 						printl("we have a match ...", self, "D")
 						self.g_serverConfig = serverConfig
 
-						self.plexInstance = Singleton().getPlexInstance(PlexLibrary(self.session, self.g_serverConfig, self.currentCompleteAddress, machineIdentifier))
+						s = ServerSettings[self.g_serverConfig.getType()]
+						mediaLibrary = s.factoryClass.createMediaLibrary(self.session, self.g_serverConfig)
+						self.mediaLibrary = Singleton().getMediaLibrary(mediaLibrary)
 
-						listViewList, mediaContainer = self.plexInstance.getMixedContentFromSection(self.currentProtocol + "://" + self.currentAddress + ":" + self.currentPort + self.currentKey, fromRemotePlayer=True)
+						listViewList, mediaContainer = self.mediaLibrary.getMixedContentFromSection(self.currentProtocol + "://" + self.currentAddress + ":" + self.currentPort + self.currentKey, fromRemotePlayer=True)
 
 						autoPlayMode = False
 
@@ -289,11 +312,11 @@ class RemoteHandler(BaseHTTPRequestHandler):
 
 						resumeMode = False  # this is always false because the ios and android app ask itself if we want to resume :-) no need to ask second time
 
-						playbackMode = self.g_serverConfig.playbackType.value
+						playbackMode = self.g_serverConfig.playbackType().getValue()
 						currentIndex = 0
 						libraryName = "Mixed"
 						splittedData = self.currentKey.split("/")
-						subtitleData = self.plexInstance.getSelectedSubtitleDataById(self.currentCompleteAddress, splittedData[-1])
+						subtitleData = self.mediaLibrary.getSelectedSubtitleDataById(self.currentCompleteAddress, splittedData[-1])
 
 						data = {"command": "playMedia", "currentKey": self.currentKey, "listViewList": listViewList, "mediaContainer": mediaContainer, "autoPlayMode": autoPlayMode, "forceResume": forceResume, "resumeMode": resumeMode, "playbackMode": playbackMode, "currentIndex": currentIndex, "libraryName": libraryName, "subtitleData": subtitleData}
 
@@ -304,16 +327,16 @@ class RemoteHandler(BaseHTTPRequestHandler):
 						printl("no match ...", self, "D")
 
 			else:
-				self.response(getOKMsg(), getPlexHeaders())
-		except:
-				traceback.print_exc()
-				self.wfile.close()
+				self.response(getOKMsg(), getServerHeaders(self.getServerType()))
+		except Exception:
+			traceback.print_exc()
+			self.wfile.close()
 
-				printl("", self, "C")
-				return
+			printl("", self, "C")
+			return
 		try:
 			self.wfile.close()
-		except:
+		except Exception:
 			pass
 
 		printl("", self, "C")
@@ -330,10 +353,9 @@ class RemoteHandler(BaseHTTPRequestHandler):
 	#
 	#===========================================================================
 	def answerPoll(self, commandID):
-		self.response(re.sub(r"INSERTCOMMANDID", str(commandID), self.subMgr.msg(self.getPlayers())), {
-			'Access-Control-Expose-Headers': 'X-Plex-Client-Identifier',
-			'Content-Type': 'text/xml'
-			})
+		headers = Singleton().getMediaLibrary().getRemotePollHeaders(commandID)
+
+		self.response(re.sub(r"INSERTCOMMANDID", str(commandID), self.subMgr.msg(self.getPlayers())), headers)
 
 	#===========================================================================
 	#
@@ -353,21 +375,22 @@ class RemoteHandler(BaseHTTPRequestHandler):
 	def getResourceXml(self):
 		printl("", self, "S")
 
-		xml = "<MediaContainer><Player protocolCapabilities='playback, navigation' product='" + getMyIp() + "' platformVersion='" + getVersion() + "' platform='Enigma2' machineIdentifier='" + getUUID() + "' title='" + config.plugins.dreamplex.boxName.value + "' protocolVersion='1' deviceClass='stb'/></MediaContainer>"
+		boxName = Singleton().getSettingsInstance().boxName.getValue()
+		result = Singleton().getMediaLibrary().getRemoteResourceDescriptor(boxName)
 
 		printl("", self, "C")
-		return xml
+		return result
 
 	#===========================================================================
 	#
 	#===========================================================================
-	def setXmlHeader(self, xml):
+	def setXmlHeader(self, content):
 		printl("", self, "S")
 
-		self.send_header('Content-type', 'text/xml; charset="utf-8"')
-		self.send_header('Content-Length', str(len(xml)))
+		self.send_header('Content-type', Singleton().getMediaLibrary().getRemoteContentType())
+		self.send_header('Content-Length', str(len(content)))
 
-		printl("", self, "S")
+		printl("", self, "C")
 
 	#===========================================================================
 	#
@@ -375,12 +398,8 @@ class RemoteHandler(BaseHTTPRequestHandler):
 	def setAccessControlHeaders(self):
 		printl("", self, "S")
 
-		self.send_header('X-Plex-Client-Identifier', getUUID())
-		self.send_header('Access-Control-Max-Age', '1209600')
-		self.send_header('Access-Control-Allow-Credentials', 'true')
-		self.send_header('Access-Control-Allow-Origin', '*')
-		self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-		self.send_header("Access-Control-Allow-Headers", "x-plex-client-identifier,x-plex-device,x-plex-device-name,x-plex-platform,x-plex-platform-version,x-plex-product,x-plex-target-client-identifier,x-plex-username,x-plex-version")
+		for headerName, headerValue in Singleton().getMediaLibrary().getRemoteAccessControlHeaders().items():
+			self.send_header(headerName, headerValue)
 
 		printl("", self, "S")
 
@@ -407,7 +426,7 @@ class RemoteHandler(BaseHTTPRequestHandler):
 
 		try:
 			ret = self.session.current_dialog.getPlayer()
-		except:
+		except Exception:
 			pass
 
 		return ret

@@ -1,0 +1,1836 @@
+# Bulgarian translations for enigma2-plugin-extensions-dreamplex package.
+# Copyright (C) 2026 THE enigma2-plugin-extensions-dreamplex'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the enigma2-plugin-extensions-dreamplex package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: enigma2-plugin-extensions-dreamplex 3.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-20 14:04+0200\n"
+"PO-Revision-Date: 2026-08-14 23:05+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: bg\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid ""
+"\n"
+"\n"
+"Cancelled!"
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"Fetching complete library data. This could take a while ..."
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"Files found: "
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"Finished"
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"No Files found. Nothing to do!"
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"Starting to search for picture files with 1280x720 in its name ..."
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"Starting to search for picture files with 1920x1080 in its name ..."
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"We are done!"
+msgstr ""
+
+msgid ""
+"\n"
+"\n"
+"starting ..."
+msgstr ""
+
+#, python-format
+msgid ""
+"\n"
+"%s"
+msgstr ""
+
+msgid " "
+msgstr ""
+
+msgid " > API Key (optional)"
+msgstr ""
+
+msgid " > Autostart"
+msgstr ""
+
+msgid " > Connection Type"
+msgstr ""
+
+msgid " > Local Authentication"
+msgstr ""
+
+msgid " > Name"
+msgstr ""
+
+msgid " > Password"
+msgstr ""
+
+msgid " > Playback Type"
+msgstr ""
+
+msgid " > Server Type"
+msgstr " > Тип на сървъра"
+
+msgid " > State"
+msgstr ""
+
+msgid " > Sync Movies Medias"
+msgstr ""
+
+msgid " > Sync Music Medias"
+msgstr ""
+
+msgid " > Sync Shows Medias"
+msgstr ""
+
+msgid " > Trailer"
+msgstr ""
+
+msgid " > Use Wake on Lan (WoL)"
+msgstr ""
+
+msgid " > Username"
+msgstr ""
+
+msgid " >> Audio language (optional)"
+msgstr ""
+
+msgid " >> Custom Max Bitrate (0 = auto)"
+msgstr ""
+
+msgid " >> DNS"
+msgstr ""
+
+msgid " >> Enable Subtitle renaming in direct local mode"
+msgstr ""
+
+msgid " >> IP"
+msgstr ""
+
+msgid " >> Mac address (Size: 12 alphanumeric no seperator) only for WoL"
+msgstr ""
+
+msgid " >> Port"
+msgstr ""
+
+msgid " >> Segmentsize in seconds"
+msgstr ""
+
+msgid " >> Settings Pincode"
+msgstr ""
+
+msgid " >> Subtitle method"
+msgstr ""
+
+msgid " >> Subtitles language (e.g. it,en)"
+msgstr ""
+
+msgid " >> Target subtitle language"
+msgstr ""
+
+msgid " >> Transcoding quality"
+msgstr ""
+
+msgid " >> Use Settings Protection"
+msgstr ""
+
+msgid " >> Use forced subtitles"
+msgstr ""
+
+msgid " >> Use universal Transcoder"
+msgstr ""
+
+msgid " >> Wait for server delay (max 180 seconds) only for WoL"
+msgstr ""
+
+msgid " >> plex.tv Home Users"
+msgstr ""
+
+msgid " >> plex.tv Password"
+msgstr ""
+
+msgid " >> plex.tv Pin Protection"
+msgstr ""
+
+msgid " >> plex.tv Pincode"
+msgstr ""
+
+msgid " >> plex.tv URL"
+msgstr ""
+
+msgid " >> plex.tv Username"
+msgstr ""
+
+msgid ""
+" This file was partially played.\n"
+"\n"
+" Do you want to resume?"
+msgstr ""
+
+#, python-format
+msgid "%d min"
+msgstr "%d мин"
+
+msgid "(PIN protected)"
+msgstr "(защитено с PIN)"
+
+msgid "(YELLOW = delete left, GREEN = delete right)"
+msgstr "(ЖЪЛТО = изтриване вляво, ЗЕЛЕНО = изтриване вдясно)"
+
+msgid "(clone)"
+msgstr "(клонинг)"
+
+msgid "(re)create remote Token"
+msgstr "(пре)създаване на отдалечен токен"
+
+msgid "-"
+msgstr ""
+
+msgid "... failed"
+msgstr ""
+
+msgid "... success"
+msgstr ""
+
+msgid "/"
+msgstr ""
+
+msgid "/hdd/dreamplex/cache"
+msgstr ""
+
+msgid "/hdd/dreamplex/config"
+msgstr ""
+
+msgid "/hdd/dreamplex/medias"
+msgstr ""
+
+msgid "/tmp"
+msgstr ""
+
+msgid "1-5: select stars   RED: clear   OK: confirm   EXIT: cancel"
+msgstr "1-5: изберете звезди   ЧЕРВЕНО: изчисти   OK: потвърди   EXIT: отказ"
+
+msgid "1.5Mbps, 480p"
+msgstr ""
+
+msgid "1.5Mbps, 480p, 30fps"
+msgstr ""
+
+msgid "1024x768, 2mbps"
+msgstr ""
+
+msgid "10Mbps, 1080p"
+msgstr ""
+
+msgid "10Mbps, 1080p, 30fps"
+msgstr ""
+
+msgid "1280x720, 3mbps"
+msgstr ""
+
+msgid "1280x720, 4mbps"
+msgstr ""
+
+msgid "12Mbps, 1080p"
+msgstr ""
+
+msgid "12Mbps, 1080p, 30fps"
+msgstr ""
+
+msgid "1920x1080, 10mbps"
+msgstr ""
+
+msgid "1920x1080, 12mbps"
+msgstr ""
+
+msgid "1920x1080, 20mbps"
+msgstr ""
+
+msgid "1920x1080, 8mbps"
+msgstr ""
+
+msgid "1: mark   0/RED: unmark   OK: confirm   EXIT: cancel"
+msgstr "1: маркирай   0/ЧЕРВЕН: премахни   OK: потвърди   EXIT: отказ"
+
+msgid "208kbps, 160p, 15fps"
+msgstr ""
+
+msgid "20Mbps, 1080p"
+msgstr ""
+
+msgid "20Mbps, 1080p, 30fps"
+msgstr ""
+
+msgid "2Mbps, 720p"
+msgstr ""
+
+msgid "2Mbps, 720p, 30fps"
+msgstr ""
+
+msgid "320kbps, 240p"
+msgstr ""
+
+msgid "320kbps, 240p, 15fps"
+msgstr ""
+
+msgid "3Mbps, 720p"
+msgstr ""
+
+msgid "420x240, 320kbps"
+msgstr ""
+
+msgid "4Mbps, 720p"
+msgstr ""
+
+msgid "4Mbps, 720p, 30fps"
+msgstr ""
+
+msgid "576x320, 720 kbps"
+msgstr ""
+
+msgid "64kbps, 128p, 3fps"
+msgstr ""
+
+msgid "720kbps, 320p"
+msgstr ""
+
+msgid "720kbps, 320p, 30fps"
+msgstr ""
+
+msgid "720x480, 1,5mbps"
+msgstr ""
+
+msgid "8Mbps, 1080p"
+msgstr ""
+
+msgid "8Mbps, 1080p, 30fps"
+msgstr ""
+
+msgid "96kbps, 128p, 12fps"
+msgstr ""
+
+msgid "<unknown>"
+msgstr ""
+
+msgid "> Activate Remote Player"
+msgstr ""
+
+msgid "> Boxname"
+msgstr ""
+
+msgid "> Cache Folder Path"
+msgstr ""
+
+msgid "> Config Folder Path"
+msgstr ""
+
+msgid "> Debug Mode"
+msgstr ""
+
+msgid "> Default View for Movies"
+msgstr ""
+
+msgid "> Default View for Music"
+msgstr ""
+
+msgid "> Default View for Shows"
+msgstr ""
+
+msgid "> Detail type for additional data"
+msgstr ""
+
+msgid "> Exit function in Player"
+msgstr ""
+
+msgid "> Log Folder Path"
+msgstr ""
+
+msgid "> Main menu hero rotation (seconds, 0=off)"
+msgstr ""
+
+msgid "> Max hero suggestions to request"
+msgstr ""
+
+msgid "> Media Folder Path"
+msgstr ""
+
+msgid "> Offer next episode"
+msgstr ""
+
+msgid "> Player Temp Path"
+msgstr ""
+
+msgid "> Remote Player Port"
+msgstr ""
+
+msgid "> Search and use forced subtitles"
+msgstr ""
+
+msgid "> Show Backdrops as Videos"
+msgstr ""
+
+msgid "> Show Filter for Section"
+msgstr ""
+
+msgid "> Show Player Poster on external LCD"
+msgstr ""
+
+msgid "> Show Plugin in Main Menu"
+msgstr ""
+
+msgid "> Show Seen/Unseen count in TvShows"
+msgstr ""
+
+msgid "> Show additional data for plex.tv sections"
+msgstr ""
+
+msgid "> Show liveTv in Views instead of backdrops"
+msgstr ""
+
+msgid "> Start with Filtermode"
+msgstr ""
+
+msgid "> Stop Live TV on startup"
+msgstr ""
+
+msgid "> Summerize Sections"
+msgstr ""
+
+msgid "> Summerize Servers"
+msgstr ""
+
+msgid "> Use Cache for Sections"
+msgstr ""
+
+msgid "> Use Picture Cache"
+msgstr ""
+
+msgid "> Use fastScroll as default"
+msgstr ""
+
+msgid "> Used Skin"
+msgstr ""
+
+msgid "> Write debugfile"
+msgstr ""
+
+msgid ">> Autoplay the suggested movie"
+msgstr "Автоматично възпроизвеждане на предложения филм"
+
+msgid ">> Countdown before playing next"
+msgstr ""
+
+msgid ">> Play Themes in TV Shows"
+msgstr ""
+
+msgid ">> Refresh suggestions after this many rotations"
+msgstr ""
+
+msgid ">> Show it this many seconds before the end"
+msgstr ""
+
+msgid "A friendly name for this server."
+msgstr ""
+
+msgid "Abort"
+msgstr ""
+
+msgid "About"
+msgstr ""
+
+msgid "Accept / play now"
+msgstr ""
+
+msgid "Activate to be able to use with any app with remote function for Plex."
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid "Add Entry"
+msgstr ""
+
+msgid "Add User"
+msgstr ""
+
+msgid "Add user"
+msgstr ""
+
+msgid "Adding new mapping was not completed"
+msgstr ""
+
+msgid "Adding new user was not completed"
+msgstr ""
+
+msgid "Affects MaxStreamingBitrate for playback."
+msgstr ""
+
+msgid "Albums"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "All (A-Z)"
+msgstr ""
+
+msgid "All (Z-A)"
+msgstr ""
+
+msgid "All Filmy"
+msgstr ""
+
+msgid "All Movies"
+msgstr ""
+
+msgid "All Shows"
+msgstr ""
+
+msgid "All episodes"
+msgstr ""
+
+msgid "Are you sure?"
+msgstr ""
+
+msgid "Artists"
+msgstr ""
+
+msgid "Ask for pin?"
+msgstr ""
+
+msgid "Aspect Ratio:"
+msgstr ""
+
+msgid "Audio Channels:"
+msgstr ""
+
+msgid "Audio Codec:"
+msgstr ""
+
+msgid ""
+"Audio Functions\n"
+"\n"
+"Please take note that switching the language here will take only effect if you enable transcoding!"
+msgstr ""
+
+msgid "Audio preference saved. Will apply on next playback."
+msgstr ""
+
+msgid "Audio track menu"
+msgstr ""
+
+msgid "Audio:"
+msgstr ""
+
+msgid "Authentication "
+msgstr ""
+
+msgid "Back to live TV"
+msgstr ""
+
+msgid "Backdrops"
+msgstr ""
+
+msgid "Background"
+msgstr ""
+
+msgid "Bitrate:"
+msgstr ""
+
+msgid "Browse"
+msgstr ""
+
+msgid "Browse Movies, TV Shows and Music on this server."
+msgstr ""
+
+msgid "By Collection"
+msgstr ""
+
+msgid "By Content Rating"
+msgstr ""
+
+msgid "By Country"
+msgstr ""
+
+msgid "By Decade"
+msgstr ""
+
+msgid "By Director"
+msgstr ""
+
+msgid "By Duration…"
+msgstr ""
+
+msgid "By First Letter"
+msgstr ""
+
+msgid "By Folder"
+msgstr ""
+
+msgid "By Genre"
+msgstr ""
+
+msgid "By Genre…"
+msgstr ""
+
+msgid "By Rating"
+msgstr ""
+
+msgid "By Rating…"
+msgstr ""
+
+msgid "By Resolution"
+msgstr ""
+
+msgid "By Starring Actor"
+msgstr ""
+
+msgid "By Year"
+msgstr ""
+
+msgid "By Year…"
+msgstr ""
+
+msgid "Cache files successfully deleted."
+msgstr ""
+
+msgid "Calculate and show them for tv shows."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Cancel rating / dismiss suggestion"
+msgstr ""
+
+msgid "Cast:"
+msgstr ""
+
+#, python-format
+msgid "Cast: %s"
+msgstr "В ролите: %s"
+
+msgid "Catalog"
+msgstr ""
+
+msgid "Catalog Download"
+msgstr ""
+
+msgid "Change PIN"
+msgstr "Промяна на ПИН"
+
+msgid "Change the port to your needs."
+msgstr ""
+
+msgid "Channels"
+msgstr ""
+
+msgid "Choose a pincode for this profile"
+msgstr "Изберете ПИН код за този профил"
+
+msgid "Choose how to deliver subtitles (External/Embed)."
+msgstr ""
+
+msgid ""
+"Clone this server's settings into a new server entry?\n"
+"You will be asked for a username/password for the new one."
+msgstr ""
+"Клониране на настройките на този сървър в нов запис?\n"
+"Ще бъдете помолени за потребителско име/парола за новия потребител."
+
+msgid "Close DreamPlex"
+msgstr ""
+
+msgid "Collections"
+msgstr "Колекции"
+
+msgid "Color buttons: filter mode"
+msgstr ""
+
+msgid "Color buttons: playback mode / resume / watched / quality"
+msgstr ""
+
+msgid "Color buttons: server settings / general settings / delete / path mapping"
+msgstr ""
+
+msgid "Color buttons: view / fast scroll / refresh library / details"
+msgstr ""
+
+msgid "Configure the plugin: servers, skin, cache and more."
+msgstr ""
+
+msgid "Confirm rating / accept suggested title"
+msgstr ""
+
+msgid "Confirmed User from Plex was configured!"
+msgstr ""
+
+msgid "Connection Settings "
+msgstr ""
+
+msgid "Continue watching"
+msgstr ""
+
+msgid ""
+"Could not reach the server.\n"
+"Please check host, port and network connectivity."
+msgstr ""
+"Сървърът не може да бъде достигнат.\n"
+"Проверете хоста, порта и мрежовата връзка."
+
+msgid "Current User:"
+msgstr ""
+
+msgid "Custom scan…"
+msgstr ""
+
+msgid "DNS"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Delete Entry"
+msgstr ""
+
+msgid "Delete User"
+msgstr ""
+
+msgid "Deleting aborted!"
+msgstr ""
+
+msgid "Direct Local"
+msgstr ""
+
+msgid "Director:"
+msgstr ""
+
+#, python-format
+msgid "Director: %s"
+msgstr "Режисьор: %s"
+
+msgid "Discover"
+msgstr ""
+
+msgid "Discover Jellyfin"
+msgstr ""
+
+msgid "Discover Plex"
+msgstr ""
+
+msgid "Dismiss"
+msgstr ""
+
+msgid "Download posters and info (not videos)"
+msgstr ""
+
+msgid "DreamPlex"
+msgstr ""
+
+#, python-format
+msgid ""
+"DreamPlex was updated to version %s.\n"
+"Restart the GUI now to apply it?"
+msgstr ""
+"DreamPlex беше обновен до версия %s.\n"
+"Да се рестартира ли графичният интерфейс сега, за да се приложи?"
+
+msgid "DreamPlex: Mediasync finished!\n"
+msgstr ""
+
+msgid "DreamPlex: Rendering finished!\n"
+msgstr ""
+
+msgid "EXIT: close"
+msgstr "EXIT: затвори"
+
+msgid "Edit User"
+msgstr ""
+
+msgid "Embed"
+msgstr ""
+
+msgid "Enable only if needed. Slows down rapidly."
+msgstr ""
+
+msgid "Enable trailer function. Only works with PlexPass or YYTrailer plugin."
+msgstr ""
+
+msgid "End host (1-254)"
+msgstr ""
+
+#, python-format
+msgid "Enter %s"
+msgstr ""
+
+msgid "Enter Jellyfin password"
+msgstr ""
+
+msgid "Enter Jellyfin username"
+msgstr ""
+
+msgid "Enter genre(s), comma separated"
+msgstr ""
+
+msgid "Enter search text"
+msgstr ""
+
+msgid "Enter subnet base (e.g. 192.168.1)"
+msgstr ""
+
+msgid "Enter the current pincode"
+msgstr "Въведете текущия ПИН код"
+
+msgid "Enter the current pincode to remove it"
+msgstr "Въведете текущия ПИН код, за да го премахнете"
+
+msgid "Enter the name of your box, e.g. Livingroom."
+msgstr ""
+
+msgid "Enter the new pincode"
+msgstr "Въведете новия ПИН код"
+
+msgid "Enter the pin here:"
+msgstr ""
+
+msgid "Enter the username here:"
+msgstr ""
+
+msgid "Enter this server automatically on startup."
+msgstr ""
+
+msgid "Enter year(s), comma separated"
+msgstr ""
+
+msgid "Enter your remote path segment here:"
+msgstr ""
+
+#, python-format
+msgid ""
+"Error!\n"
+"Error-message:%s"
+msgstr ""
+
+#, python-format
+msgid ""
+"Error!\n"
+"Error-message:%s\n"
+"Press Exit to close."
+msgstr ""
+
+msgid "Error:"
+msgstr ""
+
+msgid "Error: "
+msgstr ""
+
+msgid "Exit player"
+msgstr ""
+
+msgid "External"
+msgstr ""
+
+msgid "Favorite"
+msgstr "Любимо"
+
+msgid "File:"
+msgstr ""
+
+msgid "Framerate:"
+msgstr ""
+
+msgid "Functions List:"
+msgstr ""
+
+msgid "General Settings"
+msgstr ""
+
+msgid "General Settings "
+msgstr ""
+
+msgid "Genre:"
+msgstr ""
+
+msgid "Go back"
+msgstr ""
+
+msgid "Home Users"
+msgstr ""
+
+msgid "How long before the end of the episode the offer appears."
+msgstr ""
+
+msgid "How many times the banner cycles through its current list of suggestions before asking the server for a new one."
+msgstr ""
+
+msgid "I will now try to play the file via transcode."
+msgstr ""
+
+msgid "IP"
+msgstr ""
+
+msgid "If off (default), the related-title suggestion for a movie waits for OK and never starts itself."
+msgstr "Ако е изключено (по подразбиране), предложението за филм изчаква OK и никога не стартира само."
+
+msgid "If present, it will be used instead of username/password."
+msgstr ""
+
+msgid "If server summerize is off you can here add additional information for better overview."
+msgstr ""
+
+msgid "If you are using plex.tv"
+msgstr ""
+
+msgid "If you change the skin you have to restart at least the GUI!"
+msgstr ""
+
+msgid "If you do nothing, the next episode starts after this many seconds."
+msgstr ""
+
+msgid "Info"
+msgstr ""
+
+msgid "Info:"
+msgstr ""
+
+msgid "Information and credits for the plugin."
+msgstr ""
+
+msgid "Initiate Library refresh"
+msgstr ""
+
+msgid "Interrupt the Jellyfin server search?"
+msgstr "Прекратяване на търсенето на Jellyfin сървъри?"
+
+msgid "Invalid Location"
+msgstr ""
+
+msgid "Invalid credentials"
+msgstr ""
+
+msgid "Jellyfin discovery"
+msgstr ""
+
+#, python-format
+msgid "Jellyfin port (default %d)"
+msgstr "Порт на Jellyfin (по подразбиране %d)"
+
+msgid "Jump to menu item 1"
+msgstr ""
+
+msgid "Jump to menu item 2"
+msgstr ""
+
+msgid "Jump to menu item 3"
+msgstr ""
+
+msgid "Jump to menu item 4"
+msgstr ""
+
+msgid "Jump to menu item 5"
+msgstr ""
+
+msgid "Jump to menu item 6"
+msgstr ""
+
+msgid "Jump to menu item 7"
+msgstr ""
+
+msgid "Jump to menu item 8"
+msgstr ""
+
+msgid "Jump to menu item 9"
+msgstr ""
+
+msgid "LEFT/RIGHT: browse     UP/DOWN: scroll     OK: play now     EXIT: cancel"
+msgstr "ЛЯВО/ДЯСНО: преглед     ГОРЕ/ДОЛУ: превъртане     OK: пусни сега     EXIT: отказ"
+
+msgid "Live TV"
+msgstr ""
+
+msgid "LiveTv"
+msgstr ""
+
+msgid "Local Token:"
+msgstr ""
+
+msgid "Location:"
+msgstr ""
+
+msgid "Login failed"
+msgstr ""
+
+msgid ""
+"Login successful.\n"
+"\n"
+"Protect this profile with a PIN before switching to it later?"
+msgstr ""
+"Успешен вход.\n"
+"\n"
+"Да се защити ли този профил с ПИН код, преди да можете да го изберете отново по-късно?"
+
+msgid "MENU: Clone for another user"
+msgstr "МЕНЮ: Клониране за друг потребител"
+
+msgid "Main Menu"
+msgstr ""
+
+msgid "Malformed response from server"
+msgstr ""
+
+msgid "Manual seek / clear rating"
+msgstr ""
+
+msgid "Mappings"
+msgstr ""
+
+msgid "Mark media unwatched"
+msgstr ""
+
+msgid "Mark media watched"
+msgstr ""
+
+msgid "Media Functions"
+msgstr ""
+
+msgid "Medias:"
+msgstr ""
+
+msgid "Misc Settings "
+msgstr ""
+
+msgid "Mixed"
+msgstr ""
+
+msgid "Monitor playback to activate subtitles automatically if needed. You have to enable subtitles with 'Text'-Buttion first."
+msgstr ""
+
+msgid "Most Played"
+msgstr ""
+
+msgid "Movies"
+msgstr ""
+
+msgid "Music"
+msgstr ""
+
+msgid "Name                                         IP/plex.tv                                            Port/Email                                        Active"
+msgstr ""
+
+msgid "Name                                         IP/plex.tv                                 Port/Email                                  Active"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+#, python-format
+msgid "Next episode in %d s"
+msgstr ""
+
+msgid "Next item"
+msgstr ""
+
+msgid "Next page"
+msgstr ""
+
+msgid "No Server"
+msgstr ""
+
+msgid "No authentication credentials provided"
+msgstr ""
+
+msgid "No data in this section!"
+msgstr ""
+
+msgid ""
+"No extras found ...\n"
+"\n"
+"Press exit to return."
+msgstr ""
+
+msgid "No servers discovered"
+msgstr ""
+
+msgid "No update for addiontal informations in media views to speed up."
+msgstr ""
+
+msgid "OK: play now     EXIT: cancel"
+msgstr ""
+
+msgid "Ok"
+msgstr ""
+
+msgid "On Deck"
+msgstr ""
+
+#, python-format
+msgid "Open %s"
+msgstr ""
+
+msgid "Open (movie, episode, folder, collection or playlist)"
+msgstr ""
+
+msgid "Open Settings"
+msgstr ""
+
+msgid "Open series"
+msgstr ""
+
+msgid "Original Quality"
+msgstr ""
+
+msgid "Override bitrate from quality profile."
+msgstr ""
+
+msgid "PIN changed"
+msgstr "ПИН кодът е променен"
+
+msgid "PIN removed"
+msgstr "ПИН кодът е премахнат"
+
+msgid "PIN set for this profile"
+msgstr "ПИН кодът е зададен за този профил"
+
+msgid "Pages:"
+msgstr ""
+
+msgid "Password for Jellyfin account."
+msgstr ""
+
+msgid "Path Settings "
+msgstr ""
+
+msgid "Pathselector"
+msgstr ""
+
+msgid "Pictures"
+msgstr ""
+
+msgid "Pincode for changing settings"
+msgstr ""
+
+msgid "Pincode for switching back from any home user."
+msgstr ""
+
+msgid "Play"
+msgstr ""
+
+msgid "Play next episode"
+msgstr ""
+
+msgid "Play previous episode"
+msgstr ""
+
+msgid "Play the hero suggestion"
+msgstr ""
+
+msgid "Play trailer / extra"
+msgstr ""
+
+msgid "Playback Settings "
+msgstr ""
+
+msgid "Playlists"
+msgstr "Плейлисти"
+
+msgid "Plays tv show themes automatically."
+msgstr ""
+
+msgid "Please enter the pincode!"
+msgstr ""
+
+msgid "Please enter your search string: "
+msgstr ""
+
+msgid ""
+"Please note to run at least once the sync media function within the server menu.\n"
+"This will download the needed files in the right size of 1280x720."
+msgstr ""
+
+msgid ""
+"Please note to run at least once the sync media function within the server menu.\n"
+"This will download the needed files in the right size of 1920x1080."
+msgstr ""
+
+msgid "Please select a server type before saving."
+msgstr "Изберете тип сървър, преди да запазите."
+
+msgid "Please verify you direct local settings"
+msgstr ""
+
+msgid "Prefer forced subtitles if available."
+msgstr ""
+
+msgid "Preferred audio language, fallback to subtitles language."
+msgstr ""
+
+msgid "Preferred subtitles language."
+msgstr ""
+
+msgid "Press exit to return"
+msgstr ""
+
+msgid "Previous item"
+msgstr ""
+
+msgid "Previous page"
+msgstr ""
+
+msgid ""
+"Process aborted.\n"
+"Press Exit to close."
+msgstr ""
+
+msgid "Quick scan (/24)"
+msgstr ""
+
+msgid "Random"
+msgstr ""
+
+msgid "Rate / mark as favorite"
+msgstr ""
+
+msgid "Rate 1 star / mark favorite"
+msgstr ""
+
+msgid "Rate 2 stars"
+msgstr ""
+
+msgid "Rate 3 stars"
+msgstr ""
+
+msgid "Rate 4 stars"
+msgstr ""
+
+msgid "Rate 5 stars"
+msgstr ""
+
+msgid "Rating"
+msgstr "Оценка"
+
+msgid "Really delete this Server Entry?"
+msgstr ""
+
+msgid "Recently Added"
+msgstr ""
+
+msgid "Recently Aired"
+msgstr ""
+
+msgid "Recently Released"
+msgstr ""
+
+msgid "Recently Viewed"
+msgstr ""
+
+msgid "Recently Viewed Episodes"
+msgstr ""
+
+msgid "Recently Viewed Shows"
+msgstr ""
+
+msgid "Reconnecting to background task ...\n"
+msgstr ""
+
+msgid "Remote Settings "
+msgstr ""
+
+msgid "Remote Token:"
+msgstr "Отдалечен токен:"
+
+msgid "Remove PIN"
+msgstr "Премахване на ПИН"
+
+msgid "Renames filename.eng.srt automatically to filename.srt so e2 is able to read them."
+msgstr ""
+
+msgid "Resultion:"
+msgstr ""
+
+msgid "Revoke cache files manually"
+msgstr ""
+
+msgid "Runtime:"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save server answers in cache to speed up a bit."
+msgstr ""
+
+msgid "Save this server?"
+msgstr ""
+
+msgid "Scroll description down"
+msgstr ""
+
+msgid "Scroll description up"
+msgstr ""
+
+msgid "Scroll suggestion text down"
+msgstr ""
+
+msgid "Scroll suggestion text up"
+msgstr ""
+
+msgid "Search ..."
+msgstr ""
+
+msgid "Search Episodes..."
+msgstr ""
+
+msgid "Search Shows..."
+msgstr ""
+
+msgid "Search string that should be removed from srt file."
+msgstr ""
+
+msgid "Search..."
+msgstr ""
+
+msgid "Search…"
+msgstr ""
+
+msgid "Season"
+msgstr ""
+
+msgid "Seasons:"
+msgstr ""
+
+msgid "Seek back / previous suggestion"
+msgstr ""
+
+msgid "Seek forward / next suggestion"
+msgstr ""
+
+msgid "Seen:"
+msgstr ""
+
+msgid "Select Audio Track (applies to next playback)"
+msgstr ""
+
+msgid "Select IP or DNS."
+msgstr ""
+
+msgid "Select Subtitle Track (applies to next playback)"
+msgstr ""
+
+msgid "Select discovery"
+msgstr ""
+
+msgid "Select media to play"
+msgstr ""
+
+msgid "Select server"
+msgstr ""
+
+msgid "Select server folder"
+msgstr ""
+
+msgid "Select the type of server to add."
+msgstr "Изберете типа сървър, който да добавите."
+
+msgid "Select your type how the box is reachable."
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Server"
+msgstr ""
+
+msgid "Server Config"
+msgstr ""
+
+msgid "Server List:"
+msgstr ""
+
+msgid "Server Menu"
+msgstr ""
+
+msgid "Server Settings"
+msgstr ""
+
+msgid "Server Syncer"
+msgstr ""
+
+msgid ""
+"Server seems to be offline. Please check your your settings or connection!\n"
+" Retry?"
+msgstr ""
+
+msgid ""
+"Server seems to be offline. Start with Wake on Lan settings? \n"
+"\n"
+"Please note: \n"
+"If you press yes the spinner will run for "
+msgstr ""
+
+msgid "Set PIN"
+msgstr "Задаване на ПИН"
+
+msgid "Settings"
+msgstr ""
+
+msgid "Show additional filter in an additional menu step e.g. OnDeck"
+msgstr ""
+
+msgid "Show cast/director/rating details"
+msgstr ""
+
+msgid "Show extended info"
+msgstr ""
+
+msgid "Show help"
+msgstr ""
+
+msgid "Show live tv while you are navigating through your libs."
+msgstr ""
+
+msgid "Show playback info (long press: rate/favorite)"
+msgstr ""
+
+msgid "Shows"
+msgstr ""
+
+msgid "Simply a name for better overview"
+msgstr ""
+
+msgid "Something went wrong while opening mappings xml!"
+msgstr ""
+
+msgid "Something went wrong while opening users xml!"
+msgstr ""
+
+msgid "Sorry I didn't find the file on the provided locations"
+msgstr ""
+
+msgid "Specifiy the type of additional data."
+msgstr ""
+
+msgid "Specifiy what the exit button in the player should do."
+msgstr ""
+
+msgid "Specify what view type should start automatically."
+msgstr ""
+
+msgid "Start Download"
+msgstr ""
+
+msgid "Start Rendering"
+msgstr ""
+
+msgid "Start host (1-254)"
+msgstr ""
+
+msgid "Start with filtermode in any media view."
+msgstr ""
+
+msgid "Stop and return"
+msgstr ""
+
+msgid "Stop live TV. Enables 'play themes', 'use backdrop videos'"
+msgstr ""
+
+msgid "Streamed"
+msgstr ""
+
+msgid "Studio:"
+msgstr ""
+
+msgid ""
+"Subtitle Functions\n"
+"\n"
+"Please take note that switching the subtitles here will take only effect if you use direct local or transcoding!"
+msgstr ""
+
+msgid "Subtitle Settings "
+msgstr ""
+
+msgid "Subtitle menu"
+msgstr ""
+
+msgid "Subtitle preference saved. Will apply on next playback."
+msgstr ""
+
+msgid "Subtitles:"
+msgstr ""
+
+msgid "Suggested"
+msgstr ""
+
+#, python-format
+msgid "Suggestion in %d s"
+msgstr "Предложение след %d с"
+
+msgid "Summerize sections in an additional menu step."
+msgstr ""
+
+msgid "Summerize servers in an additional menu step. (plex.tv only)"
+msgstr ""
+
+msgid "Switch User"
+msgstr ""
+
+msgid "Switch to this user"
+msgstr "Превключване към този потребител"
+
+msgid "Switch user"
+msgstr ""
+
+msgid "Sync Media"
+msgstr ""
+
+msgid "Sync Settings "
+msgstr ""
+
+msgid ""
+"Sync or Renderer is still running!\n"
+"Continue in background?"
+msgstr ""
+
+msgid "Sync this content."
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid "System - Systemcheck"
+msgstr ""
+
+msgid "System Server"
+msgstr ""
+
+msgid "System Settings"
+msgstr ""
+
+msgid "Systemcheck"
+msgstr ""
+
+msgid "TV Shows"
+msgstr ""
+
+msgid "Target: "
+msgstr ""
+
+msgid "The Carousel skin's main-menu banner switches to another suggested title after this many seconds. 0 keeps showing the same one."
+msgstr ""
+
+msgid "The show is about to start"
+msgstr ""
+
+msgid "The skin was changed. Exit and re-enter DreamPlex to apply it."
+msgstr ""
+
+msgid "The user was not found!"
+msgstr ""
+
+#, python-format
+msgid "This Box can't decode %s streams!"
+msgstr ""
+
+msgid ""
+"This will download all medias from the selected server.\n"
+"\n"
+"Additional to this we download the pictures in 1280x720 for better fullscreen backdrops."
+msgstr ""
+
+msgid ""
+"This will download all medias from the selected server.\n"
+"\n"
+"Additional to this we download the pictures in 1920x1080 for better fullscreen backdrops."
+msgstr ""
+
+msgid "Timeout seconds (e.g. 0.5)"
+msgstr ""
+
+msgid "Toggle on/off to show or hide this server."
+msgstr ""
+
+msgid "Toggle state to on/off to show this server in lost or not."
+msgstr ""
+
+msgid "Total:"
+msgstr ""
+
+msgid "Towards the end of an episode (or a related-title suggestion towards the end of a movie), offer to jump to the next one."
+msgstr "Към края на епизод (или предложение за сходно заглавие към края на филм), предложи преминаване към следващото."
+
+msgid "Tracks"
+msgstr ""
+
+msgid "Transcoded"
+msgstr ""
+
+msgid "Tv Shows"
+msgstr ""
+
+msgid "UNEXPECTED ERROR:"
+msgstr ""
+
+msgid "UP/DOWN: scroll     OK: play now     EXIT: cancel"
+msgstr "ГОРЕ/ДОЛУ: превъртане     OK: пусни сега     EXIT: отказ"
+
+msgid "Unauthorized"
+msgstr ""
+
+msgid "Unknown AuthorizationMode"
+msgstr ""
+
+msgid "Unmark favorite"
+msgstr ""
+
+msgid "Unseen:"
+msgstr ""
+
+msgid "Unsupported mapping for this server"
+msgstr ""
+
+msgid "Unsupported users for this server"
+msgstr ""
+
+msgid "Unwatched"
+msgstr ""
+
+msgid "Updating..."
+msgstr ""
+
+msgid "Upper limit only - the server may return fewer, depending on what it has to offer."
+msgstr ""
+
+msgid "Use Home Users?"
+msgstr ""
+
+msgid "Use Pinprotection for switch back to plex.tv user?"
+msgstr ""
+
+msgid "Use this if you have m1v videos as backdrops"
+msgstr ""
+
+msgid "Use this if you secured your plex server in the settings."
+msgstr ""
+
+msgid "Use this only if you do have enough space on your hdd drive or flash."
+msgstr ""
+
+msgid "Use this to start the plugin direct in the main menu."
+msgstr ""
+
+msgid "User switched"
+msgstr ""
+
+msgid "Userinterface Settings "
+msgstr ""
+
+msgid "Username for Jellyfin account."
+msgstr ""
+
+msgid "Users"
+msgstr ""
+
+msgid "Video Codec:"
+msgstr ""
+
+msgid "View '"
+msgstr ""
+
+msgid "Wake On Lan Settings "
+msgstr ""
+
+msgid "Warning:"
+msgstr ""
+
+msgid "We did it :-)"
+msgstr ""
+
+msgid "Without this option we just print to console."
+msgstr ""
+
+msgid "Writer:"
+msgstr ""
+
+#, python-format
+msgid "Writer: %s"
+msgstr ""
+
+msgid "Wrong pincode!"
+msgstr "Грешен ПИН код!"
+
+msgid "Year:"
+msgstr ""
+
+msgid "You can use Systemcheck in the menu."
+msgstr ""
+
+msgid "You have no data in this section!"
+msgstr "Няма данни в този раздел!"
+
+msgid "You need gstreamer_fragmented installed for this feature! Please check in System ... "
+msgstr ""
+
+#, python-format
+msgid ""
+"Your Box can't decode this video stream!\n"
+"%s"
+msgstr ""
+
+msgid "Your cinema, at home"
+msgstr ""
+
+msgid "backdrop not found, trying to download ..."
+msgstr ""
+
+msgid "backdrop video exists under the location "
+msgstr ""
+
+msgid "delete Medias"
+msgstr ""
+
+msgid "e.g. lcd4linux"
+msgstr ""
+
+msgid "fastScroll 'Off'"
+msgstr ""
+
+msgid "fastScroll 'On'"
+msgstr ""
+
+msgid "for the user:"
+msgstr ""
+
+msgid "found backdrop - size("
+msgstr ""
+
+msgid "found poster - size("
+msgstr ""
+
+msgid "get local auth Token"
+msgstr ""
+
+msgid "no Data"
+msgstr ""
+
+msgid "playback mode '"
+msgstr ""
+
+msgid "playmode 'multi'"
+msgstr ""
+
+msgid "playmode 'single'"
+msgstr ""
+
+msgid "plex client for enigma2"
+msgstr ""
+
+msgid "plex.tv"
+msgstr ""
+
+#, python-format
+msgid ""
+"plex.tv Token error:\n"
+"Check Username and Password.\n"
+"%s"
+msgstr ""
+
+msgid "poster not found, trying to download ..."
+msgstr ""
+
+msgid "press 'Audio' or 'Radio'"
+msgstr ""
+
+msgid "press 'Info'"
+msgstr ""
+
+msgid "press 'Text'"
+msgstr ""
+
+msgid "refresh Library"
+msgstr ""
+
+msgid "resume 'Off'"
+msgstr ""
+
+msgid "resume 'On'"
+msgstr ""
+
+msgid "set 'Seen'"
+msgstr ""
+
+msgid "set 'Unseen'"
+msgstr ""
+
+msgid "show 'Description'"
+msgstr ""
+
+msgid "show 'Details'"
+msgstr ""
+
+msgid "skipping because unsupported image type. "
+msgstr ""
+
+msgid "title: "
+msgstr ""
+
+msgid "trying to render backdrop now ...: "
+msgstr ""
+
+msgid "turn filter mode off"
+msgstr ""
+
+msgid "unsupported mapping:"
+msgstr ""
+
+msgid "unsupported users:"
+msgstr ""
+
+msgid "use for Mapping"
+msgstr ""
+
+msgid "with the id:"
+msgstr ""
+
+msgid "☆☆☆☆☆  (cleared)"
+msgstr "☆☆☆☆☆  (изчистено)"
+
+#~ msgid "1: mark   0: unmark   OK: confirm   EXIT: cancel"
+#~ msgstr "1: включи   0: изключи   OK: потвърди   EXIT: отказ"
+
+#~ msgid "LEFT/RIGHT: browse     OK: play now     EXIT: cancel"
+#~ msgstr "ЛЯВО/ДЯСНО: преглед     OK: пусни сега     EXIT: отказ"
+
+#~ msgid "♡  (unmarked)"
+#~ msgstr "♡  (премахнато)"

@@ -25,12 +25,12 @@ You should have received a copy of the GNU General Public License
 # IMPORT
 #===============================================================================
 #noinspection PyUnresolvedReferences
-from six import PY2
 from enigma import eTimer, ePythonMessagePump, eConsoleAppContainer
 
 from threading import Thread
 from threading import Lock
 from time import sleep
+import subprocess
 import traceback
 
 from Screens.MessageBox import MessageBox
@@ -41,7 +41,8 @@ from Components.ActionMap import ActionMap
 from Components.config import config
 from Components.ScrollLabel import ScrollLabel
 from Components.Pixmap import Pixmap
-
+from . import SettingsStorage, AbstractServerSettings, ServerSettingsData, ServerSettings
+from .DP_MediaLibrary import DP_MediaLibrary
 
 try:
 	from urllib.request import URLopener
@@ -67,13 +68,12 @@ from Screens.Screen import Screen
 
 from Tools.Directories import fileExists
 
-from .DP_PlexLibrary import PlexLibrary
 from .DP_ViewFactory import getViews, getGuiElements
 from .DPH_Singleton import Singleton
 from .DPH_ScreenHelper import DPH_ScreenHelper, DPH_PlexScreen
 
 from .__common__ import printl2 as printl, isValidSize, encodeThat, getSkinResolution
-from .__init__ import _  # _ is translation
+from . import _  # _ is translation
 
 #===========================================================================
 #
@@ -85,7 +85,7 @@ class DPS_Syncer(Screen, DPH_ScreenHelper, DPH_PlexScreen):
 	_session = None
 	_mode = None
 
-	def __init__(self, session, mode, serverConfig=None):
+	def __init__(self, session, mode, serverConfig: AbstractServerSettings=None):
 		Screen.__init__(self, session)
 		DPH_ScreenHelper.__init__(self)
 		DPH_PlexScreen.__init__(self)
@@ -98,8 +98,11 @@ class DPS_Syncer(Screen, DPH_ScreenHelper, DPH_PlexScreen):
 		self.resolution = getSkinResolution()
 
 		if serverConfig is not None:
-			# now that we know the server we establish global plexInstance
-			self.plexInstance = Singleton().getPlexInstance(PlexLibrary(self.session, self.serverConfig))
+			sd: ServerSettingsData = ServerSettings[self.serverConfig.getType()]
+			if sd:
+				self.plexInstance: DP_MediaLibrary = sd.factoryClass().createMediaLibrary(self.session, self.serverConfig)
+			else:
+				self.plexInstance: DP_MediaLibrary | None = None
 
 		# we are "sync" or "render"
 		self._mode = mode
@@ -113,11 +116,17 @@ class DPS_Syncer(Screen, DPH_ScreenHelper, DPH_PlexScreen):
 		# we use this counter to reset scorll label every x entries to stay responsive
 		self.counter = 0
 
-		self["Title"] = Label(_("Server Syncer"))
+		# "Server Syncer"/"Start Sync" read as "mirror the whole server
+		# locally" - in "sync" mode this only ever downloads posters/
+		# backdrops and metadata into the local cache (see
+		# syncThroughMediaLibrary()), never the actual video files. "render"
+		# mode (backdrop-video rendering, a different feature entirely) is
+		# untouched.
+		self["Title"] = Label(_("Catalog Download") if self._mode == "sync" else _("Server Syncer"))
 
 		self["btn_greenText"] = Label()
 		if self._mode == "sync":
-			self["btn_greenText"].setText(_("Start Sync"))
+			self["btn_greenText"].setText(_("Start Download"))
 		else:
 			self["btn_greenText"].setText(_("Start Rendering"))
 		self["btn_green"] = Pixmap()
@@ -131,15 +140,14 @@ class DPS_Syncer(Screen, DPH_ScreenHelper, DPH_PlexScreen):
 		self["btn_red"] = Pixmap()
 
 		self["setupActions"] = ActionMap(["DPS_Syncer"],
-		{
-			"red": self.keyRed,
-			"blue": self.keyBlue,
-			"yellow": self.keyYellow,
-			"green": self.keyGreen,
-			"bouquet_up": self.keyBouquetUp,
-			"bouquet_down": self.keyBouquetDown,
-			"cancel": self.exit,
-		}, -2)
+										 {
+											 "red": self.keyRed,
+											 "blue": self.keyBlue,
+											 "green": self.keyGreen,
+											 "bouquet_up": self.keyBouquetUp,
+											 "bouquet_down": self.keyBouquetDown,
+											 "cancel": self.exit,
+										 }, -2)
 
 		self.onFirstExecBegin.append(self.startup)
 		self.onShown.append(self.finishLayout)
@@ -151,7 +159,7 @@ class DPS_Syncer(Screen, DPH_ScreenHelper, DPH_PlexScreen):
 	def finishLayout(self):
 		printl("", self, "S")
 
-		self.setTitle("Server - Syncer")
+		self.setTitle(_("Catalog Download") if self._mode == "sync" else "Server - Syncer")
 
 		# first we set the pics for buttons
 		self.setColorFunctionIcons()
@@ -247,14 +255,6 @@ class DPS_Syncer(Screen, DPH_ScreenHelper, DPH_PlexScreen):
 
 			self["btn_redText"].hide()
 			self["btn_red"].hide()
-
-		printl("", self, "C")
-
-	#===========================================================================
-	#
-	#===========================================================================
-	def keyYellow(self):
-		printl("", self, "S")
 
 		printl("", self, "C")
 
@@ -624,6 +624,8 @@ class BackgroundMediaSyncer(Thread):
 
 		self.resolution = getSkinResolution()
 
+		self.settings: SettingsStorage = Singleton().getSettingsInstance()
+
 		self.running = False
 
 	#===========================================================================
@@ -685,7 +687,7 @@ class BackgroundMediaSyncer(Thread):
 	#===========================================================================
 	#
 	#===========================================================================
-	def setPlexInstance(self, plexInstance):
+	def setPlexInstance(self, plexInstance: DP_MediaLibrary):
 		printl("", self, "S")
 
 		self.plexInstance = plexInstance
@@ -744,6 +746,42 @@ class BackgroundMediaSyncer(Thread):
 	#===========================================================================
 	#
 	#===========================================================================
+	def runRenderPipeline(self, renderArgs, encodeArgs):
+		"""Esegue "renderArgs | encodeArgs" senza interporre una shell.
+
+        Restituisce (status, output) con la stessa semantica di
+        subprocess.getstatusoutput(), che era usato in precedenza: status e'
+        il codice di uscita dell'ultimo comando della pipe e output ne
+        raccoglie stdout e stderr.
+        """
+
+		renderProc = None
+		encodeProc = None
+		try:
+			renderProc = subprocess.Popen(renderArgs, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+			encodeProc = subprocess.Popen(encodeArgs, stdin=renderProc.stdout,
+										  stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			# by closing our copy of the descriptor, the first process gets
+			# SIGPIPE if the second one exits first
+			renderProc.stdout.close()
+
+			output = encodeProc.communicate()[0]
+			renderProc.wait()
+
+			return encodeProc.returncode, output.decode("utf-8", "replace")
+		except Exception as e:
+			printl("exception: " + str(e), self, "W")
+			for proc in (renderProc, encodeProc):
+				if proc is not None and proc.poll() is None:
+					try:
+						proc.kill()
+					except Exception:
+						pass
+			return 1, str(e)
+
+	#===========================================================================
+	#
+	#===========================================================================
 	def renderBackdrops(self):
 		printl("", self, "S")
 
@@ -759,7 +797,6 @@ class BackgroundMediaSyncer(Thread):
 
 		import math
 		import glob
-		import subprocess
 
 		try:
 			from PIL import Image
@@ -777,7 +814,7 @@ class BackgroundMediaSyncer(Thread):
 			resolutionString = "*1280x720_v2.jpg"
 			searchString = "1280x720_v2.jpg"
 
-		self.count = len(glob.glob1(config.plugins.dreamplex.mediafolderpath.value, resolutionString))
+		self.count = len(glob.glob1(self.settings.mediaFolderPath.getValue(), resolutionString))
 
 		msg_text = _("\n\nFiles found: ") + str(self.count)
 		self.messages.push((THREAD_WORKING, msg_text))
@@ -787,7 +824,7 @@ class BackgroundMediaSyncer(Thread):
 
 		if int(self.count) > 0:
 			self.currentIndex = 0
-			for myFile in glob.glob1(config.plugins.dreamplex.mediafolderpath.value, resolutionString):
+			for myFile in glob.glob1(self.settings.mediaFolderPath.getValue(), resolutionString):
 				sleep(0.2)
 				self.currentIndex += 1
 				if self.cancel:
@@ -800,7 +837,7 @@ class BackgroundMediaSyncer(Thread):
 						extension = str.upper(myFile[-3:])
 						if extension == "JPG":
 							extension = "JPEG"
-						imageLocationWoExtension = config.plugins.dreamplex.mediafolderpath.value + myFileWoExtension
+						imageLocationWoExtension = self.settings.mediaFolderPath.getValue() + myFileWoExtension
 
 						# location string
 						videoLocation = imageLocationWoExtension + ".m1v"
@@ -816,7 +853,7 @@ class BackgroundMediaSyncer(Thread):
 							self.messagePump.send(0)
 
 							# now we check if we are are jpeg or png
-							imageLocation = config.plugins.dreamplex.mediafolderpath.value + myFile
+							imageLocation = self.settings.mediaFolderPath.getValue() + myFile
 
 							i = Image.open(imageLocation)
 
@@ -853,18 +890,27 @@ class BackgroundMediaSyncer(Thread):
 
 							printl("started rendering : " + str(videoLocation), self, "D")
 
+							# The two commands run as processes connected by a
+							# pipe, without going through a shell:
+							# imageLocation and videoLocation come from file
+							# names on disk, themselves built from the server
+							# metadata. A title containing an apostrophe or a
+							# space would break the command, and one
+							# containing ";" or "$(...)" would run arbitrary
+							# commands with the privileges of enigma2.
 							if self.resolution == "FHD":
-								cmd = renderCommand + " -v 0 -f 25 -n1 -I p -j " + imageLocation + " | mpeg2enc -v 0 -f 12 -x 1920 -y 1080 -a 3 -4 1 -2 1 -q 1 -H --level high -o " + videoLocation
+								width, height = "1920", "1080"
 							else:
-								cmd = renderCommand + " -v 0 -f 25 -n1 -I p -j " + imageLocation + " | mpeg2enc -v 0 -f 12 -x 1280 -y 720 -a 3 -4 1 -2 1 -q 1 -H --level high -o " + videoLocation
+								width, height = "1280", "720"
 
-							printl("cmd: " + str(cmd), self, "D")
+							renderArgs = [renderCommand, "-v", "0", "-f", "25", "-n1", "-I", "p", "-j", imageLocation]
+							encodeArgs = ["mpeg2enc", "-v", "0", "-f", "12", "-x", width, "-y", height,
+										  "-a", "3", "-4", "1", "-2", "1", "-q", "1", "-H",
+										  "--level", "high", "-o", videoLocation]
 
-							if PY2:
-								import commands
-								(status, response) = commands.getstatusoutput(cmd)
-							else:
-								(status, response) = subprocess.getstatusoutput(cmd)
+							printl("cmd: " + str(renderArgs) + " | " + str(encodeArgs), self, "D")
+
+							status, response = self.runRenderPipeline(renderArgs, encodeArgs)
 
 							if fileExists(videoLocation) and status == 0:
 								printl("finished rendering myFile: " + str(myFile), self, "D")
@@ -1001,7 +1047,7 @@ class BackgroundMediaSyncer(Thread):
 			self.messagePump.send(0)
 
 			# in this run we gather only the information
-			self.cylceThroughLibrary()
+			self.cycleThroughLibrary()
 
 			printl("sectionCount " + str(self.sectionCount), self, "D")
 			printl("movieCount " + str(self.movieCount), self, "D")
@@ -1012,7 +1058,7 @@ class BackgroundMediaSyncer(Thread):
 			printl("albumCount " + str(self.albumCount), self, "D")
 
 			# this run really fetches the data
-			self.cylceThroughLibrary(dryRun=False)
+			self.cycleThroughLibrary(dryRun=False)
 
 			if self.cancel:
 				self.messages.push((THREAD_FINISHED, _("Process aborted.\nPress Exit to close.")))
@@ -1031,15 +1077,15 @@ class BackgroundMediaSyncer(Thread):
 	#===========================================================================
 	#
 	#===========================================================================
-	def cylceThroughLibrary(self, dryRun=True):
-		printl("cylceThroughLibrary", self, "S")
+	def cycleThroughLibrary(self, dryRun=True):
+		printl("cycleThroughLibrary", self, "S")
 
 		for section in self.sectionList:
 			# interupt if needed
 			if self.cancel:
 				break
 
-			if self.serverConfig.syncMovies.value:
+			if self.serverConfig.syncMovies().getValue():
 				if section[2] == "movieEntry":
 					printl("movie", self, "D")
 					movieUrl = section[3]["contentUrl"]
@@ -1051,14 +1097,14 @@ class BackgroundMediaSyncer(Thread):
 					library, mediaContainer = self.plexInstance.getMoviesFromSection(movieUrl)
 
 					if not dryRun:
-						self.syncThrougMediaLibrary(library, myType="Movie")
+						self.syncThroughMediaLibrary(library, myType="Movie")
 					else:
 						self.movieCount += len(library)
 
-			if self.serverConfig.syncShows.value:
+			if self.serverConfig.syncShows().getValue():
 				if section[2] == "showEntry":
 					printl("show: " + str(section))
-					showUrl = section[3]["contentUrl"]\
+					showUrl = section[3]["contentUrl"]
 
 					if "/all" not in showUrl:
 						showUrl += "/all"
@@ -1067,7 +1113,7 @@ class BackgroundMediaSyncer(Thread):
 					library, mediaContainer = self.plexInstance.getShowsFromSection(showUrl)
 
 					if not dryRun:
-						self.syncThrougMediaLibrary(library, myType="Show")
+						self.syncThroughMediaLibrary(library, myType="Show")
 					else:
 						self.showCount += len(library)
 
@@ -1081,7 +1127,7 @@ class BackgroundMediaSyncer(Thread):
 						library, mediaContainer = self.plexInstance.getSeasonsOfShow(seasonsUrl)
 
 						if not dryRun:
-							self.syncThrougMediaLibrary(library, myType="Season")
+							self.syncThroughMediaLibrary(library, myType="Season")
 						else:
 							self.seasonCount += len(library)
 
@@ -1095,16 +1141,16 @@ class BackgroundMediaSyncer(Thread):
 							library, mediaContainer = self.plexInstance.getEpisodesOfSeason(episodesUrl)
 
 							if not dryRun:
-								self.syncThrougMediaLibrary(library, myType="Episode")
+								self.syncThroughMediaLibrary(library, myType="Episode")
 							else:
 								self.episodeCount += len(library)
 
-			if self.serverConfig.syncMusic.value:
+			if self.serverConfig.syncMusic().getValue():
 				if section[2] == "musicEntry":
 					printl("music", self, "D")
 
 					# first we go through the artists
-					url = section[3]["contentUrl"]\
+					url = section[3]["contentUrl"]
 
 					if "/all" not in url:
 						url += "/all"
@@ -1113,7 +1159,7 @@ class BackgroundMediaSyncer(Thread):
 					library, mediaContainer = self.plexInstance.getMusicByArtist(url)
 
 					if not dryRun:
-						self.syncThrougMediaLibrary(library, myType="Music")
+						self.syncThroughMediaLibrary(library, myType="Music")
 					else:
 						self.artistCount += len(library)
 
@@ -1124,7 +1170,7 @@ class BackgroundMediaSyncer(Thread):
 					library, mediaContainer = self.plexInstance.getMusicByAlbum(url)
 
 					if not dryRun:
-						self.syncThrougMediaLibrary(library, myType="Albums")
+						self.syncThroughMediaLibrary(library, myType="Albums")
 					else:
 						self.albumCount += len(library)
 
@@ -1133,7 +1179,7 @@ class BackgroundMediaSyncer(Thread):
 	#===========================================================================
 	#
 	#===========================================================================
-	def syncThrougMediaLibrary(self, library, myType):
+	def syncThroughMediaLibrary(self, library, myType):
 		printl("", self, "S")
 
 		for media in library:
@@ -1158,7 +1204,7 @@ class BackgroundMediaSyncer(Thread):
 				t_postfix = variant[2]
 
 				# location string
-				location = config.plugins.dreamplex.mediafolderpath.value + str(self.prefix) + "_" + str(media[1]["ratingKey"]) + str(t_postfix)
+				location = self.settings.mediaFolderPath.getValue() + str(self.prefix) + "_" + str(media[1]["ratingKey"]) + str(t_postfix)
 
 				# check if backdrop exists
 				if fileExists(location):
@@ -1184,7 +1230,7 @@ class BackgroundMediaSyncer(Thread):
 				t_postfix = variant[2]
 
 				# location string
-				location = config.plugins.dreamplex.mediafolderpath.value + str(self.prefix) + "_" + str(media[1]["ratingKey"]) + str(t_postfix)
+				location = self.settings.mediaFolderPath.getValue() + str(self.prefix) + "_" + str(media[1]["ratingKey"]) + str(t_postfix)
 
 				# check if poster exists
 				if fileExists(location):
@@ -1201,9 +1247,9 @@ class BackgroundMediaSyncer(Thread):
 
 			self.decreaseQueueCount(myType=myType)
 
-			msg_text = "Movies: " + str(self.movieCount) + "\n" + "Shows: " + str(self.showCount)\
-						+ "\n" + "Seasons: " + str(self.seasonCount) + "\n" + "Episodes: " + str(self.episodeCount) \
-						+ "\n" + "Artists: " + str(self.artistCount) + "\n" + "Albums: " + str(self.albumCount)
+			msg_text = "Movies: " + str(self.movieCount) + "\n" + "Shows: " + str(self.showCount) \
+					   + "\n" + "Seasons: " + str(self.seasonCount) + "\n" + "Episodes: " + str(self.episodeCount) \
+					   + "\n" + "Artists: " + str(self.artistCount) + "\n" + "Albums: " + str(self.albumCount)
 			self.progress.push((THREAD_WORKING, msg_text))
 			self.progressPump.send(0)
 
@@ -1248,7 +1294,7 @@ class BackgroundMediaSyncer(Thread):
 		printl("download url " + download_url, self, "D")
 
 		if self.urllibInstance is None:
-			server = self.plexInstance.getServerFromURL(download_url)
+			server: str = self.plexInstance.getServerFromURL(download_url)
 			self.initUrllibInstance(server)
 
 		printl("starting download", self, "D")
@@ -1271,19 +1317,21 @@ class BackgroundMediaSyncer(Thread):
 	#===========================================================================
 	#
 	#===========================================================================
-	def initUrllibInstance(self, server):
+	def initUrllibInstance(self, server: str):
 		printl("", self, "S")
 
 		# we establish the connection once here
 		self.urllibInstance = URLopener()
 
-		# we add headers only in special cases
-		connectionType = self.serverConfig.connectionType.value
-		localAuth = self.serverConfig.localAuth.value
-
-		if connectionType == "2" or localAuth:
-			authHeader = self.plexInstance.get_hTokenForServer(server)
-			self.urllibInstance.addheader("X-Plex-Token", authHeader["X-Plex-Token"])
+		# get_hTokenForServer() already returns an empty dict when this
+		# backend/server has no token to attach (Plex: try/except around a
+		# missing cache entry; Jellyfin: no token found) - no need to guess
+		# here, from shared code, whether a header is needed by inspecting
+		# connectionType()/localAuth(), which only Plex's own values mean
+		# anything for.
+		authHeader = self.plexInstance.get_hTokenForServer(server)
+		for h, v in authHeader.items():
+			self.urllibInstance.addheader(h, v)
 
 		printl("", self, "C")
 

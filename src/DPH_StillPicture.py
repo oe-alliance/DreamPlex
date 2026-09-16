@@ -31,6 +31,7 @@ from enigma import eWidget, eServiceReference, iPlayableService, eTimer
 from Components.Renderer.Renderer import Renderer
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Components.config import config
+from . import Singleton
 
 from .__common__ import printl2 as printl
 
@@ -63,7 +64,7 @@ class Showiframe(object):
 		printl("", self, "S")
 
 		# we append here to have ctype.so also for sh4 boxes
-		libsFolder = "/usr/libs"  # config.plugins.dreamplex.pluginfolderpath.value + "libs"
+		libsFolder = "/usr/libs"  # Singleton().getSettingsInstance().pluginfolderpath.getValue() + "libs"
 		libname = "libshowiframe.so.0"
 		sys.path.append(libsFolder)
 
@@ -308,7 +309,7 @@ class StillPicture(Renderer, InfoBarBase):
 		printl("", self, "S")
 
 		if default is True:
-			self.stillpictureDefault = config.plugins.dreamplex.mediafolderpath.value + "/bootlogo.m1v"
+			self.stillpictureDefault = Singleton().getSettingsInstance().mediaFolderPath.getValue() + "/bootlogo.m1v"
 
 		if self.stillpicture != value:
 			self.stillpicture = value

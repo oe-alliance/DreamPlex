@@ -45,19 +45,22 @@ if __name__ == '__main__':
 #===============================================================================
 # IMPORT
 #===============================================================================
+from __future__ import annotations
 import socket
 import struct
 import threading
 import time
 from six import PY2, PY3
+
+from . import SettingsStorage, Singleton
+from .plex.PlexSettings import PlexSettings
+
 try:
 	from urllib.request import urlopen
-except:
+except Exception:
 	from urllib2 import urlopen
 
-from Components.config import config
-
-from .__common__ import printl2 as printl, getUUID, getBoxInformation, getVersion, getMyIp
+from .__common__ import printl2 as printl, getUUID, getBoxInformation, getVersion, getMyIp, DiscoveredServer
 
 #===============================================================================
 #
@@ -81,7 +84,7 @@ class PlexGdm(object):
 		self.client_register_group = (self._multicast_address, 32413)
 		self.client_update_port = 32412
 
-		self.server_list = []
+		self.server_list:list[DiscoveredServer] = []
 		self.discovery_interval = 120
 
 		self._discovery_is_running = False
@@ -102,10 +105,12 @@ class PlexGdm(object):
 		gBoxType = getBoxInformation()
 		self.client_id = str(getUUID())
 
+		settings: SettingsStorage = Singleton().getSettingsInstance()
+
 		self.client_data = "Content-Type: plex/media-player\n"
 		self.client_data += "Resource-Identifier: %s\n" % self.client_id
-		self.client_data += "Name: %s\n" % config.plugins.dreamplex.boxName.value
-		self.client_data += "Port: %s\n" % config.plugins.dreamplex.remotePort.value
+		self.client_data += "Name: %s\n" % settings.boxName.getValue()
+		self.client_data += "Port: %s\n" % settings.remotePort.getValue()
 		self.client_data += "Product: %s\n" % gBoxType[1] + " (" + str(getMyIp()) + ")"
 		self.client_data += "Version: %s\n" % str(getVersion())
 		self.client_data += "Protocol: plex\n"
@@ -138,13 +143,13 @@ class PlexGdm(object):
 		#Set socket reuse, may not work on all OSs.
 		try:
 			update_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		except:
+		except Exception:
 			pass
 
 		#Attempt to bind to the socket to recieve and send data.  If we can;t do this, then we cannot send registration
 		try:
 			update_sock.bind(('0.0.0.0', self.client_update_port))
-		except:
+		except Exception:
 			printl("Error: Unable to bind to port [%s] - client will not be registered" % self.client_update_port, self, "D")
 
 			printl("", self, "C")
@@ -161,7 +166,7 @@ class PlexGdm(object):
 			if PY3:
 				sendstr = sendstr.encode()
 			update_sock.sendto(sendstr, self.client_register_group)
-		except:
+		except Exception:
 			printl("Error: Unable to send registeration message", self, "D")
 
 		#Now, listen for client discovery reguests and respond.
@@ -180,7 +185,7 @@ class PlexGdm(object):
 						if PY3:
 							sendstr = sendstr.encode()
 						update_sock.sendto(sendstr, addr)
-					except:
+					except Exception:
 						printl("Error: Unable to send client update message", self, "D")
 
 					if self.debug:
@@ -197,7 +202,7 @@ class PlexGdm(object):
 			if PY3:
 				sendstr = sendstr.encode()
 			update_sock.sendto(sendstr, self.client_register_group)
-		except:
+		except Exception:
 			printl("Error: Unable to send client update message", self, "D")
 
 		self.client_registered = False
@@ -219,8 +224,8 @@ class PlexGdm(object):
 				return False
 
 			try:
-				media_server = self.server_list[0]['server']
-				media_port = self.server_list[0]['port']
+				media_server = self.server_list[0].server
+				media_port = self.server_list[0].port
 
 				printl("Checking server [%s] on port [%s]" % (media_server, media_port), self, "D")
 				f = urlopen('http://%s:%s/clients' % (media_server, media_port))
@@ -235,7 +240,7 @@ class PlexGdm(object):
 					printl("Client registration not found", self, "D")
 					printl("Client data is: %s" % client_result, self, "D")
 
-			except:
+			except Exception:
 				printl("Unable to check status", self, "D")
 
 		printl("", self, "C")
@@ -244,7 +249,7 @@ class PlexGdm(object):
 	#===========================================================================
 	#
 	#===========================================================================
-	def getServerList(self):
+	def getServerList(self) -> list[DiscoveredServer]:
 		printl("", self, "S")
 
 		printl("", self, "C")
@@ -256,7 +261,7 @@ class PlexGdm(object):
 	def discover(self):
 		printl("", self, "S")
 
-		#noinspection PyArgumentEqualDefault
+		# noinspection PyArgumentEqualDefault
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 		# Set a timeout so the socket does not block indefinitely
@@ -292,38 +297,39 @@ class PlexGdm(object):
 
 		self.discovery_complete = True
 
-		discovered_servers = []
+		discovered_servers: list[DiscoveredServer] = []
 
 		if returnData:
 
 			for response in returnData:
-				update = {'server': response.get('from')[0]}
+				update: DiscoveredServer = DiscoveredServer(type=PlexSettings.SETTINGS_NAME)
+				update.server = response.get('from')[0]
 
 				#Check if we had a positive HTTP response
 				if "200 OK" in response.get('data'):
 
-					for each in response.get('data').split('\n'):
+					for each in str(response.get('data').split('\n')):
 
-						update['discovery'] = "auto"
-						update['owned'] = '1'
-						update['master'] = 1
-						update['role'] = 'master'
-						update['class'] = None
+						update.discovery = "auto"
+						update.owned = '1'
+						update.master = 1
+						update.role = 'master'
+						update.clazz = None
 
 						if "Content-Type:" in each:
-							update['content-type'] = each.split(':')[1].strip()
+							update.contentType = each.split(':')[1].strip()
 						elif "Resource-Identifier:" in each:
-							update['uuid'] = each.split(':')[1].strip()
+							update.uuid = each.split(':')[1].strip()
 						elif "Name:" in each:
-							update['serverName'] = each.split(':')[1].strip()
+							update.serverName = each.split(':')[1].strip()
 						elif "Port:" in each:
-							update['port'] = each.split(':')[1].strip()
+							update.port = int(each.split(':')[1].strip())
 						elif "Updated-At:" in each:
-							update['updated'] = each.split(':')[1].strip()
+							update.updated = each.split(':')[1].strip()
 						elif "Version:" in each:
-							update['version'] = each.split(':')[1].strip()
+							update.version = each.split(':')[1].strip()
 						elif "Server-Class:" in each:
-							update['class'] = each.split(':')[1].strip()
+							update.clazz = each.split(':')[1].strip()
 
 				discovered_servers.append(update)
 
@@ -334,7 +340,7 @@ class PlexGdm(object):
 		else:
 			printl("Number of servers Discovered: %s" % str(len(self.server_list)), self, "D")
 			for items in self.server_list:
-				printl("Server Discovered: %s" % str(items['serverName']), self, "D")
+				printl("Server Discovered: %s" % str(items.serverName), self, "D")
 
 		printl("", self, "C")
 

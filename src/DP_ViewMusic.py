@@ -29,7 +29,7 @@ from Components.config import config
 from .DP_View import DP_View
 
 from .__common__ import printl2 as printl, encodeThat
-from .__init__ import _  # _ is translation
+from . import _  # _ is translation
 
 #===============================================================================
 #
