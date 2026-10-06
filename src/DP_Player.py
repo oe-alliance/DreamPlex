@@ -64,13 +64,17 @@ from .DPH_Singleton import Singleton
 #from .DP_Summary import DreamplexPlayerSummary
 from .DPH_ScreenHelper import DPH_ScreenHelper
 
-from .__common__ import printl2 as printl, convertSize, encodeThat
+from .__common__ import printl2 as printl, buildMediaChoiceName, encodeThat, runInThread, fireAndForget, PlaybackClock
 from .__init__ import _  # _ is translation
 
 
 # we need this to see the states for subtitles also in audioselction with yellow button
 SUBTITLES_ENABLED = False
 SUBTITLES_CONTENT = None
+
+# how often playback progress is reported to the server. It used to be
+# repeated in four places that could disagree; keep it in one.
+TIMELINE_INTERVAL_MS = 5000
 
 
 #===============================================================================
@@ -87,7 +91,14 @@ class InfobarAudioSelectionExtended(InfoBarAudioSelection):
 	#===========================================================================
 	def audioSelection(self):
 		printl("mh: audioSelection", self, "D")
-		self.session.openWithCallback(self.audioSelected, myAudioSelection, infobar=self.session.infobar or self)
+		# our own callback: the image's audioSelected() is gone since OpenATV 7.6
+		self.session.openWithCallback(self.audioSelectionClosed, myAudioSelection, infobar=self.session.infobar or self)
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def audioSelectionClosed(self, result=None):
+		printl("result: " + str(result), self, "D")
 
 #===============================================================================
 #
@@ -153,7 +164,10 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	timeshift_enabled = False
 	isVisible = False
 	playbackType = None
+	playSessionID = None
+	playbackClock = None
 	timelineWatcher = None
+	seekwatcherThread = None
 	whatPoster = None
 	subtitleStreams = None
 	subtitleLanguageCode = None
@@ -279,9 +293,19 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 	def __evUpdatedInfo(self):
 		if self.resume and self.resumeStamp is not None and self.resumeStamp > 0.0:
-			self.mhSeekHack = 0
-			self.seekwatcherThread = eTimer()
-			self.seekwatcherThread.callback.append(self.seekWatcher)
+			# evUpdatedInfo fires again and again while a resume is pending,
+			# and this used to build a NEW eTimer every time. Replacing a live
+			# one drops the last Python reference to a timer whose callback
+			# may be on the stack - enigma2 dispatches service events
+			# synchronously from C++ - which is the shape of a use-after-free.
+			# Keep the one object for the life of the player and just (re)arm
+			# it: the next entry of a playlist needs it again. (Spotted by
+			# DreamFin while chasing a native crash.)
+			if self.seekwatcherThread is None:
+				self.seekwatcherThread = eTimer()
+				self.seekwatcherThread.callback.append(self.seekWatcher)
+				self.mhSeekHack = 0
+
 			self.seekwatcherThread.start(900, False)
 			return
 
@@ -302,7 +326,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		self.startTimelineWatcher()
 
 		if self.timelineWatcher is not None:
-			self.timelineWatcher.start(5000, False)
+			self.timelineWatcher.start(TIMELINE_INTERVAL_MS, False)
 
 		printl("", self, "C")
 
@@ -364,7 +388,36 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 		self.setPoster()
 
-		self.count, self.options, self.server = Singleton().getPlexInstance().getMediaOptionsToPlay(self.media_id, server, False, myType=selection[1]['tagType'])
+		# asking the server for the media options is a network round trip:
+		# keep it off the enigma2 main loop so the GUI cannot freeze
+		def work():
+			plex = Singleton().getPlexInstance()
+			# the playback type first: getMediaOptionsToPlay() already reads it
+			# (getTranscodeSettings() only builds the client capabilities when
+			# it says "transcode"), so setting it later, in setSelectedMedia(),
+			# left that read on the previous type - with a server configured as
+			# streamed, the first transcoded play sent its capabilities empty
+			plex.setPlaybackType(str(self.playbackMode))
+			return plex.getMediaOptionsToPlay(self.media_id, server, False, myType=selection[1]['tagType'])
+
+		runInThread(work, self.onMediaOptionsReady)
+
+		printl("", self, "C")
+
+	#===========================================================
+	#
+	#===========================================================
+	def onMediaOptionsReady(self, mediaOptions, error):
+		printl("", self, "S")
+
+		if error is not None or not mediaOptions:
+			printl("could not get media options: " + str(error), self, "E")
+			self.session.open(MessageBox, (_("Error:") + "\n%s") % str(error), MessageBox.TYPE_INFO)
+
+			printl("", self, "C")
+			return
+
+		self.count, self.options, self.server = mediaOptions
 
 		self.selectMedia(self.count, self.options, self.server)
 
@@ -392,13 +445,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 				for items in self.options:
 					printl("item: " + str(items), self, "D")
-					if items[1] is not None:
-						name = items[1].split('/')[-1]
-					else:
-						size = convertSize(int(items[3]))
-						duration = time.strftime('%H:%M:%S', time.gmtime(int(items[4])))
-						# this is the case when there is no information of the real file name
-						name = items[0] + " (" + items[2] + " / " + size + " / " + duration + ")"
+					name = buildMediaChoiceName(items)
 
 					printl("name " + str(name), self, "D")
 					functionList.append((name, indexCount, ))
@@ -407,7 +454,9 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 				self.session.openWithCallback(self.setSelectedMedia, ChoiceBox, title=_("Select media to play"), list=functionList)
 
 			else:
-				self.setSelectedMedia()
+				# only one version: play it directly with an explicit choice,
+				# so a None choice can only mean "dialog cancelled"
+				self.setSelectedMedia((None, 0))
 
 			printl("", self, "C")
 
@@ -419,13 +468,23 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		result = 0
 		printl("choice: " + str(choice), self, "D")
 
-		if choice is not None:
-			result = int(choice[1])
+		if choice is None:
+			# the version dialog was cancelled (EXIT) -> go back, do not play
+			printl("selection cancelled, leaving player", self, "I")
+			self.close((False, ))
+			printl("", self, "C")
+			return
+
+		result = int(choice[1])
 
 		printl("result: " + str(result), self, "D")
 
-		Singleton().getPlexInstance().setPlaybackType(str(self.playbackMode))
+		# remember which VERSION was picked so the transcoder serves it too
+		selectedOption = self.options[result]
+		if len(selectedOption) > 7 and selectedOption[7] is not None:
+			Singleton().getPlexInstance().setSelectedVersion(selectedOption[7])
 
+		# the playback type was set before asking for the options (playMedia)
 		mediaFileUrl = Singleton().getPlexInstance().mediaType({'key': self.options[result][0], 'file': self.options[result][1]}, self.server)
 		printl("We have selected media at " + mediaFileUrl, self, "I")
 
@@ -439,7 +498,29 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	def buildPlayerData(self, mediaFileUrl, isExtraData=False):
 		printl("", self, "S")
 
-		self.playerData[self.currentIndex] = Singleton().getPlexInstance().playLibraryMedia(self.media_id, mediaFileUrl, isExtraData=isExtraData)
+		# playLibraryMedia talks to the server (and starting a transcode
+		# session can take seconds): off the main loop it goes
+		def work():
+			return Singleton().getPlexInstance().playLibraryMedia(self.media_id, mediaFileUrl, isExtraData=isExtraData)
+
+		runInThread(work, self.onPlayerDataReady)
+
+		printl("", self, "C")
+
+	#===============================================================================
+	#
+	#===============================================================================
+	def onPlayerDataReady(self, playerData, error):
+		printl("", self, "S")
+
+		if error is not None or not playerData:
+			printl("could not build player data: " + str(error), self, "E")
+			self.session.open(MessageBox, (_("Error:") + "\n%s") % str(error), MessageBox.TYPE_INFO)
+
+			printl("", self, "C")
+			return
+
+		self.playerData[self.currentIndex] = playerData
 
 		# populate addional data
 		self.setPlayerData()
@@ -692,7 +773,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 
 			if self.timelineWatcher is not None:
 				# we start here too because it seems that direct local does not hit the buffer full function
-				self.timelineWatcher.start(5000, False)
+				self.timelineWatcher.start(TIMELINE_INTERVAL_MS, False)
 
 			if self.subtitleWatcher is not None:
 				self.subtitleWatcher.start(10000, False)
@@ -739,10 +820,15 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 					number = str(x[1])
 					description = "?"
 					myLanguage = _("<unknown>")
+					# the label above is translated, so it cannot also serve as the
+					# sentinel further down: in Spanish it reads "<desconocido>" and
+					# any comparison against "<unknown>" silently stops matching.
+					languageIsUnknown = True
 					selected = ""
 
 					if x[4] != "und":
 						foundDefined = True  # mh
+						languageIsUnknown = False
 
 						if x[4] in LanguageCodes:
 							myLanguage = LanguageCodes[x[4]][0]
@@ -778,7 +864,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 						forceMatch = False
 						if self.plexInstance.getServerConfig().useForcedSubtitles.value:
 							if foundDefined == False:
-								if myLanguage == "<unknown>":
+								if languageIsUnknown:
 									if description == "UTF-8 text":
 										try:
 											if self.playerData[self.currentIndex]['usingExtForcedSubs'] == True:
@@ -905,6 +991,30 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 			printl("we are a multiuser server", self, "D")
 			self.multiUser = True
 
+		# our own clock, because in transcoded HLS the decoder never has a
+		# position to offer. Starts at the resume point so the very first
+		# report already lands where playback actually is, not at zero
+		self.playbackClock = PlaybackClock()
+		try:
+			startAt = int(self.resumeStamp) if self.resumeStamp else 0
+		except (TypeError, ValueError):
+			startAt = 0
+		self.playbackClock.start(startAt)
+
+		# the timer only fires after its interval, so the server would not
+		# hear about this playback for another interval: report at once
+		self.updateTimeline()
+
+		# and start it right here. It used to be started from four other
+		# places instead, and none of them won for streamed/transcoded
+		# playback: resumePlayerData() started a timer that play() then
+		# threw away by calling this method again (play() only started it
+		# again for direct local), and the bufferFull event that would
+		# have covered it never arrives on HLS. The result on hardware was
+		# zero updateTimeline() calls for a whole playback - no progress
+		# reported and the PlaybackClock left inert.
+		self.timelineWatcher.start(TIMELINE_INTERVAL_MS, False)
+
 		printl("", self, "C")
 
 	#===========================================================================
@@ -918,10 +1028,16 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 			self.transcoderHeartbeat.callback.append(self.keepTranscoderAlive)
 			self.transcoderHeartbeat.start(10000, False)
 
-		if self.timelineWatcher is not None:
-			self.timelineWatcher.stop()
-
 		super(DP_Player, self).pauseService()
+
+		if self.playbackClock is not None:
+			self.playbackClock.pause()
+
+		if self.timelineWatcher is not None:
+			# report the pause before going quiet, otherwise the dashboard
+			# keeps showing the stream as playing
+			self.updateTimeline()
+			self.timelineWatcher.stop()
 
 		printl("", self, "C")
 
@@ -937,8 +1053,14 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		if self.transcoderHeartbeat is not None:
 			self.transcoderHeartbeat.stop()
 
+		if self.playbackClock is not None:
+			self.playbackClock.resume()
+
 		if self.timelineWatcher is not None:
-			self.timelineWatcher.start(30000, False)
+			# same 5s as everywhere else: at 30s the dashboard kept showing
+			# the stream paused long after it had been resumed
+			self.updateTimeline()
+			self.timelineWatcher.start(TIMELINE_INTERVAL_MS, False)
 
 		printl("", self, "S")
 	#===========================================================================
@@ -949,7 +1071,12 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		printl("", self, "S")
 
 		printl("", self, "C")
-		return str(self.playerData[self.currentIndex]['videoData']['title'])
+		# applySkin asks for the title while the version-selection dialog is
+		# still open, i.e. before playerData is filled - never crash here
+		try:
+			return str(self.playerData[self.currentIndex]['videoData']['title'])
+		except (KeyError, TypeError, IndexError):
+			return ""
 
 	#===========================================================================
 	#
@@ -968,6 +1095,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		self.server = str(self.playbackData['server'])
 		self.id = str(self.playbackData['id'])
 		self.multiUserServer = self.playbackData['multiUserServer']
+		self.playSessionID = self.playbackData.get('playSessionID')
 		self.url = str(self.playbackData['playUrl'])
 		self.transcodingSession = str(self.playbackData['transcodingSession'])
 		self.playbackType = str(self.playbackData['playbackType'])
@@ -1128,17 +1256,35 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	#===========================================================================
 	#noinspection PyUnusedLocal
 	def seekWatcher(self, *args):
+		"""One attempt at the resume seek. Repeated by the eTimer, not here.
+
+		This runs on the enigma2 MAIN LOOP: despite its name the watcher is
+		an eTimer, not a thread. It used to hold a `while` loop with a
+		sleep(1) in it, which froze the whole GUI for as long as the resume
+		took - key presses were simply dropped, and if the decoder never
+		reported a position (which is what happens on transcoded HLS on some
+		images) resumeStamp was never cleared and the loop never ended, so
+		the GUI stayed frozen until the image's hang detector killed enigma2.
+		The timer already repeats every 900ms, so one attempt per call is
+		all that was ever needed.
+		"""
 		printl("", self, "S")
 
-		printl("seekWatcher started", self, "I")
+		if self.resumeStamp is None:
+			# nothing left to do: stop repeating
+			if self.seekwatcherThread is not None:
+				self.seekwatcherThread.stop()
+			printl("seekWatcher finished", self, "I")
+			printl("", self, "C")
+			return
+
 		try:
-			while self is not None and self.resumeStamp is not None:
-				self.seekToStartPos()
-				sleep(1)
+			self.seekToStartPos()
 		except Exception as e:
 			printl("stopping due to exception in seektostartpos, eg. stopped playback before ready ..." + str(e), self, "W")
+			if self.seekwatcherThread is not None:
+				self.seekwatcherThread.stop()
 
-		printl("seekWatcher finished ", self, "I")
 		printl("", self, "C")
 
 	#===========================================================================
@@ -1151,6 +1297,13 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 				service = self.session.nav.getCurrentService()
 				seek = service and service.seek()
 				if seek is not None:
+
+					# only assigned when getLength() succeeds, and it is used
+					# further down in a log line - without this default a
+					# failing getLength() raised NameError there, the except
+					# below swallowed it, and the resume was lost with nothing
+					# but a warning (found by the DreamFin fork, same code)
+					length = None
 
 					r = seek.getLength()
 					if not r[0]:
@@ -1179,7 +1332,9 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 						return
 
 					elapsed = self.resumeStamp * 90000
-					printl("seeking to " + str(time) + " length " + str(length) + " ", self, "D")
+					# `time` here used to be the imported time function, so the
+					# log read "seeking to <built-in function time>"
+					printl("seeking to " + str(self.resumeStamp) + "s length " + str(length) + " ", self, "D")
 
 					#mh //if elapsed < 90000:
 					#mh //	printl("skip seeking < 10s", self, "D")
@@ -1205,7 +1360,7 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 			self.setSeekState(self.SEEK_STATE_PLAY)
 
 		if self.timelineWatcher is not None:
-			self.timelineWatcher.start(5000, False)
+			self.timelineWatcher.start(TIMELINE_INTERVAL_MS, False)
 
 		#printl("", self, "C")
 
@@ -1250,6 +1405,11 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	#===========================================================================
 	def leavePlayerConfirmed(self, answer):
 		printl("", self, "S")
+
+		# the resume watcher must not outlive the player: it keeps firing on
+		# the main loop while resumeStamp is set, and nothing else stops it
+		if self.seekwatcherThread is not None:
+			self.seekwatcherThread.stop()
 
 		if answer != "EOF":
 			self.handleProgress()
@@ -1316,8 +1476,21 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		printl("", self, "S")
 
 		try:
-			currentTime = int(self.getPlayPosition()[1] / 90000)
-			totalTime = int(self.getPlayLength()[1] / 90000)
+			# decoder when valid, own clock in HLS - reading the decoder
+			# blindly used to leave currentTime negative here, which fell
+			# through to the "end of file" branch below and scrobbled the
+			# media as watched without anybody having watched it
+			currentTime = self.getPlaybackPosition()
+			totalTime = self.getMediaDuration()
+			valid = currentTime is not None and currentTime > 0 and totalTime > 0
+
+			if not EOF and not valid:
+				printl("no valid play position, reporting nothing", self, "D")
+				printl("", self, "C")
+				return
+
+			if currentTime is None:
+				currentTime = 0
 			printl("progress data available, ...", self, "D")
 
 			if not EOF and currentTime is not None and currentTime > 0 and totalTime is not None and totalTime > 0:
@@ -1327,12 +1500,15 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 				progress = 100
 				printl("End of file reached", self, "D")
 
+			# the reports below are sent while leaving the player: we do not
+			# need their answer, so never block the GUI waiting for them
 			if self.timelineWatcher is not None:
 				self.timelineWatcher.stop()
 
-				urlPath = self.server + "/:/timeline?containerKey=/library/sections/onDeck&key=/library/metadata/" + self.id + "&ratingKey=" + self.id
-				urlPath += "&state=stopped&time=" + str(currentTime * 1000) + "&duration=" + str(totalTime * 1000)
-				self.plexInstance.doRequest(urlPath)
+				# closes the session on the server side: without it the box
+				# lingers in the dashboard until the entry times out
+				urlPath = self.buildTimelineUrl("stopped", currentTime, totalTime)
+				fireAndForget(lambda url=urlPath: self.plexInstance.doRequest(url))
 
 			#Legacy PMS Server server support before MultiUser version v0.9.8.0 and if we are not connected via plex.tv
 			else:
@@ -1345,12 +1521,14 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 				#If we are less than 95% complete, store resume time
 				elif progress < 95:
 					printl("Less than 95% progress, will store resume time", self, "I")
-					self.plexInstance.doRequest(http + "://" + self.server + "/:/progress?key=" + self.id + "&identifier=com.plexapp.plugins.library&time=" + str(currentTime * 1000))
+					progressUrl = http + "://" + self.server + "/:/progress?key=" + self.id + "&identifier=com.plexapp.plugins.library&time=" + str(currentTime * 1000)
+					fireAndForget(lambda url=progressUrl: self.plexInstance.doRequest(url))
 
 				#Otherwise, mark as watched
 				else:
 					printl("Movie marked as watched. Over 95% complete", self, "I")
-					self.plexInstance.doRequest(http + "://" + self.server + "/:/scrobble?key=" + self.id + "&identifier=com.plexapp.plugins.library")
+					scrobbleUrl = http + "://" + self.server + "/:/scrobble?key=" + self.id + "&identifier=com.plexapp.plugins.library"
+					fireAndForget(lambda url=scrobbleUrl: self.plexInstance.doRequest(url))
 
 		except:
 			printl("no progress data maybe playback never started, returning ...", self, "D")
@@ -1364,8 +1542,10 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	def keepTranscoderAlive(self):
 		printl("", self, "S")
 
+		# periodic ping: must not stall playback if the server is slow
 		http = self.plexInstance.http
-		self.plexInstance.doRequest(http + "://" + self.server + "/video/:/transcode/universal/ping?session=" + self.transcodingSession)
+		pingUrl = http + "://" + self.server + "/video/:/transcode/universal/ping?session=" + self.transcodingSession
+		fireAndForget(lambda url=pingUrl: self.plexInstance.doRequest(url))
 
 		printl("", self, "C")
 
@@ -1375,11 +1555,14 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	def stopTranscoding(self):
 		printl("", self, "S")
 
+		# sent while leaving playback: no answer needed, never block on it
 		http = self.plexInstance.http
 		if self.universalTranscoder:
-			self.plexInstance.doRequest(http + "://" + self.server + "/video/:/transcode/universal/stop?session=" + self.transcodingSession)
+			stopUrl = http + "://" + self.server + "/video/:/transcode/universal/stop?session=" + self.transcodingSession
 		else:
-			self.plexInstance.doRequest(http + "://" + self.server + "/video/:/transcode/segmented/stop?session=" + self.transcodingSession)
+			stopUrl = http + "://" + self.server + "/video/:/transcode/segmented/stop?session=" + self.transcodingSession
+
+		fireAndForget(lambda url=stopUrl: self.plexInstance.doRequest(url))
 
 		printl("", self, "C")
 
@@ -1422,12 +1605,123 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	#===========================================================================
 	#
 	#===========================================================================
+	def getMediaDuration(self):
+		"""Length in seconds, from the metadata rather than the decoder.
+
+		getPlayLength() has nothing to say about a transcoded HLS stream,
+		so the only reliable source is what the server told us about the
+		media when it was opened.
+		"""
+		try:
+			duration = int(self.videoData.get("duration", 0))
+		except (AttributeError, TypeError, ValueError):
+			return 0
+
+		if duration > 0:
+			return int(duration / 1000)  # plex reports milliseconds
+
+		# no metadata: fall back to the decoder, which is right for a
+		# plain file even if it is useless for HLS
+		try:
+			length = self.getPlayLength()
+			if length[0] == 0 and length[1] > 0:
+				return int(length[1] / 90000)
+		except Exception:
+			pass
+
+		return 0
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def getPlaybackPosition(self):
+		"""Seconds into the media: the decoder when it knows, our clock when
+		it does not.
+
+		getPlayPosition() returns (result, pts) and the pts only means
+		something when result is 0 - which in transcoded HLS is never, so
+		there the PlaybackClock estimate is all there is. When the decoder
+		IS valid (plain files) it wins and the clock is resynced to it.
+		"""
+		try:
+			position = self.getPlayPosition()
+			if position[0] == 0:
+				seconds = int(position[1] / 90000)
+				if seconds >= 0:
+					if self.playbackClock is not None:
+						self.playbackClock.syncTo(seconds)
+					return seconds
+		except Exception:
+			pass
+
+		if self.playbackClock is not None:
+			return self.playbackClock.tell()
+
+		return None
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def doSeek(self, pts):
+		# keep the clock on the jump target, otherwise every resume or
+		# absolute seek in HLS would leave the estimate at the old spot
+		if self.playbackClock is not None and pts is not None and pts >= 0:
+			self.playbackClock.syncTo(int(pts / 90000))
+
+		super(DP_Player, self).doSeek(pts)
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def doSeekRelative(self, pts):
+		if self.playbackClock is not None and pts is not None:
+			self.playbackClock.add(int(pts / 90000))
+
+		super(DP_Player, self).doSeekRelative(pts)
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def buildTimelineUrl(self, state, currentTime, totalTime):
+		"""Timeline report the server builds its "now playing" entry from.
+
+		`identifier` and `X-Plex-Session-Identifier` are what upstream left
+		out: without them the server still moves the resume point, but it
+		never shows the box as playing anything.
+		"""
+		urlPath = self.server + "/:/timeline?containerKey=/library/sections/onDeck"
+		urlPath += "&identifier=com.plexapp.plugins.library"
+		urlPath += "&key=/library/metadata/" + self.id + "&ratingKey=" + self.id
+		urlPath += "&state=" + state
+		urlPath += "&time=" + str(currentTime * 1000) + "&duration=" + str(totalTime * 1000)
+
+		if self.playSessionID:
+			urlPath += "&X-Plex-Session-Identifier=" + str(self.playSessionID)
+
+		return urlPath
+
+	#===========================================================================
+	#
+	#===========================================================================
 	def updateTimeline(self):
 		printl("", self, "S")
 
 		try:
-			currentTime = int(self.getPlayPosition()[1] / 90000)
-			totalTime = int(self.getPlayLength()[1] / 90000)
+			# decoder position when valid, own clock in transcoded HLS -
+			# upstream read the decoder blindly and reported garbage like
+			# time=-60002501940670000, which the server drops on the floor
+			currentTime = self.getPlaybackPosition()
+
+			# the length has to come from the metadata: a transcoded HLS
+			# stream does not report one, so getPlayLength() answers with
+			# garbage there and asking it would silence every report
+			totalTime = self.getMediaDuration()
+
+			if currentTime is None or totalTime <= 0:
+				printl("no position or duration to report", self, "D")
+				printl("", self, "C")
+				return True
+
 			progress = int((float(currentTime) / float(totalTime)) * 100)
 		except:
 			return
@@ -1443,34 +1737,30 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 		else:
 			self["endingTime"].hide()
 
-		if self.multiUserServer:
-			try:
-				printl("currentTime: " + str(currentTime), self, "C")
-				printl("totalTime: " + str(totalTime), self, "C")
+		try:
+			printl("currentTime: " + str(currentTime), self, "C")
+			printl("totalTime: " + str(totalTime), self, "C")
 
-				urlPath = self.server + "/:/timeline?containerKey=/library/sections/onDeck&key=/library/metadata/" + self.id + "&ratingKey=" + self.id
+			# only a real pause is "paused"; everything else - playing,
+			# buffering (throttled server), fast forward - is the user
+			# watching, so report "playing". The old code only accepted
+			# SEEK_STATE_PLAY and dropped every report while the server
+			# throttled, which is most of a well-buffered stream
+			if self.seekstate == self.SEEK_STATE_PAUSE:
+				state = "paused"
+			else:
+				state = "playing"
 
-				seekState = self.seekstate
+			printl("Movies %s time: %s secs of %s @ %s%%" % (state.upper(), currentTime, totalTime, progress), self, "D")
 
-				if seekState == self.SEEK_STATE_PAUSE:
-					printl("Movies PAUSED time: %s secs of %s @ %s%%" % (currentTime, totalTime, progress), self, "D")
-					urlPath += "&state=paused&time=" + str(currentTime * 1000) + "&duration=" + str(totalTime * 1000)
-					self.plexInstance.doRequest(urlPath)
+			# this runs on a timer WHILE playing: a slow server here would
+			# stutter the GUI on every tick, so fire it in the background
+			urlPath = self.buildTimelineUrl(state, currentTime, totalTime)
+			fireAndForget(lambda url=urlPath: self.plexInstance.doRequest(url))
 
-				elif seekState == self.SEEK_STATE_PLAY:
-					printl("Movies PLAYING time: %s secs of %s @ %s%%" % (currentTime, totalTime, progress), self, "D")
-					urlPath += "&state=playing&time=" + str(currentTime * 1000) + "&duration=" + str(totalTime * 1000)
-					self.plexInstance.doRequest(urlPath)
-
-				# todo add buffering here if needed
-					#urlPath += "&state=buffering&time=" + str(currentTime*1000)
-
-				# todo add stopped here if needed
-					#urlPath += "&state=stopped&time=" + str(currentTime*1000) + "&duration=" + str(totalTime*1000)
-
-			except Exception as e:
-				printl("exception: " + str(e), self, "E")
-				return False
+		except Exception as e:
+			printl("exception: " + str(e), self, "E")
+			return False
 
 		printl("", self, "C")
 		return True
@@ -1620,8 +1910,32 @@ class DP_Player(Screen, InfoBarBase, InfoBarShowHide, InfoBarCueSheetSupport,
 	def seekToMinute(self, minutes):
 		printl("", self, "S")
 
-		self.resumeStamp = int(minutes) * 60
-		self.seekToStartPos()
+		# the dialog can be cancelled, which answers None
+		if minutes is None:
+			printl("minute input cancelled", self, "D")
+			printl("", self, "C")
+			return
+
+		try:
+			seconds = max(0, int(minutes) * 60)
+		except (TypeError, ValueError):
+			printl("not a usable minute: " + str(minutes), self, "W")
+			printl("", self, "C")
+			return
+
+		# never past the end of the media
+		totalTime = self.getMediaDuration()
+		if totalTime > 0 and seconds > totalTime:
+			printl("clamping %s to the end of the media (%s)" % (seconds, totalTime), self, "D")
+			seconds = totalTime
+
+		# jump straight away instead of going through seekToStartPos(): that
+		# one refuses to seek until the decoder reports where it is, and on
+		# transcoded HLS it never does, so the jump was dropped in silence -
+		# the minute dialog worked and nothing happened. seekToStartPos()
+		# stays as it is: its retry logic is right for resuming AT START.
+		printl("seeking to minute " + str(minutes) + " (" + str(seconds) + "s)", self, "I")
+		self.doSeek(seconds * 90000)
 
 		printl("", self, "C")
 

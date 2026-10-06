@@ -116,7 +116,7 @@ msgstr "plex.tv"
 
 #: /hdd/workspaces/DreamPlex/src/__init__.py:176
 msgid "Streamed"
-msgstr "Streamed"
+msgstr "Emitido"
 
 #: /hdd/workspaces/DreamPlex/src/__init__.py:176
 msgid "Transcoded"
@@ -124,7 +124,7 @@ msgstr "Transcodificado"
 
 #: /hdd/workspaces/DreamPlex/src/__init__.py:176
 msgid "Direct Local"
-msgstr "Direct Local"
+msgstr "Local directo"
 
 #: /hdd/workspaces/DreamPlex/src/__init__.py:215
 msgid "64kbps, 128p, 3fps"
@@ -221,7 +221,7 @@ msgstr "1920x1080, 20mbps"
 #: /hdd/workspaces/DreamPlex/src/__init__.py:301
 #: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py:248
 msgid "Movies"
-msgstr "Peliculas"
+msgstr "Películas"
 
 #: /hdd/workspaces/DreamPlex/src/__init__.py:304
 msgid "TV Shows"
@@ -231,7 +231,7 @@ msgstr "Series TV"
 #: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py:250
 #: /hdd/workspaces/DreamPlex/src/DP_ViewMusic.py:56
 msgid "Music"
-msgstr "Musica"
+msgstr "Música"
 
 #: /hdd/workspaces/DreamPlex/src/__init__.py:310
 msgid "Mixed"
@@ -239,7 +239,7 @@ msgstr "Diverso"
 
 #: /hdd/workspaces/DreamPlex/src/DP_HelperScreens.py:51
 msgid "Search ..."
-msgstr "Busqueda ..."
+msgstr "Buscar ..."
 
 #: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py:249
 msgid "Tv Shows"
@@ -264,7 +264,7 @@ msgstr "Nuevo"
 #: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py:395
 #: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py:472
 msgid "No data in this section!"
-msgstr "çSin datos en la sección!"
+msgstr "¡Sin datos en la sección!"
 
 #: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py:771
 msgid "Season"
@@ -276,11 +276,11 @@ msgstr "Pulse exit para salir"
 
 #: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py:1012
 msgid "If you are using plex.tv"
-msgstr "Si usted esta usando plex.tv"
+msgstr "Si usted está usando plex.tv"
 
 #: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py:1013
 msgid "please check if python-pyopenssl is installed."
-msgstr "Verificar si python-pyopenssl esta instalado"
+msgstr "Verifique si python-pyopenssl está instalado."
 
 #: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py:1014
 msgid "You can use Systemcheck in the menu."
@@ -315,7 +315,7 @@ msgstr "Selección de destino"
 
 #: /hdd/workspaces/DreamPlex/src/DP_PathSelector.py:187
 msgid "Invalid Location"
-msgstr "Ubicación invalida"
+msgstr "Ubicación no válida"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Mappings.py:113
 msgid "Delete Entry"
@@ -336,7 +336,7 @@ msgstr "Entre su destino remoto aquí:"
 #: /hdd/workspaces/DreamPlex/src/DP_Mappings.py:167
 #: /hdd/workspaces/DreamPlex/src/DP_Mappings.py:182
 msgid "Adding new mapping was not completed"
-msgstr "AAñadiendo su mapeo no fue completado"
+msgstr "No se completó al añadir el mapeo"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:88
 msgid "Start Sync"
@@ -344,11 +344,11 @@ msgstr "Arrancar Sync"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:90
 msgid "Start Rendering"
-msgstr "Comenzando Renderizado"
+msgstr "Iniciar Renderizado"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:94
 msgid "Background"
-msgstr "Plan alternativo"
+msgstr "Fondo"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:98
 msgid "Abort"
@@ -413,9 +413,7 @@ msgstr ""
 msgid ""
 "Sync or Renderer is still running!\n"
 "Continue in background?"
-msgstr ""
-"Sync o el renderizado todavia está en ejecución!\n"
-"Continuar en segundo plano?"
+msgstr "¡La sincronización o el renderizado siguen en marcha!\n¿Continuar en segundo plano?"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:534
 msgid "DreamPlex: Rendering finished!\n"
@@ -430,30 +428,21 @@ msgid ""
 "\n"
 "\n"
 "Starting to search for picture files with 1920x1080 in its name ..."
-msgstr ""
-"\n"
-"\n"
-"Comenzando la busqueda de fotos con 1920x1080 en el nombre..."
+msgstr "\n\nBuscando fotos con 1920x1080 en el nombre..."
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:709
 msgid ""
 "\n"
 "\n"
 "Starting to search for picture files with 1280x720 in its name ..."
-msgstr ""
-"\n"
-"\n"
-"Comenzando la busqueda de fotos con 1280x720 en el nombre..."
+msgstr "\n\nBuscando fotos con 1280x720 en el nombre..."
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:725
 msgid ""
 "\n"
 "\n"
 "Files found: "
-msgstr ""
-"\n"
-"\n"
-"Ficheros no encontrados:"
+msgstr "\n\nFicheros encontrados: "
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:752
 msgid "backdrop video exists under the location "
@@ -481,10 +470,7 @@ msgid ""
 "\n"
 "\n"
 "No Files found. Nothing to do!"
-msgstr ""
-"\n"
-"\n"
-"No se encontraron ficheros. NAda que hacer!"
+msgstr "\n\nNo se encontraron ficheros. ¡Nada que hacer!"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:817
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:939
@@ -500,10 +486,7 @@ msgid ""
 "\n"
 "\n"
 "We are done!"
-msgstr ""
-"\n"
-"\n"
-"Terminado!"
+msgstr "\n\n¡Terminado!"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:897
 msgid ""
@@ -527,7 +510,7 @@ msgstr ""
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:941
 msgid "We did it :-)"
-msgstr "Lo conseguimos  :-)"
+msgstr "¡Lo conseguimos! :-)"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:944
 #, python-format
@@ -535,26 +518,23 @@ msgid ""
 "Error!\n"
 "Error-message:%s\n"
 "Press Exit to close."
-msgstr ""
-"Erreur!\n"
-"Mensaje de Error:%s\n"
-"Pulsar Exit para cerrar."
+msgstr "¡Error!\nMensaje de error: %s\nPulse Exit para cerrar."
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:1059
-msgid "title: "
-msgstr "Título:"
+msgid "title: %s"
+msgstr "Título: %s"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:1078
-msgid "found backdrop - size("
-msgstr "Encontrado Fondo de pantalla - tamaño("
+msgid "found backdrop - size(%sx%s)"
+msgstr "Fondo de pantalla encontrado - tamaño (%sx%s)"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:1084
 msgid "backdrop not found, trying to download ..."
 msgstr "No encontrado Fondo de pantalla, intentando descargar ..."
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:1104
-msgid "found poster - size("
-msgstr "Poster encontrado- tamaño("
+msgid "found poster - size(%sx%s)"
+msgstr "Póster encontrado - tamaño (%sx%s)"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:1110
 msgid "poster not found, trying to download ..."
@@ -562,11 +542,11 @@ msgstr "Poster no encontrado, intentando descargar ..."
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:1173
 msgid "... success"
-msgstr "... Exito"
+msgstr "... éxito"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Syncer.py:1179
 msgid "... failed"
-msgstr "... Falló"
+msgstr "... falló"
 
 #: /hdd/workspaces/DreamPlex/src/DP_ViewShows.py:57
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:60
@@ -576,7 +556,7 @@ msgstr "Series"
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:118
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:302
 msgid "Main Menu"
-msgstr "Menu Principal"
+msgstr "Menú Principal"
 
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:178
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:395
@@ -585,11 +565,11 @@ msgstr "Sistema"
 
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:336
 msgid "UNEXPECTED ERROR:"
-msgstr "ERROR NO ESPERADO:"
+msgstr "ERROR INESPERADO:"
 
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:348
 msgid "Settings"
-msgstr "Configuraciones"
+msgstr "Ajustes"
 
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:349
 msgid "Server"
@@ -597,7 +577,7 @@ msgstr "Servidor"
 
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:350
 msgid "Systemcheck"
-msgstr "Verificación del sisetma"
+msgstr "Verificación del sistema"
 
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:351
 msgid "Backdrops"
@@ -613,26 +593,19 @@ msgstr "Sobre"
 
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:457
 msgid ""
-"Plexserver seems to be offline. Start with Wake on Lan settings? \n"
+"Plexserver seems to be offline. Start with Wake on Lan settings?\n"
 "\n"
-"Please note: \n"
-"If you press yes the spinner will run for "
-msgstr ""
-"El servidor Plex parece fuera de linea. Comenzar la configuración Wake on "
-"Lan?\n"
-"\n"
-"Por favor anote: \n"
-"Si pulsa sobre SI, comenzará la ejecución"
+"Please note:\n"
+"If you press yes it will wait %s seconds for the server to start up, "
+"according to your settings."
+msgstr "El servidor Plex parece estar fuera de línea. ¿Iniciar con los ajustes de Wake on Lan?\n\nNota:\nSi pulsa Sí, se esperarán %s segundos a que el servidor arranque, según su configuración."
 
 #: /hdd/workspaces/DreamPlex/src/DP_MainMenu.py:467
 msgid ""
 "Plexserver seems to be offline. Please check your your settings or "
 "connection!\n"
 " Retry?"
-msgstr ""
-"El servidor Plex parece fuera de linea. Verifique la configuración o la "
-"conexión!\n"
-"Reintentar?"
+msgstr "El servidor Plex parece estar fuera de línea. ¡Verifique la configuración o la conexión!\n¿Reintentar?"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Player.py:275
 msgid "Error:"
@@ -645,7 +618,7 @@ msgstr "Seleccione el medio a reproducir"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Player.py:353
 msgid "Sorry I didn't find the file on the provided locations"
-msgstr "Lo lamentamos, no encontramos el fichero en la ubucación indicada"
+msgstr "No se encontró el fichero en las ubicaciones indicadas"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Player.py:354
 msgid "Location:"
@@ -657,7 +630,7 @@ msgstr "Verifique la configuración de Direct Local"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Player.py:356
 msgid "I will now try to play the file via transcode."
-msgstr "Intentaré ejcutando el fichero Transcodificado."
+msgstr "Intentaré reproducir el fichero transcodificado."
 
 #: /hdd/workspaces/DreamPlex/src/DP_Player.py:358
 msgid "Warning:"
@@ -668,10 +641,7 @@ msgid ""
 " This file was partially played.\n"
 "\n"
 " Do you want to resume?"
-msgstr ""
-"El fichero fue pactialmente reproducido.\n"
-"\n"
-"Quiere renudarlo?"
+msgstr "Este fichero se reprodujo parcialmente.\n\n¿Quiere reanudarlo?"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Player.py:712
 #: /hdd/workspaces/DreamPlex/src/DP_Player.py:729
@@ -685,9 +655,7 @@ msgstr "Este receptor no puede decodificar %s streams !"
 msgid ""
 "Your Box can't decode this video stream!\n"
 "%s"
-msgstr ""
-"Su receptor no puede decodificar este Video stream vidéo!\n"
-"%s"
+msgstr "¡Su receptor no puede decodificar este vídeo!\n%s"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_MovingLabel.py:120
 msgid "no Data"
@@ -707,11 +675,11 @@ msgstr "Casting:"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:295
 msgid "press 'Text'"
-msgstr "Puksar sobre 'Text'"
+msgstr "Pulse 'Text'"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:297
 msgid "Subtitles:"
-msgstr "Subtitulos:"
+msgstr "Subtítulos:"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:300
 msgid "press 'Audio'"
@@ -723,7 +691,7 @@ msgstr "Audio:"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:305
 msgid "press 'Info'"
-msgstr "Presione 'Info'"
+msgstr "Pulse 'Info'"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:307
 msgid "Info:"
@@ -783,7 +751,7 @@ msgstr "Framerate:"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:372
 msgid "Audio Channels:"
-msgstr "Canales de Audio"
+msgstr "Canales de Audio:"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:376
 msgid "Aspect Ratio:"
@@ -812,8 +780,8 @@ msgstr ""
 "Pulse sobre Exit para retornar."
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:751
-msgid "playback mode '"
-msgstr "Modo de Reprodcción '"
+msgid "playback mode '%s'"
+msgstr "Modo de reproducción '%s'"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:753
 msgid "View '"
@@ -831,12 +799,12 @@ msgstr "Borrar los medios"
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:796
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:814
 msgid "playmode 'multi'"
-msgstr "Mode de reproducción 'multi'"
+msgstr "Modo de reproducción 'multi'"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:798
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:811
 msgid "playmode 'single'"
-msgstr "Mode de reproducción 'single'"
+msgstr "Modo de reproducción 'single'"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:827
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:845
@@ -850,11 +818,11 @@ msgstr "Resumir 'Off'"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:860
 msgid "fastScroll 'On'"
-msgstr "Défilement rapide 'On'"
+msgstr "FastScroll 'Sí'"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:862
 msgid "fastScroll 'Off'"
-msgstr "fastScroll 'Off'"
+msgstr "FastScroll 'No'"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:945
 msgid "turn filter mode off"
@@ -878,7 +846,7 @@ msgstr "Marcar el medio como visualizado"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:2007
 msgid "Initiate Library refresh"
-msgstr "Iniciar actualización de la Libreria"
+msgstr "Iniciar actualización de la Biblioteca"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:2010
 msgid "Media Functions"
@@ -902,19 +870,15 @@ msgid ""
 "\n"
 "Please take note that switching the language here will take only effect if "
 "you enable transcoding!"
-msgstr ""
-"Opciones de Audio\n"
-"\n"
-"Tome nota que cambiando el Audio tendrán efecto si habilita "
-"transcodificación!"
+msgstr "Funciones de Audio\n\n¡Recuerde que cambiar el idioma aquí solo tiene efecto si habilita la transcodificación!"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:2173
 msgid "Are you sure?"
-msgstr "Está seguro?"
+msgstr "¿Está seguro?"
 
 #: /hdd/workspaces/DreamPlex/src/DP_View.py:2187
 msgid "Deleting aborted!"
-msgstr "SEliminación anulada!"
+msgstr "¡Eliminación anulada!"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:31
 msgid "All"
@@ -922,11 +886,11 @@ msgstr "Todos"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:32
 msgid "All Movies"
-msgstr "Todas las peliculas"
+msgstr "Todas las Películas"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:33
 msgid "All Filmy"
-msgstr "Toda la Filmografia"
+msgstr "Toda la Filmografía"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:34
 msgid "All Shows"
@@ -938,7 +902,7 @@ msgstr "Todos los Episodios"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:36
 msgid "By Genre"
-msgstr "Por Genero"
+msgstr "Por Género"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:37
 msgid "By Folder"
@@ -950,7 +914,7 @@ msgstr "Por Primera Letra"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:39
 msgid "By Resolution"
-msgstr "Por Resocución"
+msgstr "Por Resolución"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:40
 msgid "By Rating"
@@ -974,7 +938,7 @@ msgstr "Por Año"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:45
 msgid "By Collection"
-msgstr "Por Collección"
+msgstr "Por Colección"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:46
 msgid "By Content Rating"
@@ -994,23 +958,23 @@ msgstr "Recientemente Añadido"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:50
 msgid "Recently Released"
-msgstr "Recientemente Realizado"
+msgstr "Recientemente Estrenado"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:51
 msgid "Recently Viewed"
-msgstr "Recintemente Visualizado"
+msgstr "Recientemente Visualizado"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:52
 msgid "Recently Viewed Episodes"
-msgstr "Episodios Recintemente Visualizados"
+msgstr "Episodios Recientemente Visualizados"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:53
 msgid "Recently Viewed Shows"
-msgstr "Series Recintemente Visualizadas"
+msgstr "Series Recientemente Visualizadas"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:54
 msgid "Unwatched"
-msgstr "Si  Visualizar"
+msgstr "Sin visualizar"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:55
 msgid "On Deck"
@@ -1022,15 +986,15 @@ msgstr "Buscar"
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:57
 msgid "Search Shows..."
-msgstr "Buscar une serie"
+msgstr "Buscar Series..."
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:58
 msgid "Search Episodes..."
-msgstr "Buscar un Episodio"
+msgstr "Buscar Episodios..."
 
 #: /hdd/workspaces/DreamPlex/src/DPH_Translations.py:61
 msgid "Series"
-msgstr "Serie"
+msgstr "Series"
 
 #: /hdd/workspaces/DreamPlex/src/plugin.py:47
 msgid "DreamPlex"
@@ -1046,7 +1010,7 @@ msgstr "Menú Servidor"
 
 #: /hdd/workspaces/DreamPlex/src/DP_ServerMenu.py:231
 msgid "Please enter your search string: "
-msgstr "Introduzca la cadena de busqueda:"
+msgstr "Introduzca el texto de búsqueda: "
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:109
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:385
@@ -1111,7 +1075,7 @@ msgstr "> Nombre del Receptor"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:110
 msgid "Enter the name of your box, e.g. Livingroom."
-msgstr "Introduzca el nombre del Receptor, ejmpl : salón."
+msgstr "Introduzca el nombre del receptor, p. ej.: salón."
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:111
 msgid "> Used Skin"
@@ -1119,7 +1083,7 @@ msgstr "> Skin usado"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:111
 msgid "If you change the skin you have to restart at least the GUI!"
-msgstr "Si cambia el Skin debe reinicar por lo menos el GUI!"
+msgstr "¡Si cambia el skin debe reiniciar al menos la interfaz!"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:112
 msgid "> Show Plugin in Main Menu"
@@ -1127,11 +1091,11 @@ msgstr "> Mostrar Plugin en el Menú Principal"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:113
 msgid "> Use Cache for Sections"
-msgstr ">Utilizar la caché para las Secciones"
+msgstr "> Utilizar la caché para las Secciones"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:114
 msgid "> Use Picture Cache"
-msgstr "> Usar caché de imagenes"
+msgstr "> Usar caché de imágenes"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:114
 msgid ""
@@ -1151,7 +1115,7 @@ msgstr "> Mostrar Poster en el LCD externo"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:116
 msgid "e.g. lcd4linux"
-msgstr "ejempl. lcd4linux"
+msgstr "p. ej. lcd4linux"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:119
 msgid "> Check for updates on startup"
@@ -1215,7 +1179,7 @@ msgstr "> Utilizar FastScroll por defecto"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:150
 msgid "> Show liveTv in Views instead of backdrops"
-msgstr "> Mostar TV en Driecto en vistas en lugar de fondos"
+msgstr "> Mostrar TV en Directo en las vistas en lugar de fondos"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:152
 msgid "> Show additional data for plex.tv sections"
@@ -1232,7 +1196,7 @@ msgstr "Parametros de Ubicaciones"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:158
 msgid "> Default View for Movies"
-msgstr "> Vista por defecto para las Peliculas"
+msgstr "> Vista por defecto para las Películas"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:159
 msgid "> Default View for Shows"
@@ -1260,7 +1224,7 @@ msgstr "> Ubicación temporal del Reproductor"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:177
 msgid "> Log Folder Path"
-msgstr "> Ruta de la carpeta de Log's"
+msgstr "> Ruta de la carpeta de logs"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:181
 msgid "Remote Settings"
@@ -1290,7 +1254,7 @@ msgstr "Sin esta opción solo se mostrará en la consola."
 #: /hdd/workspaces/DreamPlex/src/DP_Settings.py:207
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:509
 msgid "Save"
-msgstr "Salvado"
+msgstr "Guardar"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:103
 msgid "Server List:"
@@ -1334,7 +1298,7 @@ msgstr "Descubrir"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:189
 msgid "Really delete this Server Entry?"
-msgstr "Realmente elimiar esta entrada de Servidor?"
+msgstr "¿Eliminar realmente esta entrada de servidor?"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:271
 msgid "Select server"
@@ -1346,12 +1310,11 @@ msgstr "-"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:387
 msgid " > State"
-msgstr "> Estado"
+msgstr " > Estado"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:387
-msgid "Toggle state to on/off to show this server in lost or not."
-msgstr ""
-"Modificar el estado On/Off para mostrar este servidor en perdidos o no."
+msgid "Toggle state to on/off to show this server in the list or not."
+msgstr "Active/desactive para mostrar o no este servidor en la lista."
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:388
 msgid " > Autostart"
@@ -1359,15 +1322,15 @@ msgstr " > Autoinicio"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:388
 msgid "Enter this server automatically on startup."
-msgstr "Entrar en este servidor autoáticamente en el inicio."
+msgstr "Entrar en este servidor automáticamente en el inicio."
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:389
 msgid " > Name"
-msgstr " > Nombe"
+msgstr " > Nombre"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:390
 msgid " > Trailer"
-msgstr "> Trailer"
+msgstr " > Tráiler"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:393
 msgid "Connection Settings"
@@ -1379,7 +1342,7 @@ msgstr " > Tipo de conexión"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:398
 msgid " > Local Authentication"
-msgstr "> Autenticación local"
+msgstr " > Autenticación local"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:402
 msgid " >> DNS"
@@ -1396,7 +1359,7 @@ msgstr "Parámetros de Reproducción"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:414
 msgid " > Playback Type"
-msgstr "> Tipo de Reproducción"
+msgstr " > Tipo de Reproducción"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:420
 msgid " >> Use universal Transcoder"
@@ -1428,17 +1391,15 @@ msgstr "Parámetros de Wake On Lan"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:440
 msgid " > Use Wake on Lan (WoL)"
-msgstr "> Usar  Wake on Lan (WoL)"
+msgstr " > Usar Wake on Lan (WoL)"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:443
 msgid " >> Mac address (Size: 12 alphanumeric no seperator) only for WoL"
-msgstr ""
-" >> Dirección Mac (Tamaño : 12 caracteres alfanumericos. sin espacios) solo "
-"para WOL"
+msgstr " >> Dirección MAC (12 caracteres alfanuméricos, sin separador) solo para WoL"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:444
 msgid " >> Wait for server delay (max 180 seconds) only for WoL"
-msgstr ">> Espere por demora del servidor (max 180 seg) solo para WoL"
+msgstr " >> Espera del servidor (máx. 180 s) solo para WoL"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:447
 msgid "Sync Settings"
@@ -1446,15 +1407,15 @@ msgstr "Parámetros de sincronización"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:449
 msgid " > Sync Movies Medias"
-msgstr "> Sincronizar Peliculas"
+msgstr " > Sincronizar Películas"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:450
 msgid " > Sync Shows Medias"
-msgstr "> Sincronizar Series"
+msgstr " > Sincronizar Series"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:451
 msgid " > Sync Music Medias"
-msgstr "> Sincronizar Música"
+msgstr " > Sincronizar Música"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:474
 msgid " >> IP"
@@ -1462,7 +1423,7 @@ msgstr " >> IP"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:485
 msgid " >> plex.tv URL"
-msgstr ">> plex.tv URL"
+msgstr " >> plex.tv URL"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:485
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:486
@@ -1517,6 +1478,38 @@ msgstr "plex.tv Token:"
 msgid "plex.tv Localtoken:"
 msgstr "plex.tv Token Local:"
 
+#: /hdd/workspaces/DreamPlex/src/DP_Server.py
+msgid " >> Transcoding video codec"
+msgstr " >> Códec de vídeo al transcodificar"
+
+#: /hdd/workspaces/DreamPlex/src/__init__.py
+msgid "H.264 (compatible)"
+msgstr "H.264 (compatible)"
+
+#: /hdd/workspaces/DreamPlex/src/__init__.py
+msgid "HEVC/H.265 (experimental)"
+msgstr "HEVC/H.265 (experimental)"
+
+#: /hdd/workspaces/DreamPlex/src/DP_Server.py
+msgid "H.264 works everywhere. HEVC/H.265 halves the bitrate but the server must be Plex Pass with hardware encoding enabled ('Enable HEVC video encoding' in Transcoder settings, not available on AMD) - if it cannot, the server silently falls back to H.264."
+msgstr "H.264 funciona en cualquier equipo. HEVC/H.265 reduce el bitrate a la mitad, pero el servidor debe tener Plex Pass con codificación por hardware activada ('Enable HEVC video encoding' en los ajustes del transcodificador; no disponible en AMD). Si no puede, el servidor vuelve a H.264 sin avisar."
+
+#: /hdd/workspaces/DreamPlex/src/DP_Server.py
+msgid "Same bitrates as H.264 but a bigger picture at every step, because HEVC needs clearly less bitrate for the same quality. 1440p and 2160p ask a lot from the server and only pay off with a source of that resolution."
+msgstr "Los mismos bitrates que en H.264 pero con más resolución en cada escalón, porque HEVC necesita bastante menos bitrate para la misma calidad. 1440p y 2160p exigen mucho al servidor y solo compensan si el original tiene esa resolución."
+
+#: /hdd/workspaces/DreamPlex/src/DP_Server.py
+msgid " >> plex.tv Token"
+msgstr " >> Token de plex.tv"
+
+#: /hdd/workspaces/DreamPlex/src/DP_Server.py
+msgid "Filled in automatically after a successful login. You can also paste a token here to use one issued elsewhere - leave it empty to force a fresh login with the username and password above."
+msgstr "Se rellena solo tras un inicio de sesión correcto. También puedes pegar aquí un token emitido en otro sitio; déjalo vacío para forzar un nuevo inicio de sesión con el usuario y la contraseña de arriba."
+
+#: /hdd/workspaces/DreamPlex/src/DP_PlexLibrary.py
+msgid "plex.tv username or password missing in the server settings"
+msgstr "Falta el usuario o la contraseña de plex.tv en los ajustes del servidor"
+
 #~ msgid ""
 #~ "For currentlyRunning feature just activate.\n"
 #~ "For section management you have to connect your server successfully to "
@@ -1559,3 +1552,282 @@ msgstr "plex.tv Token Local:"
 
 #~ msgid "download_url: "
 #~ msgstr "download_url:"
+
+msgid "Connection Settings "
+msgstr "Ajustes de Conexión "
+
+msgid "General Settings "
+msgstr "Ajustes Generales "
+
+msgid "Playback Settings "
+msgstr "Ajustes de Reproducción "
+
+msgid "Subtitle Settings "
+msgstr "Ajustes de Subtítulos "
+
+msgid "Sync Settings "
+msgstr "Ajustes de Sincronización "
+
+msgid "Wake On Lan Settings "
+msgstr "Ajustes de Wake On Lan "
+
+msgid "Path Settings "
+msgstr "Ajustes de Rutas "
+
+msgid "Remote Settings "
+msgstr "Ajustes Remotos "
+
+msgid "Misc Settings "
+msgstr "Ajustes Varios "
+
+msgid "Userinterface Settings "
+msgstr "Ajustes de Interfaz "
+
+msgid "System Settings"
+msgstr "Ajustes del Sistema"
+
+msgid " > Access Token (optional)"
+msgstr " > Token de acceso (opcional)"
+
+msgid " >> Enable Subtitle renaming in direct local mode"
+msgstr " >> Renombrar subtítulos en modo local directo"
+
+msgid " >> plex.tv Home Users"
+msgstr " >> Usuarios Home de plex.tv"
+
+msgid " >> plex.tv Pin Protection"
+msgstr " >> Protección con PIN de plex.tv"
+
+msgid " >> plex.tv Pincode"
+msgstr " >> PIN de plex.tv"
+
+msgid " >> Settings Pincode"
+msgstr " >> PIN de los Ajustes"
+
+msgid " >> Target subtitle language"
+msgstr " >> Idioma de los subtítulos"
+
+msgid " >> Use Settings Protection"
+msgstr " >> Proteger los Ajustes"
+
+msgid "> Exit function in Player"
+msgstr "> Función de Exit en el Reproductor"
+
+msgid "> Remote Player Port"
+msgstr "> Puerto del Reproductor Remoto"
+
+msgid "> Search and use forced subtitles"
+msgstr "> Buscar y usar subtítulos forzados"
+
+msgid "> Summerize Servers"
+msgstr "> Resumen de Servidores"
+
+msgid ">> Password"
+msgstr ">> Contraseña"
+
+msgid ">> Server override IP"
+msgstr ">> IP alternativa del servidor"
+
+msgid ">> Servers root"
+msgstr ">> Raíz de los servidores"
+
+msgid ">> Username"
+msgstr ">> Usuario"
+
+msgid "Add User"
+msgstr "Añadir Usuario"
+
+msgid "Delete User"
+msgstr "Eliminar Usuario"
+
+msgid "Edit User"
+msgstr "Editar Usuario"
+
+msgid "Switch User"
+msgstr "Cambiar Usuario"
+
+msgid "All Artists"
+msgstr "Todos los Artistas"
+
+msgid "Current User:"
+msgstr "Usuario actual:"
+
+msgid "Home Users"
+msgstr "Usuarios Home"
+
+msgid "Server Config"
+msgstr "Configuración del Servidor"
+
+msgid "Server Syncer"
+msgstr "Sincronizador del Servidor"
+
+msgid "System Server"
+msgstr "Servidor del Sistema"
+
+msgid "Select plex folder"
+msgstr "Seleccione carpeta de Plex"
+
+msgid "use for Mapping"
+msgstr "usar para el Mapeo"
+
+msgid "Ask for pin?"
+msgstr "¿Pedir PIN?"
+
+msgid "Use Home Users?"
+msgstr "¿Usar Usuarios Home?"
+
+msgid "Use Pinprotection for switch back to plex.tv user?"
+msgstr "¿Proteger con PIN la vuelta al usuario de plex.tv?"
+
+msgid "Enter the pin here:"
+msgstr "Introduzca el PIN aquí:"
+
+msgid "Enter the username here:"
+msgstr "Introduzca el usuario aquí:"
+
+msgid "Please enter the pincode!"
+msgstr "¡Introduzca el PIN!"
+
+msgid "with the id:"
+msgstr "con el id:"
+
+msgid "press 'Audio' or 'Radio'"
+msgstr "Pulse 'Audio' o 'Radio'"
+
+msgid "Delete media from Library"
+msgstr "Eliminar medio de la biblioteca"
+
+msgid "Adding new user was not completed"
+msgstr "No se completó al añadir el usuario"
+
+msgid "Confirmed User from Plex was configured!"
+msgstr "¡Usuario confirmado de Plex configurado!"
+
+msgid "The user was not found!"
+msgstr "¡No se encontró el usuario!"
+
+msgid "Something went wrong while opening users xml!"
+msgstr "¡Error al abrir users.xml!"
+
+msgid "Cache files successfully deleted."
+msgstr "Ficheros de caché eliminados correctamente."
+
+msgid "Revoke cache files manually"
+msgstr "Borrar ficheros de caché manualmente"
+
+msgid "Could not reach plex.tv:\n%s"
+msgstr "No se pudo conectar con plex.tv:\n%s"
+
+msgid "Could not reach plex.tv:\n%s\n\nTip: use an IP connection with an Access Token instead."
+msgstr "No se pudo conectar con plex.tv:\n%s\n\nConsejo: use una conexión por IP con Token de acceso."
+
+msgid "<unknown>"
+msgstr "<desconocido>"
+
+msgid "skipping because unsupported image type. "
+msgstr "omitido: tipo de imagen no soportado. "
+
+msgid "Activate to be able to use with any app with remote function for Plex."
+msgstr "Actívelo para usar cualquier app con función de mando remoto para Plex."
+
+msgid "Calculate and show them for tv shows."
+msgstr "Calcular y mostrarlos para las series."
+
+msgid "Change the port to your needs."
+msgstr "Cambie el puerto según sus necesidades."
+
+msgid "Enable only if needed. Slows down rapidly."
+msgstr "Actívelo solo si es necesario. Ralentiza bastante."
+
+msgid "Enable trailer function. Only works with PlexPass or YYTrailer plugin."
+msgstr "Activa los tráilers. Solo con PlexPass o el plugin YYTrailer."
+
+msgid "If server summerize is off you can here add additional information for better overview."
+msgstr "Si el resumen de servidores está desactivado, añada aquí más información."
+
+msgid "Monitor playback to activate subtitles automatically if needed. You have to enable subtitles with the 'Text' button first."
+msgstr "Vigila la reproducción para activar subtítulos automáticamente. Actívelos antes con el botón 'Text'."
+
+msgid "No update for addiontal informations in media views to speed up."
+msgstr "No actualizar los datos adicionales en las vistas para ir más rápido."
+
+msgid "Pincode for changing settings"
+msgstr "PIN para cambiar los ajustes"
+
+msgid "Pincode for switching back from any home user."
+msgstr "PIN para volver desde cualquier usuario Home."
+
+msgid "Plays tv show themes automatically."
+msgstr "Reproduce las sintonías de las series automáticamente."
+
+msgid "Renames filename.eng.srt automatically to filename.srt so e2 is able to read them."
+msgstr "Renombra fichero.eng.srt a fichero.srt para que e2 pueda leerlos."
+
+msgid "Save plex server answers in cache to speed up a bit."
+msgstr "Guarda en caché las respuestas del servidor Plex para ir más rápido."
+
+msgid "Search string that should be removed from srt file."
+msgstr "Texto que se eliminará del fichero srt."
+
+msgid "Select your type how the box is reachable."
+msgstr "Seleccione cómo se conecta al receptor."
+
+msgid "Show additional filter in an additional menu step e.g. OnDeck"
+msgstr "Muestra un filtro adicional en un paso extra (p. ej. En Curso)."
+
+msgid "Show live tv while you are navigating through your libs."
+msgstr "Muestra la TV en directo mientras navega por sus bibliotecas."
+
+msgid "Simply a name for better overview"
+msgstr "Simplemente un nombre para identificarlo."
+
+msgid "Specifiy the type of additional data."
+msgstr "Especifica el tipo de datos adicionales."
+
+msgid "Specifiy what the exit button in the player should do."
+msgstr "Especifica qué hace el botón Exit en el reproductor."
+
+msgid "Specify what view type should start automatically."
+msgstr "Especifica qué tipo de vista se inicia automáticamente."
+
+msgid "Start with filtermode in any media view."
+msgstr "Iniciar en modo filtro en cualquier vista."
+
+msgid "Stop live TV. Enables 'play themes', 'use backdrop videos'"
+msgstr "Detiene la TV en directo. Habilita 'sintonías' y 'vídeos de fondo'."
+
+msgid "Summerize sections in an additional menu step."
+msgstr "Agrupa las secciones en un paso de menú adicional."
+
+msgid "Summerize servers in an additional menu step. (plex.tv only)"
+msgstr "Agrupa los servidores en un paso adicional. (solo plex.tv)"
+
+msgid "Sync this content."
+msgstr "Sincronizar este contenido."
+
+msgid "Use this if you secured your plex server in the settings."
+msgstr "Úselo si protegió su servidor Plex en los ajustes."
+
+msgid "Use this only if you do have enough space on your hdd drive or flash."
+msgstr "Úselo solo si tiene espacio suficiente en el disco o la flash."
+
+msgid "Use this to start the plugin direct in the main menu."
+msgstr "Úselo para abrir el plugin directamente en el menú principal."
+
+msgid "X-Plex-Token used to authenticate against this server. Overrides local authentication and plex.tv tokens."
+msgstr "Token X-Plex para autenticarse en este servidor. Prevalece sobre la autenticación local y los tokens de plex.tv."
+
+msgid "Subtitle Functions\n\nPlease take note that switching the subtitles here will take only effect if you use direct local or transcoding!"
+msgstr "Funciones de Subtítulos\n\n¡Recuerde que cambiar los subtítulos aquí solo tiene efecto con local directo o transcodificación!"
+
+#: /hdd/workspaces/DreamPlex/src/DP_View.py:866
+msgid "refresh Library"
+msgstr "Actualizar Biblioteca"
+
+#: /hdd/workspaces/DreamPlex/src/DP_View.py:869
+msgid "Server Settings"
+msgstr "Ajustes del Servidor"
+
+#: /hdd/workspaces/DreamPlex/src/DP_View.py:870
+msgid "Plex Settings"
+msgstr "Ajustes de Plex"

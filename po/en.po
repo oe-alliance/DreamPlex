@@ -619,8 +619,8 @@ msgstr ""
 msgid "This Box can't decode %s streams!"
 msgstr "This Box can't decode %s streams!"
 
-msgid "Toggle state to on/off to show this server in lost or not."
-msgstr "Toggle state to on/off to show this server in lost or not."
+msgid "Toggle state to on/off to show this server in the list or not."
+msgstr "Toggle state to on/off to show this server in the list or not."
 
 msgid "Total:"
 msgstr "Total:"

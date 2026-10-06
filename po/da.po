@@ -1349,7 +1349,7 @@ msgid " > State"
 msgstr "> Estado"
 
 #: /hdd/workspaces/DreamPlex/src/DP_Server.py:387
-msgid "Toggle state to on/off to show this server in lost or not."
+msgid "Toggle state to on/off to show this server in the list or not."
 msgstr ""
 "Modificar el estado On/Off para mostrar este servidor en perdidos o no."
 

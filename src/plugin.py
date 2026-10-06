@@ -101,8 +101,18 @@ def menu_dreamplex(menuid, **kwargs):
 def Autostart(reason, session=None, **kwargs):
 
 	if reason == 0:
-		prepareEnvironment()
-		getUUID()
+		# This runs while enigma2 reads the plugin list at boot, so anything
+		# raising here takes the whole GUI down with it and leaves the box
+		# unusable (that is exactly what a stdlib symbol removed in a newer
+		# Python once did). A broken plugin must disable itself, not the
+		# receiver - so swallow it and report it loudly instead.
+		try:
+			prepareEnvironment()
+			getUUID()
+		except Exception as e:
+			print("[DreamPlex] autostart failed, plugin disabled for this boot: %s" % str(e))
+			import traceback
+			traceback.print_exc()
 
 	else:
 		config.plugins.dreamplex.entriescount.save()
@@ -341,11 +351,18 @@ def sessionStart(reason, **kwargs):
 	if "session" in kwargs:
 		globalvars.global_session = kwargs["session"]
 
-		if config.plugins.dreamplex.remoteAgent.value:
-			startRemoteDeamon()
+		# same reasoning as in Autostart(): a failure while the GUI session
+		# starts must not stop enigma2 from coming up
+		try:
+			if config.plugins.dreamplex.remoteAgent.value:
+				startRemoteDeamon()
 
-		# load skin data here as well
-		startEnvironment()
+			# load skin data here as well
+			startEnvironment()
+		except Exception as e:
+			print("[DreamPlex] session start failed, plugin disabled for this boot: %s" % str(e))
+			import traceback
+			traceback.print_exc()
 
 #===============================================================================
 # plugins
@@ -359,9 +376,9 @@ def Plugins(**kwargs):
 	boxResolution = getBoxResolution()
 
 	if boxResolution == "FHD":
-		myList.append(PluginDescriptor(name="DreamPlex", description="plex client for enigma2", where=[PluginDescriptor.WHERE_PLUGINMENU], icon="pluginLogoHD.png", fnc=main))
+		myList.append(PluginDescriptor(name="DreamPlex", description=_("plex client for enigma2"), where=[PluginDescriptor.WHERE_PLUGINMENU], icon="pluginLogoHD.png", fnc=main))
 	else:
-		myList.append(PluginDescriptor(name="DreamPlex", description="plex client for enigma2", where=[PluginDescriptor.WHERE_PLUGINMENU], icon="pluginLogo.png", fnc=main))
+		myList.append(PluginDescriptor(name="DreamPlex", description=_("plex client for enigma2"), where=[PluginDescriptor.WHERE_PLUGINMENU], icon="pluginLogo.png", fnc=main))
 	myList.append(PluginDescriptor(where=PluginDescriptor.WHERE_AUTOSTART, fnc=Autostart))
 	myList.append(PluginDescriptor(where=PluginDescriptor.WHERE_SESSIONSTART, fnc=sessionStart))
 

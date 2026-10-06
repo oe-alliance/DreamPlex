@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="6" allowSync="0" art="/:/resources/movie-fanart.jpg" content="secondary" identifier="com.plexapp.plugins.library" librarySectionID="1" mediaTagPrefix="/system/bundle/media/flags/" mediaTagVersion="1400000000" thumb="/:/resources/movie.png" title1="Movies" viewGroup="secondary" viewMode="65592">
+	<Directory key="all" title="All Movies"/>
+	<Directory key="unwatched" title="Unwatched"/>
+	<Directory key="recentlyAdded" title="Recently Added"/>
+	<Directory secondary="1" key="genre" title="By Genre"/>
+	<Directory secondary="1" key="year" title="By Year"/>
+	<Directory prompt="Search Movies" search="1" key="search?type=1" title="Search..."/>
+</MediaContainer>

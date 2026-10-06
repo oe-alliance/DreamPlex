@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="1" allowSync="1" identifier="com.plexapp.plugins.library" librarySectionID="1" librarySectionTitle="Movies" librarySectionUUID="11111111-1111-1111-1111-111111111111" mediaTagPrefix="/system/bundle/media/flags/" mediaTagVersion="1700000000">
+	<Video ratingKey="1001" key="/library/metadata/1001" guid="plex://movie/aaaa0001" studio="Test Studios" type="movie" title="Alpha Movie" contentRating="PG-13" summary="A test movie about pipelines." rating="7.5" year="2020" tagline="Testing all the way" thumb="/library/metadata/1001/thumb/1700000000" art="/library/metadata/1001/art/1700000000" duration="7200000" viewOffset="60000" originallyAvailableAt="2020-01-01" addedAt="1690000000" updatedAt="1700000000" audioCodec="dca" videoCodec="h264" videoResolution="1080" videoFrameRate="24p">
+		<Media id="2001" duration="7200000" bitrate="8000" width="1920" height="1080" aspectRatio="1.78" audioChannels="6" audioCodec="dca" videoCodec="h264" videoResolution="1080" container="mkv" videoFrameRate="24p" videoProfile="high">
+			<Part id="3001" key="/library/parts/3001/1700000000/file.mkv" duration="7200000" file="/data/movies/Alpha Movie (2020)/Alpha.Movie.2020.mkv" size="8000000000" container="mkv" videoProfile="high">
+				<Stream id="4001" streamType="1" default="1" codec="h264" index="0" bitrate="7000" language="English" languageCode="eng" height="1080" width="1920" frameRate="23.976" profile="high" displayTitle="1080p (H.264)"/>
+				<Stream id="4002" streamType="2" selected="1" codec="dca" index="1" channels="6" bitrate="1000" language="English" languageCode="eng" audioChannelLayout="5.1" displayTitle="English (DTS 5.1)"/>
+				<Stream id="4003" streamType="3" index="2" codec="srt" format="srt" language="English" languageCode="eng" displayTitle="English (SRT)"/>
+			</Part>
+		</Media>
+		<Genre tag="Action"/>
+		<Director tag="Jane Doe"/>
+	</Video>
+</MediaContainer>

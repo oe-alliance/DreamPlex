@@ -26,6 +26,8 @@ You should have received a copy of the GNU General Public License
 #=================================
 import time
 
+from enigma import eTimer
+
 from Components.ActionMap import HelpableActionMap
 from Components.Sources.StaticText import StaticText
 from Components.config import config
@@ -60,6 +62,7 @@ class DPS_MainMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper):
 
 	selectedEntry = None
 	g_serverConfig = None
+	wolTimer = None
 
 	nextExitIsQuit = True
 	currentService = None
@@ -468,7 +471,13 @@ class DPS_MainMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper):
 	def showWakeMessage(self):
 		printl("", self, "S")
 
-		self.session.openWithCallback(self.executeWakeOnLan, MessageBox, _("Plexserver seems to be offline. Start with Wake on Lan settings? \n\nPlease note: \nIf you press yes the spinner will run for " + str(self.g_woldelay) + " seconds. \nAccording to your settings."), MessageBox.TYPE_YESNO)
+		# the delay has to stay OUT of _(): building the msgid by concatenation
+		# put the number inside it, so it never matched the catalogue and this
+		# message always came out in English. And it no longer promises a
+		# spinner - there is none on this path.
+		message = _("Plexserver seems to be offline. Start with Wake on Lan settings?\n\nPlease note:\nIf you press yes it will wait %s seconds for the server to start up, according to your settings.") % self.g_woldelay
+
+		self.session.openWithCallback(self.executeWakeOnLan, MessageBox, message, MessageBox.TYPE_YESNO)
 
 		printl("", self, "C")
 
@@ -514,9 +523,40 @@ class DPS_MainMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper):
 	#
 	#===========================================================================
 	def sleepNow(self):
+		"""Wait for the server to come up, WITHOUT freezing the GUI.
+
+		This runs on the enigma2 main loop (it is the callback chain of a
+		MessageBox), so the time.sleep() that used to be here blocked
+		everything for `wol_delay` seconds - 60 by default and up to 180.
+		That is long enough for the image's hang detector to kill enigma2,
+		which is exactly what synchronous waits were doing before they were
+		moved off the main loop. A timer waits just as well and the GUI
+		stays alive meanwhile.
+		"""
 		printl("", self, "S")
 
-		time.sleep(int(self.g_woldelay))
+		delay = int(self.g_woldelay)
+		printl("waiting %s s for the server, without blocking" % delay, self, "I")
+
+		# never replace a live timer: that drops the last reference to one
+		# whose callback may be on the stack
+		if self.wolTimer is None:
+			self.wolTimer = eTimer()
+			self.wolTimer.callback.append(self.wolDelayElapsed)
+
+		self.wolTimer.start(delay * 1000, True)  # single shot
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def wolDelayElapsed(self):
+		printl("", self, "S")
+
+		if self.wolTimer is not None:
+			self.wolTimer.stop()
+
 		self.checkServerState()
 
 		printl("", self, "C")

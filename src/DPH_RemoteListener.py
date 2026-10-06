@@ -26,7 +26,10 @@ You should have received a copy of the GNU General Public License
 #===============================================================================
 from enigma import ePythonMessagePump
 
-from BaseHTTPServer import HTTPServer
+try:
+	from http.server import HTTPServer
+except ImportError:
+	from BaseHTTPServer import HTTPServer
 from threading import Thread
 
 from Components.config import config

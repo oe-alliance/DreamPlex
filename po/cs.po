@@ -37,16 +37,18 @@ msgstr "DreamPlex"
 
 #: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:147
 msgid ""
-"Plexserver seems to be offline. Start with Wake on Lan settings? \n"
+"Plexserver seems to be offline. Start with Wake on Lan settings?\n"
 "\n"
-"Please note: \n"
-"If you press yes the spinner will run for "
+"Please note:\n"
+"If you press yes it will wait %s seconds for the server to start up, "
+"according to your settings."
 msgstr ""
 "Plexserver je asi v režimu offline. Začít s probuzením po síti (Wake on "
-"Lan)? \n"
+"Lan)?\n"
 "\n"
-"Vezměte prosím na vědomí: \n"
-"Stisknete-li ano, načítání poběží až po "
+"Vezměte prosím na vědomí:\n"
+"Stisknete-li ano, počká se %s sekund na spuštění serveru, podle vašeho "
+"nastavení."
 
 #: e:\Development\GitHub\DreamPlex\src/DP_MainMenu.py:157
 msgid ""
@@ -443,7 +445,7 @@ msgid " > State"
 msgstr " > Stav"
 
 #: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:552
-msgid "Toggle state to on/off to show this server in lost or not."
+msgid "Toggle state to on/off to show this server in the list or not."
 msgstr "Přepnout stav zapnout / vypnout, zda se server ztratil nebo ne."
 
 #: e:\Development\GitHub\DreamPlex\src/DP_Settings.py:553

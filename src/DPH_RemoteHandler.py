@@ -28,8 +28,15 @@ import re
 import traceback
 
 from time import sleep
-from urlparse import urlparse, parse_qs
-from BaseHTTPServer import BaseHTTPRequestHandler
+try:
+	from urllib.parse import urlparse, parse_qs
+except ImportError:
+	from urlparse import urlparse, parse_qs
+
+try:
+	from http.server import BaseHTTPRequestHandler
+except ImportError:
+	from BaseHTTPServer import BaseHTTPRequestHandler
 
 from Components.config import config
 

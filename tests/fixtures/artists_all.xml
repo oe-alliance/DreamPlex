@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="2" allowSync="1" art="/:/resources/artist-fanart.jpg" identifier="com.plexapp.plugins.library" librarySectionID="3" librarySectionTitle="Music" librarySectionUUID="33333333-3333-3333-3333-333333333333" mediaTagPrefix="/system/bundle/media/flags/" mediaTagVersion="1700000000" thumb="/:/resources/artist.png" title1="Music" title2="All Artists" viewGroup="artist" viewMode="65592">
+	<Directory ratingKey="3001" key="/library/metadata/3001/children" guid="plex://artist/cccc0001" type="artist" title="Alpha Artist" summary="A test artist." index="1" thumb="/library/metadata/3001/thumb/1700000000" art="/library/metadata/3001/art/1700000000" addedAt="1690000000" updatedAt="1700000000">
+		<Genre tag="Rock"/>
+	</Directory>
+	<Directory ratingKey="3002" key="/library/metadata/3002/children" guid="plex://artist/cccc0002" type="artist" title="Beta Artist" summary="Another test artist." index="1" thumb="/library/metadata/3002/thumb/1700000001" art="/library/metadata/3002/art/1700000001" addedAt="1690000100" updatedAt="1700000001">
+		<Genre tag="Electronic"/>
+	</Directory>
+</MediaContainer>

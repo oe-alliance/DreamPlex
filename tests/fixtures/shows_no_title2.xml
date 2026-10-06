@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="1" allowSync="1" art="/:/resources/show-fanart.jpg" identifier="com.plexapp.plugins.library" librarySectionID="2" librarySectionTitle="TV Shows" mediaTagPrefix="/system/bundle/media/flags/" mediaTagVersion="1700000000" viewGroup="show" viewMode="65592">
+	<Directory ratingKey="2001" key="/library/metadata/2001/children" guid="plex://show/bbbb0001" studio="Test Network" type="show" title="Alpha Show" contentRating="TV-14" summary="A test show." index="1" rating="8.2" year="2019" thumb="/library/metadata/2001/thumb/1700000000" art="/library/metadata/2001/art/1700000000" duration="2400000" originallyAvailableAt="2019-03-01" leafCount="10" viewedLeafCount="3" childCount="2" addedAt="1690000000" updatedAt="1700000000">
+		<Genre tag="Drama"/>
+	</Directory>
+</MediaContainer>

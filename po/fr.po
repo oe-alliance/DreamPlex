@@ -970,7 +970,7 @@ msgid "Mixed"
 msgstr "Mixte"
 
 #: ../src/DP_Server.py:472
-msgid "Monitor playback to activate subtitles automatically if needed. You have to enable subtitles with 'Text'-Buttion first."
+msgid "Monitor playback to activate subtitles automatically if needed. You have to enable subtitles with the 'Text' button first."
 msgstr "Surveillez la lecture pour activer automatiquement les sous-titres si nécessaire. Vous devez d’abord activer les sous-titres avec le bouton ‘Text'."
 
 #: ../src/DPH_Translations.py:59 ../src/DP_PlexLibrary.py:250
@@ -1111,15 +1111,17 @@ msgstr ""
 
 #: ../src/DP_MainMenu.py:459
 msgid ""
-"Plexserver seems to be offline. Start with Wake on Lan settings? \n"
+"Plexserver seems to be offline. Start with Wake on Lan settings?\n"
 "\n"
-"Please note: \n"
-"If you press yes the spinner will run for "
+"Please note:\n"
+"If you press yes it will wait %s seconds for the server to start up, "
+"according to your settings."
 msgstr ""
-"Plexserver semble être hors ligne. Afficher les paramètres WOL (Wake on Lan) ? \n"
+"Plexserver semble être hors ligne. Afficher les paramètres WOL (Wake on Lan) ?\n"
 "\n"
 "Attention :\n"
-"Si vous appuyez sur Oui, le spinner s'affichera pendant "
+"Si vous appuyez sur Oui, %s secondes seront attendues pour que le serveur "
+"démarre, selon vos paramètres."
 
 #: ../src/DP_PlexLibrary.py:1058
 msgid "Press exit to return"
@@ -1430,7 +1432,7 @@ msgstr ""
 "En plus on télécharge toutes les images en 1920x1080 pour une meilleure qualité d'arrière-plans en plein écran."
 
 #: ../src/DP_Server.py:430
-msgid "Toggle state to on/off to show this server in lost or not."
+msgid "Toggle state to on/off to show this server in the list or not."
 msgstr "Changer Etat en oui/non pour afficher le serveur."
 
 #: ../src/DP_View.py:246

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="4" allowSync="0" identifier="com.plexapp.plugins.library" librarySectionID="1" title1="Pel·lis" viewGroup="secondary">
+	<Directory key="all" title="All Pel·lis"/>
+	<Directory key="unwatched" title="Unwatched"/>
+	<Directory secondary="1" key="genre" title="By Genre"/>
+	<Directory prompt="Search Pel·lis" search="1" key="search?type=1" title="Search..."/>
+</MediaContainer>

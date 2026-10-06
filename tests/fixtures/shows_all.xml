@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="2" allowSync="1" art="/:/resources/show-fanart.jpg" identifier="com.plexapp.plugins.library" librarySectionID="2" librarySectionTitle="TV Shows" librarySectionUUID="22222222-2222-2222-2222-222222222222" mediaTagPrefix="/system/bundle/media/flags/" mediaTagVersion="1700000000" thumb="/:/resources/show.png" title1="TV Shows" title2="All Shows" viewGroup="show" viewMode="65592">
+	<Directory ratingKey="2001" key="/library/metadata/2001/children" guid="plex://show/bbbb0001" studio="Test Network" type="show" title="Alpha Show" contentRating="TV-14" summary="A test show." index="1" rating="8.2" year="2019" thumb="/library/metadata/2001/thumb/1700000000" art="/library/metadata/2001/art/1700000000" banner="/library/metadata/2001/banner/1700000000" duration="2400000" originallyAvailableAt="2019-03-01" leafCount="10" viewedLeafCount="3" childCount="2" addedAt="1690000000" updatedAt="1700000000">
+		<Genre tag="Drama"/>
+		<Role tag="Actor One"/>
+	</Directory>
+	<Directory ratingKey="2002" key="/library/metadata/2002/children" guid="plex://show/bbbb0002" studio="Test Network" type="show" title="Beta Show" contentRating="TV-MA" summary="Another test show." index="1" rating="7.1" year="2022" thumb="/library/metadata/2002/thumb/1700000001" art="/library/metadata/2002/art/1700000001" duration="1800000" originallyAvailableAt="2022-09-01" leafCount="8" viewedLeafCount="8" childCount="1" addedAt="1690000100" updatedAt="1700000001">
+		<Genre tag="Comedy"/>
+		<Role tag="Actor Two"/>
+	</Directory>
+</MediaContainer>

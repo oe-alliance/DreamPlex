@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="1" allowSync="1" identifier="com.plexapp.plugins.library" librarySectionID="1" librarySectionTitle="Movies">
+	<Video ratingKey="1004" key="/library/metadata/1004" type="movie" title="Epsilon Movie" summary="Movie whose trailer only exists as primaryExtraKey." year="2024" duration="5400000" primaryExtraKey="/library/metadata/9002" addedAt="1690000000" updatedAt="1700000000">
+		<Media id="2301" duration="5400000" bitrate="8000" width="1920" height="1080" aspectRatio="1.78" audioChannels="6" audioCodec="ac3" videoCodec="h264" videoResolution="1080" container="mkv" videoFrameRate="24p">
+			<Part id="3301" key="/library/parts/3301/1700000000/epsilon.mkv" duration="5400000" file="/data/movies/Epsilon (2024)/epsilon.mkv" size="5400000000" container="mkv"/>
+		</Media>
+	</Video>
+</MediaContainer>

@@ -44,7 +44,7 @@ from .DPH_ScreenHelper import DPH_ScreenHelper, DPH_Screen, DPH_Filter, DPH_Plex
 from .DP_ViewFactory import getGuiElements
 from .DP_Users import DPS_Users
 
-from .__common__ import printl2 as printl, getLiveTv
+from .__common__ import printl2 as printl, getLiveTv, runInThread
 from .__plugin__ import Plugin
 from .__init__ import _  # _ is translation
 
@@ -140,8 +140,9 @@ class DPS_ServerMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper, DPH_Filte
 		self["text_HomeUser"] = Label()
 
 		self.onLayoutFinish.append(self.finishLayout)
+		# getInitialData loads asynchronously now; the steps that need the
+		# data (menu_main_list, selection override) run in its callback
 		self.onLayoutFinish.append(self.getInitialData)
-		self.onLayoutFinish.append(self.checkSelectionOverride)
 
 		printl("", self, "C")
 
@@ -178,7 +179,16 @@ class DPS_ServerMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper, DPH_Filte
 	def getInitialData(self):
 		printl("", self, "S")
 
-		self.getServerData()
+		# the follow-up steps need the data, so they run in the callback
+		self.getServerData(initialLoad=True)
+
+		printl("", self, "C")
+
+	#===============================================================================
+	#
+	#===============================================================================
+	def finishInitialData(self):
+		printl("", self, "S")
 
 		# save the mainMenuList for later usage
 		self.menu_main_list = self["menu"].list
@@ -186,6 +196,8 @@ class DPS_ServerMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper, DPH_Filte
 		if self.g_horizontal_menu:
 			# init horizontal menu
 			self.refreshOrientationHorMenu(0)
+
+		self.checkSelectionOverride()
 
 		printl("", self, "C")
 
@@ -271,6 +283,8 @@ class DPS_ServerMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper, DPH_Filte
 		if self.isHomeUser:
 			if choice[1] != "":
 				printl(choice[1], self, "D")
+				# compare against the pin of the CHOSEN user, not the last listed one
+				self.currentPin = choice[1]
 				self.session.openWithCallback(self.askForPin, InputBox, title=_("Please enter the pincode!"), type=Input.PIN)
 			else:
 				self.switchUser()
@@ -332,7 +346,7 @@ class DPS_ServerMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper, DPH_Filte
 #				else:
 				self.switchUser()
 			else:
-				self.session.open(MessageBox, "The pin was wrong! Abort user switiching.", MessageBox.TYPE_INFO)
+				self.session.open(MessageBox, "The pin was wrong! Aborting user switch.", MessageBox.TYPE_INFO)
 
 		printl("", self, "C")
 
@@ -568,13 +582,31 @@ class DPS_ServerMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper, DPH_Filte
 	#===========================================================================
 	#
 	#===========================================================================
-	def getServerData(self, filterBy=None, serverFilterActive=False):
+	def getServerData(self, filterBy=None, serverFilterActive=False, initialLoad=False):
 		printl("", self, "S")
 
-		if config.plugins.dreamplex.summerizeSections.value and filterBy is None:
-			serverData = self.plexInstance.getSectionTypes()
-		else:
-			serverData = self.plexInstance.getAllSections(myFilter=filterBy, serverFilterActive=serverFilterActive)
+		# the request can take seconds (or hang on an unreachable plex.tv):
+		# do it off the main loop so the GUI stays alive
+		def work():
+			if config.plugins.dreamplex.summerizeSections.value and filterBy is None:
+				return self.plexInstance.getSectionTypes()
+			return self.plexInstance.getAllSections(myFilter=filterBy, serverFilterActive=serverFilterActive)
+
+		def onDone(serverData, error):
+			self.onServerDataReady(serverData, error, initialLoad)
+
+		runInThread(work, onDone)
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def onServerDataReady(self, serverData, error, initialLoad=False):
+		printl("", self, "S")
+
+		if error is not None:
+			printl("error while loading server data: " + str(error), self, "E")
 
 		if not serverData:
 			self.showNoDataMessage()
@@ -592,6 +624,9 @@ class DPS_ServerMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper, DPH_Filte
 				except:
 					pass
 
+		if initialLoad:
+			self.finishInitialData()
+
 		printl("", self, "C")
 
 	#===========================================================================
@@ -599,7 +634,19 @@ class DPS_ServerMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper, DPH_Filte
 	#===========================================================================
 	def getFilterData(self, entryData):
 		printl("", self, "S")
-		menuData = self.plexInstance.getSectionFilter(entryData)
+
+		runInThread(lambda: self.plexInstance.getSectionFilter(entryData), self.onFilterDataReady)
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def onFilterDataReady(self, menuData, error):
+		printl("", self, "S")
+
+		if error is not None:
+			printl("error while loading filter data: " + str(error), self, "E")
 
 		if not menuData:
 			self.showNoDataMessage()
@@ -612,7 +659,7 @@ class DPS_ServerMenu(DPH_Screen, DPH_HorizontalMenu, DPH_ScreenHelper, DPH_Filte
 			self.beforeFilterListViewList = self.g_serverDataMenu
 			self.refreshMenu()
 
-		printl("", self, "S")
+		printl("", self, "C")
 
 	#===========================================================================
 	#

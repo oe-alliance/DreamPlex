@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="3" allowSync="0" title1="Plex Library">
+	<Directory allowSync="1" art="/:/resources/movie-fanart.jpg" composite="/library/sections/1/composite/1700000000" filters="1" refreshing="0" thumb="/:/resources/movie.png" key="1" type="movie" title="Movies" agent="tv.plex.agents.movie" scanner="Plex Movie" language="es-ES" uuid="11111111-1111-1111-1111-111111111111" updatedAt="1700000000" createdAt="1600000000" scannedAt="1700000000" content="1" directory="1" contentChangedAt="4711" hidden="0">
+		<Location id="1" path="/data/movies"/>
+	</Directory>
+	<Directory allowSync="1" art="/:/resources/show-fanart.jpg" composite="/library/sections/2/composite/1700000001" filters="1" refreshing="0" thumb="/:/resources/show.png" key="2" type="show" title="TV Shows" agent="tv.plex.agents.series" scanner="Plex TV Series" language="es-ES" uuid="22222222-2222-2222-2222-222222222222" updatedAt="1700000001" createdAt="1600000001" scannedAt="1700000001" content="1" directory="1" contentChangedAt="4712" hidden="0">
+		<Location id="2" path="/data/shows"/>
+	</Directory>
+	<Directory allowSync="1" art="/:/resources/artist-fanart.jpg" composite="/library/sections/3/composite/1700000002" filters="1" refreshing="0" thumb="/:/resources/artist.png" key="3" type="artist" title="Music" agent="tv.plex.agents.music" scanner="Plex Music" language="es-ES" uuid="33333333-3333-3333-3333-333333333333" updatedAt="1700000002" createdAt="1600000002" scannedAt="1700000002" content="1" directory="1" contentChangedAt="4713" hidden="0">
+		<Location id="3" path="/data/music"/>
+	</Directory>
+</MediaContainer>

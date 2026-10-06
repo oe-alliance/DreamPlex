@@ -26,6 +26,8 @@ You should have received a copy of the GNU General Public License
 #=================================
 import time
 
+from enigma import eTimer
+
 from Components.ActionMap import ActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.Sources.StaticText import StaticText
@@ -56,7 +58,16 @@ from .DPH_Singleton import Singleton
 #===============================================================================
 
 
+# how many one-second polls to wait for the GDM search before giving up, so a
+# silent network cannot leave the timer running for ever
+GDM_MAX_ATTEMPTS = 10
+
+
 class DPS_Server(Screen, DPH_PlexScreen):
+
+	gdmTimer = None
+	gdmClient = None
+	gdmAttempts = 0
 
 	def __init__(self, session, what=None):
 		printl("", self, "S")
@@ -256,19 +267,58 @@ class DPS_Server(Screen, DPH_PlexScreen):
 	#
 	#===========================================================================
 	def keyBlue(self):
+		"""Discover servers on the LAN without freezing the GUI.
+
+		This is an ActionMap callback, so it runs on the enigma2 main loop.
+		It used to sit in a `while not discovery_complete: sleep(1)` loop,
+		which blocks everything until the answer arrives - and forever if it
+		never does. The wait is now a timer, with a cap so a silent GDM
+		cannot leave it spinning.
+		"""
 		printl("", self, "S")
 
-		client = PlexGdm()
-		client.setClientDetails()
+		self.gdmClient = PlexGdm()
+		self.gdmClient.setClientDetails()
+		self.gdmClient.start_discovery()
 
-		client.start_discovery()
-		while not client.discovery_complete:
-			print("Waiting for results")
-			time.sleep(1)
+		self.gdmAttempts = 0
 
-		client.stop_discovery()
-		serverList = client.getServerList()
+		# reuse the timer object rather than replacing a live one
+		if self.gdmTimer is None:
+			self.gdmTimer = eTimer()
+			self.gdmTimer.callback.append(self.checkDiscovery)
+
+		self.gdmTimer.start(1000, False)
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def checkDiscovery(self):
+		printl("", self, "S")
+
+		self.gdmAttempts += 1
+
+		if not self.gdmClient.discovery_complete and self.gdmAttempts < GDM_MAX_ATTEMPTS:
+			printl("waiting for results (%s/%s)" % (self.gdmAttempts, GDM_MAX_ATTEMPTS), self, "D")
+			printl("", self, "C")
+			return
+
+		if self.gdmTimer is not None:
+			self.gdmTimer.stop()
+
+		timedOut = not self.gdmClient.discovery_complete
+		self.gdmClient.stop_discovery()
+
+		serverList = self.gdmClient.getServerList()
 		printl("serverList: " + str(serverList), self, "D")
+
+		if timedOut and not serverList:
+			printl("discovery timed out with nothing found", self, "W")
+			self.session.open(MessageBox, _("No server answered the search."), MessageBox.TYPE_INFO, timeout=5)
+			printl("", self, "C")
+			return
 
 		menu = []
 		for server in serverList:
@@ -436,7 +486,7 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		##
 		self.cfglist.append(getConfigListEntry(_("General Settings ") + separator, config.plugins.dreamplex.about, _("-")))
 		##
-		self.cfglist.append(getConfigListEntry(_(" > State"), self.current.state, _("Toggle state to on/off to show this server in lost or not.")))
+		self.cfglist.append(getConfigListEntry(_(" > State"), self.current.state, _("Toggle state to on/off to show this server in the list or not.")))
 		self.cfglist.append(getConfigListEntry(_(" > Autostart"), self.current.autostart, _("Enter this server automatically on startup.")))
 		self.cfglist.append(getConfigListEntry(_(" > Name"), self.current.name, _("Simply a name for better overview")))
 		self.cfglist.append(getConfigListEntry(_(" > Trailer"), self.current.loadExtraData, _("Enable trailer function. Only works with PlexPass or YYTrailer plugin.")))
@@ -453,6 +503,8 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 			else:
 				self.cfglist.append(getConfigListEntry(_(" >> DNS"), self.current.dns, _(" ")))
 				self.cfglist.append(getConfigListEntry(_(" >> Port"), self.current.port, _(" ")))
+			if getattr(self.current, "accessToken", None) is not None:
+				self.cfglist.append(getConfigListEntry(_(" > Access Token (optional)"), self.current.accessToken, _("X-Plex-Token used to authenticate against this server. Overrides local authentication and plex.tv tokens.")))
 			if self.current.localAuth.value:
 				self.addMyPlexSettings()
 
@@ -474,11 +526,16 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 				self.cfglist.append(getConfigListEntry(_(" >> Transcoding quality"), self.current.quality, _("You need gstreamer_fragmented installed for this feature! Please check in System ... ")))
 				self.cfglist.append(getConfigListEntry(_(" >> Segmentsize in seconds"), self.current.segments, _("You need gstreamer_fragmented installed for this feature! Please check in System ... ")))
 			else:
-				self.cfglist.append(getConfigListEntry(_(" >> Transcoding quality"), self.current.uniQuality, _("You need gstreamer_fragmented installed for this feature! Please check in System ... ")))
+				self.cfglist.append(getConfigListEntry(_(" >> Transcoding video codec"), self.current.transcodeVideoCodec, _("H.264 works everywhere. HEVC/H.265 halves the bitrate but the server must be Plex Pass with hardware encoding enabled ('Enable HEVC video encoding' in Transcoder settings, not available on AMD) - if it cannot, the server silently falls back to H.264.")))
+				# each codec has its own ladder, so only the one in use is shown
+				if self.current.transcodeVideoCodec.value == "hevc":
+					self.cfglist.append(getConfigListEntry(_(" >> Transcoding quality"), self.current.uniQualityHevc, _("Same bitrates as H.264 but a bigger picture at every step, because HEVC needs clearly less bitrate for the same quality. 1440p and 2160p ask a lot from the server and only pay off with a source of that resolution.")))
+				else:
+					self.cfglist.append(getConfigListEntry(_(" >> Transcoding quality"), self.current.uniQuality, _("You need gstreamer_fragmented installed for this feature! Please check in System ... ")))
 
 		elif self.current.playbackType.value == "2":
 			self.useMappings = True
-			self.cfglist.append(getConfigListEntry(_("> Search and use forced subtitles"), self.current.useForcedSubtitles, _("Monitor playback to activate subtitles automatically if needed. You have to enable subtitles with 'Text'-Buttion first.")))
+			self.cfglist.append(getConfigListEntry(_("> Search and use forced subtitles"), self.current.useForcedSubtitles, _("Monitor playback to activate subtitles automatically if needed. You have to enable subtitles with the 'Text' button first.")))
 
 		elif self.current.playbackType.value == "3":
 			self.useMappings = False
@@ -543,6 +600,7 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		self.cfglist.append(getConfigListEntry(_(" >> plex.tv URL"), self.current.myplexUrl, ''))
 		self.cfglist.append(getConfigListEntry(_(" >> plex.tv Username"), self.current.myplexUsername, ''))
 		self.cfglist.append(getConfigListEntry(_(" >> plex.tv Password"), self.current.myplexPassword, ''))
+		self.cfglist.append(getConfigListEntry(_(" >> plex.tv Token"), self.current.myplexToken, _("Filled in automatically after a successful login. You can also paste a token here to use one issued elsewhere - leave it empty to force a fresh login with the username and password above.")))
 
 		self.cfglist.append(getConfigListEntry(_(" >> plex.tv Home Users"), self.current.myplexHomeUsers, _("Use Home Users?")))
 		if self.current.myplexHomeUsers.value:
@@ -671,7 +729,15 @@ class DPS_ServerConfig(ConfigListScreen, Screen, DPH_PlexScreen):
 		self.current.machineIdentifier.value = machineIdentifiers
 		printl("machineIdentifier: " + str(self.current.machineIdentifier.value), self, "D")
 
-		if self.current.connectionType.value == "2" or self.current.localAuth.value:
+		# Only sign in to plex.tv when there is no token yet. Re-authenticating
+		# on every save breaks servers provisioned with a token but no stored
+		# password (the token is what runtime uses anyway - see
+		# setMyPlexData), turning any edit into "Invalid email, username, or
+		# password". Clear the token field to force a fresh login.
+		needsToken = (self.current.connectionType.value == "2" or self.current.localAuth.value) \
+					and not self.current.myplexToken.value
+
+		if needsToken:
 			self.keyBlue()
 		else:
 			self.saveNow()

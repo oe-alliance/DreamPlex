@@ -207,6 +207,8 @@ def initServerEntryConfig():
 	config.plugins.dreamplex.Entries[i].myplexPin = ConfigPIN(default=0000)
 	config.plugins.dreamplex.Entries[i].myplexToken = ConfigText(visible_width=50, fixed_size=False)
 	config.plugins.dreamplex.Entries[i].myplexLocalToken = ConfigText(visible_width=50, fixed_size=False)
+	# manually entered X-Plex-Token, wins over any other token source
+	config.plugins.dreamplex.Entries[i].accessToken = ConfigText(visible_width=50, fixed_size=False)
 	config.plugins.dreamplex.Entries[i].myplexTokenUsername = ConfigText(visible_width=50, fixed_size=False)
 	config.plugins.dreamplex.Entries[i].myplexHomeUsers = ConfigYesNo()
 	config.plugins.dreamplex.Entries[i].protectSettings = ConfigYesNo()
@@ -243,12 +245,24 @@ def initServerEntryConfig():
 
 	# universal transcoder settings
 	config.plugins.dreamplex.Entries[i].uniQuality = ConfigSelection(default="3", choices=[("0", _("420x240, 320kbps")), ("1", _("576x320, 720 kbps")), ("2", _("720x480, 1,5mbps")), ("3", _("1024x768, 2mbps")), ("4", _("1280x720, 3mbps")), ("5", _("1280x720, 4mbps")), ("6", _("1920x1080, 8mbps")), ("7", _("1920x1080, 10mbps")), ("8", _("1920x1080, 12mbps")), ("9", _("1920x1080, 20mbps"))])
+	# codec the universal transcoder should encode to. h264 is what every
+	# server and decoder handles; hevc needs a Plex Pass server with hardware
+	# encoding enabled and is silently ignored (falling back to h264) when the
+	# server cannot honour it - see getTranscodeProfileExtra()
+	config.plugins.dreamplex.Entries[i].transcodeVideoCodec = ConfigSelection(default="h264", choices=[("h264", _("H.264 (compatible)")), ("hevc", _("HEVC/H.265 (experimental)"))])
+	# hevc carries the same picture in clearly less bitrate, so its ladder
+	# spends that on resolution instead: every step shows what h264 shows one
+	# or two steps higher, and the top ones go beyond 1080p - see
+	# getUniversalTranscoderSettings()
+	config.plugins.dreamplex.Entries[i].uniQualityHevc = ConfigSelection(default="3", choices=[("0", _("568x320, 320kbps")), ("1", _("720x480, 720 kbps")), ("2", _("1280x720, 1,5mbps")), ("3", _("1280x720, 2mbps")), ("4", _("1920x1080, 3mbps")), ("5", _("1920x1080, 4mbps")), ("6", _("2560x1440, 8mbps"))])
 
 	printl("=== TRANSCODED ===", "__init__::initServerEntryConfig", "D")
 	printl("universalTranscoder: " + str(config.plugins.dreamplex.Entries[i].universalTranscoder.value), "__init__::initServerEntryConfig", "D")
 	printl("quality: " + str(config.plugins.dreamplex.Entries[i].quality.value), "__init__::initServerEntryConfig", "D")
 	printl("segments: " + str(config.plugins.dreamplex.Entries[i].segments.value), "__init__::initServerEntryConfig", "D")
 	printl("uniQuality: " + str(config.plugins.dreamplex.Entries[i].uniQuality.value), "__init__::initServerEntryConfig", "D")
+	printl("uniQualityHevc: " + str(config.plugins.dreamplex.Entries[i].uniQualityHevc.value), "__init__::initServerEntryConfig", "D")
+	printl("transcodeVideoCodec: " + str(config.plugins.dreamplex.Entries[i].transcodeVideoCodec.value), "__init__::initServerEntryConfig", "D")
 	# TRANSCODED VIA PROXY
 
 	# DIRECT LOCAL
@@ -493,11 +507,45 @@ def getViewsByType(myType):
 #===============================================================================
 
 
+# Our catalogue is bound in localeInit(), which runs from prepareEnvironment()
+# - and enigma2 calls Plugins() to read the plugin list BEFORE any of that.
+# Anything translated at registration time therefore asked gettext for a domain
+# that was not bound yet and got the msgid straight back, which is why the
+# plugin browser showed its description in English however good the catalogue
+# was. Bind on first use instead of relying on the order of startup.
+_localeBindTried = False
+
+
+def bindOwnCatalogue():
+	"""Point gettext at our .mo files, once, whenever _() is first needed.
+
+	Everything this needs is already loaded and proven at that moment: the
+	module-level code above resolves SCOPE_PLUGINS the same way while enigma2
+	is reading the plugin list. If it fails anyway the except leaves things
+	exactly as they were before - dgettext returns the msgid - and localeInit()
+	still binds the domain properly later on.
+	"""
+	global _localeBindTried
+
+	if _localeBindTried:
+		return
+
+	_localeBindTried = True  # set first: never retry on every single lookup
+
+	try:
+		gettext.bindtextdomain("DreamPlex", "%s%s" % (resolveFilename(SCOPE_PLUGINS), "Extensions/DreamPlex/locale/"))
+	except Exception as e:
+		print("[DreamPlex] could not bind the translation catalogue: %s" % str(e))
+
+
 def _(txt):
 	#printl("", "__init__::_(txt)", "S")
 
 	if len(txt) == 0:
 		return ""
+
+	bindOwnCatalogue()
+
 	text = gettext.dgettext("DreamPlex", txt)
 	if text == txt:
 		text = gettext.gettext(txt)

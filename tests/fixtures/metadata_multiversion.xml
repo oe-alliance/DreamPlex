@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="1" allowSync="1" identifier="com.plexapp.plugins.library" librarySectionID="1" librarySectionTitle="Movies" librarySectionUUID="11111111-1111-1111-1111-111111111111" mediaTagPrefix="/system/bundle/media/flags/" mediaTagVersion="1700000000">
+	<Video ratingKey="1002" key="/library/metadata/1002" guid="plex://movie/aaaa0002" studio="Test Studios" type="movie" title="Gamma Movie" contentRating="PG-13" summary="A movie with two versions." rating="7.9" year="2022" thumb="/library/metadata/1002/thumb/1700000000" art="/library/metadata/1002/art/1700000000" duration="6600000" originallyAvailableAt="2022-03-01" addedAt="1690000000" updatedAt="1700000000">
+		<Media id="2101" duration="6600000" bitrate="8000" width="1920" height="1080" aspectRatio="1.78" audioChannels="6" audioCodec="ac3" videoCodec="h264" videoResolution="1080" container="mkv" videoFrameRate="24p" videoProfile="high">
+			<Part id="3101" key="/library/parts/3101/1700000000/file-1080.mkv" duration="6600000" file="/data/movies/Gamma Movie (2022)/Gamma.Movie.2022.1080p.mkv" size="6600000000" container="mkv" videoProfile="high">
+				<Stream id="4101" streamType="1" default="1" codec="h264" index="0" bitrate="7000" height="1080" width="1920" displayTitle="1080p (H.264)"/>
+				<Stream id="4102" streamType="2" selected="1" codec="ac3" index="1" channels="6" language="English" languageCode="eng" displayTitle="English (AC3 5.1)"/>
+			</Part>
+		</Media>
+		<Media id="2102" duration="6600000" bitrate="24000" width="3840" height="2160" aspectRatio="1.78" audioChannels="8" audioCodec="eac3" videoCodec="hevc" videoResolution="4k" container="mkv" videoFrameRate="24p" videoProfile="main 10">
+			<Part id="3102" key="/library/parts/3102/1700000000/file-4k.mkv" duration="6600000" file="/data/movies/Gamma Movie (2022)/Gamma.Movie.2022.2160p.mkv" size="24000000000" container="mkv" videoProfile="main 10">
+				<Stream id="4201" streamType="1" default="1" codec="hevc" index="0" bitrate="22000" height="2160" width="3840" displayTitle="4K (HEVC Main 10)"/>
+				<Stream id="4202" streamType="2" selected="1" codec="eac3" index="1" channels="8" language="English" languageCode="eng" displayTitle="English (EAC3 7.1)"/>
+			</Part>
+		</Media>
+	</Video>
+</MediaContainer>

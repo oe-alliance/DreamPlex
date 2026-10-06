@@ -65,7 +65,7 @@ from .DPH_Singleton import Singleton
 from .DPH_ScreenHelper import DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Screen, DPH_Filter
 from .DP_ViewFactory import getNoneDirectoryElements, getDefaultDirectoryElementsList, getGuiElements
 
-from .__common__ import printl2 as printl, loadPicture, durationToTime, getLiveTv, encodeThat, checkXmlFile, getXmlContent, getSkinResolution
+from .__common__ import printl2 as printl, loadPicture, durationToTime, getLiveTv, encodeThat, checkXmlFile, getXmlContent, getSkinResolution, runInThread, fireAndForget, getRatingValue
 from .__plugin__ import Plugin
 from .__init__ import _, defaultSkinsFolderPath  # _ is translation
 
@@ -565,9 +565,19 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 			media_id = selection[1]['ratingKey']
 			server = selection[1]['server']
 
-			count, options, server = Singleton().getPlexInstance().getMediaOptionsToPlay(media_id, server, False, myType=selection[1]['tagType'], loadExtraData=True)
+			# looking up the extras is a server round trip: off the main loop
+			def work():
+				return Singleton().getPlexInstance().getMediaOptionsToPlay(media_id, server, False, myType=selection[1]['tagType'], loadExtraData=True)
 
-			self.selectMedia(count, options, server)
+			def onDone(mediaOptions, error):
+				if error is not None or not mediaOptions:
+					printl("could not load extras: " + str(error), self, "W")
+					self.session.open(MessageBox, (_("No extras found ...\n\nPress exit to return.")), MessageBox.TYPE_INFO)
+					return
+				count, options, extraServer = mediaOptions
+				self.selectMedia(count, options, extraServer)
+
+			runInThread(work, onDone)
 
 		elif self.serverConfig.loadExtraData.value == "2":
 			try:
@@ -610,7 +620,10 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 				self.session.openWithCallback(self.setSelectedMedia, ChoiceBox, title=_("Select media to play"), list=functionList)
 
 			else:
-				self.setSelectedMedia()
+				# a single extra (the usual case: one trailer) never played
+				# because setSelectedMedia() bailed out on choice=None
+				items = self.options[0]
+				self.setSelectedMedia((items[1], 0, items[0], items[5]))
 
 			printl("", self, "C")
 
@@ -623,7 +636,11 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 
 		if choice is not None:
 			http = self.plexInstance.http
-			url = "%s://%s%s" % (http, self.server, choice[2])
+			if str(choice[2]).startswith("http"):
+				# cloud-hosted extras come with an absolute URL already
+				url = str(choice[2])
+			else:
+				url = "%s://%s%s" % (http, self.server, choice[2])
 			ratingKey = choice[3]
 
 			printl("url: " + str(url), self, "D")
@@ -653,14 +670,164 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 			self.sessionData = stillPlaying[1]  # is list with data
 			currentIndex = int(self.sessionData[3])
 			self["listview"].setIndex(currentIndex)
+			self.refreshEntryViewState(currentIndex)
 			self.refresh()
 
 		else:
 			self.sessionData = False
+			# the player already reported the final position to the PMS, so
+			# re-read the played item and refresh its seen/unseen marker
+			self.refreshEntryViewState()
 			if not config.plugins.dreamplex.stopLiveTvOnStartup.value and self.liveTvInViews:
 				self.restoreLiveTv()
 
 		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def refreshEntryViewState(self, index=None):
+		"""
+		Re-fetch the metadata of a single list entry and patch its
+		seen/started/unseen marker in place: one request, no full section
+		reload (same modifyEntry mechanic as markWatched/markUnwatched).
+		"""
+		printl("", self, "S")
+
+		try:
+			if index is None:
+				index = self["listview"].getIndex()
+			index = int(index)
+			entry = self.listViewList[index]
+			entryData = entry[1]
+
+			if "ratingKey" not in entryData or "server" not in entryData:
+				printl("no ratingKey/server in entry, skipping marker refresh", self, "D")
+				printl("", self, "C")
+				return
+
+			plexInstance = Singleton().getPlexInstance()
+			url = "%s://%s/library/metadata/%s" % (plexInstance.http, entryData["server"], entryData["ratingKey"])
+
+			# fetch off the main loop, then patch the row in the callback. The
+			# callback gets the row's dict, not its index: by the time the answer
+			# arrives a letter filter may have changed which row sits there.
+			runInThread(lambda: plexInstance.getMoviesFromSection(url),
+					lambda result, error: self.applyRefreshedViewState(entryData, result, error))
+
+		except Exception as e:
+			printl("could not refresh entry view state: " + str(e), self, "W")
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def applyRefreshedViewState(self, entryData, result, error):
+		printl("", self, "S")
+
+		try:
+			if error is not None:
+				printl("could not refresh entry view state: " + str(error), self, "W")
+				printl("", self, "C")
+				return
+
+			freshList = result[0] if result else None
+			if not freshList:
+				printl("", self, "C")
+				return
+
+			entry = self.findListEntry(entryData)
+			if entry is None:
+				# the level was left before the server answered: the row is not
+				# on this screen any more, and an index would land on whatever
+				# row sits there now
+				printl("", self, "C")
+				return
+
+			freshEntry = freshList[0]
+			freshData = freshEntry[1]
+
+			# only carry over the watch state, the rest of entryData keeps
+			# whatever the original view flow put there
+			for field in ("viewCount", "viewOffset", "lastViewedAt"):
+				if field in freshData:
+					entryData[field] = freshData[field]
+				else:
+					entryData.pop(field, None)
+
+			icons = {"seen": self.seenPic, "started": self.startedPic, "unseen": self.unseenPic}
+			patched = list(entry)
+			patched[3] = icons.get(str(freshEntry[3]), self.unseenPic)
+			visibleIndex = self.replaceListEntry(entryData, tuple(patched))
+
+			if visibleIndex is not None:
+				# modifyEntry does not repaint the row on every skin/listbox
+				# combination - rebuild the visual list like the initial load does,
+				# leaving the cursor wherever the user has it now
+				self.updateList(myIndex=self["listview"].getIndex())
+
+				# the yellow button was worked out before this answer arrived
+				if self.selection is not None and self.selection[1].get("tagType") != "Directory":
+					self.handleViewStateInformation()
+
+			# the pickle cache of this section is stale now
+			self.forceUpdate = True
+		except Exception as e:
+			printl("could not refresh entry view state: " + str(e), self, "W")
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def findListEntry(self, entryData):
+		"""The row of this level holding this very entryData dict, or None.
+
+		Looked up in the unfiltered list, which has every row of the level
+		whatever the letter filter shows. Matched by identity: indices differ
+		between the filtered and the unfiltered list, and an index captured
+		earlier may point at another row by now.
+		"""
+		for row in self.beforeFilterListViewList or []:
+			if row[1] is entryData:
+				return row
+
+		return None
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def replaceListEntry(self, entryData, newEntry):
+		"""Put newEntry in place of the row holding this very entryData dict,
+		in the list on screen AND in the unfiltered one.
+
+		With a letter filter active they are different lists - filter() builds
+		the one on screen out of beforeFilterListViewList - so replacing the
+		row in the visible list only left the unfiltered one with the old
+		tuple: clearing the filter brought the old watch icon back, while the
+		dict inside, shared by both rows, already said otherwise. Without a
+		filter both names point at the same list, patched once.
+
+		Returns the row's index in the list on screen, or None when the
+		filter hides it.
+		"""
+		lists = [self.listViewList]
+		if self.beforeFilterListViewList is not self.listViewList:
+			lists.append(self.beforeFilterListViewList)
+
+		visibleIndex = None
+		for rows in lists:
+			if rows is None:
+				continue
+			for index, row in enumerate(rows):
+				if row[1] is entryData:
+					rows[index] = newEntry
+					if rows is self.listViewList:
+						visibleIndex = index
+					break
+
+		return visibleIndex
 
 	#===========================================================================
 	#
@@ -743,19 +910,24 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 		self.setColorFunction(color="red", level="1", functionList=("", self.togglePlayMode))
 		self.setColorFunction(color="green", level="1", functionList=("", self.toggleResumeMode))
 		self.setColorFunction(color="yellow", level="1", functionList=("", self.executeLibraryFunction))  # name is empty because we set it dynamical
-		self.setColorFunction(color="blue", level="1", functionList=(_("playback mode '" + self.playbackModes[self.configuredPlaybackMode][1] + "'"), self.togglePlaybackMode))
+		# the mode name has to stay OUT of the msgid: concatenating it in built
+		# a key like "playback mode 'Transcoded'" that no catalogue can hold,
+		# so the label showed an English wrapper around a translated value -
+		# "playback mode 'Transcodificado'". A label in two languages at once
+		# is the signature of this bug. (Found by the DreamFin fork.)
+		self.setColorFunction(color="blue", level="1", functionList=(_("playback mode '%s'") % self.playbackModes[self.configuredPlaybackMode][1], self.togglePlaybackMode))
 
 		self.setColorFunction(color="red", level="2", functionList=(_("View '") + str(self.currentViewName) + " '", self.onToggleView))
 		self.setColorFunction(color="green", level="2", functionList=("", self.toggleFastScroll))  # name is empty because we set it dynamical
-		self.setColorFunction(color="yellow", level="2", functionList=("refresh Library", self.initiateRefresh))
+		self.setColorFunction(color="yellow", level="2", functionList=(_("refresh Library"), self.initiateRefresh))
 		self.setColorFunction(color="blue", level="2", functionList=(_("show 'Details'"), self.toggleDetails))
 
-		self.setColorFunction(color="red", level="3", functionList=("Server Settings", self.showServerSettings))
-		self.setColorFunction(color="green", level="3", functionList=("Plex Settings", self.showGeneralSettings))
+		self.setColorFunction(color="red", level="3", functionList=(_("Server Settings"), self.showServerSettings))
+		self.setColorFunction(color="green", level="3", functionList=(_("Plex Settings"), self.showGeneralSettings))
 		self.setColorFunction(color="yellow", level="3", functionList=(_("delete Medias"), self.deleteMedias))
 		self.setColorFunction(color="blue", level="3", functionList=(_("use for Mapping"), self.useForMappingHelper))
 
-		self.setColorFunction(color="red", level="4", functionList=("", self.toggleFilterMode))  # name is empty because we set it dynamical
+		self.setColorFunction(color="red", level="4", functionList=("", self.leaveFilterMode))  # name is empty because we set it dynamical
 		self.setColorFunction(color="green", level="4", functionList=None)
 		self.setColorFunction(color="yellow", level="4", functionList=None)
 		self.setColorFunction(color="blue", level="4", functionList=None)
@@ -1004,12 +1176,12 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 
 		if self.fastScroll:
 			self.fastScroll = False
-			self["btn_" + color + "Text"].setText("fastScroll 'Off'")
+			self["btn_" + color + "Text"].setText(_("fastScroll 'Off'"))
 			self["info"].hide()
 			self["infoLabel"].hide()
 		else:
 			self.fastScroll = True
-			self["btn_" + color + "Text"].setText("fastScroll 'On'")
+			self["btn_" + color + "Text"].setText(_("fastScroll 'On'"))
 			self["info"].show()
 			self["infoLabel"].show()
 			self["miniTv"].hide()
@@ -1055,7 +1227,8 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 
 		self.playbackMode = self.nextPlaybackMode
 
-		self["btn_" + color + "Text"].setText("playback mode '" + myName + "'")
+		# this one was not even marked for translation
+		self["btn_" + color + "Text"].setText(_("playback mode '%s'") % myName)
 
 		printl("", self, "C")
 
@@ -1091,6 +1264,46 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 
 			self["L2"].show()
 			self["L3"].show()
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def leaveFilterMode(self):
+		"""The RED button of the filter mode: bring the whole list back with
+		the cursor on the same entry, then turn the mode off.
+
+		Leaving the mode used to keep the list filtered. Clearing the filter
+		needs a space typed on the number keys, and where the space sits
+		depends on each image's key map - on OpenATV 7.0 it is the second
+		press of 1 - so there was no obvious way back to the whole list.
+
+		Deliberately NOT part of toggleFilterMode(): onEnter() calls that on
+		every OK and reads the cursor right after, to pick what to play from
+		self.listViewList. Restoring the list in there would swap it between
+		choosing an entry and reading the cursor, and the player would get
+		another one - the family of the onLeave() bug fixed in v2.3.20.
+		"""
+		printl("", self, "S")
+
+		if self.beforeFilterListViewList is not None and self.listViewList is not self.beforeFilterListViewList:
+			current = self["listview"].getCurrent()
+
+			self.listViewList = self.beforeFilterListViewList
+			self["listview"].setList(self.listViewList)
+
+			index = 0
+			if current is not None:
+				for position, row in enumerate(self.listViewList):
+					if row[1] is current[1]:
+						index = position
+						break
+			self["listview"].setIndex(index)
+
+			self.refresh()
+
+		self.toggleFilterMode()
 
 		printl("", self, "C")
 
@@ -1542,8 +1755,16 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 				self.session.nav.stopService()
 
 		if self.viewStep >= 0:
-			self["listview"].setList(self.currentEntryDataDict[self.viewStep])
+			restoredList = self.currentEntryDataDict[self.viewStep]
+			self["listview"].setList(restoredList)
 			self["listview"].setIndex(self.currentIndexDict[self.viewStep])
+
+			# The widget list and the list we hand to the player must stay in sync:
+			# onEnter() indexes self.listViewList with the widget's index, so a
+			# level left without restoring it plays the wrong item - or raises
+			# IndexError and takes enigma2 down with it.
+			self.listViewList = restoredList
+			self.beforeFilterListViewList = restoredList
 
 			if self.filterMode:
 				self.toggleFilterMode(quit=True)
@@ -1589,9 +1810,32 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 		printl("", self, "S")
 		printl("entryData: " + str(entryData), self, "D")
 
-		# loadLibrary is a function in each class that inherits from DP_LibMain (DP_LibMovies, DP_LibSHows, DP_LibMusic)
-		libraryDataArr = self.loadLibrary(entryData, self.forceUpdate)
+		# fetching a library can take seconds (big sections, slow or
+		# unreachable server): keep it off the enigma2 main loop so the GUI
+		# never freezes while we wait
+		forceUpdate = self.forceUpdate
 		self.forceUpdate = False
+
+		runInThread(lambda: self.loadLibrary(entryData, forceUpdate), self.onLibraryLoaded)
+
+		printl("", self, "C")
+
+	#===========================================================================
+	#
+	#===========================================================================
+	def onLibraryLoaded(self, libraryDataArr, error):
+		printl("", self, "S")
+
+		if error is not None:
+			printl("error while loading library: " + str(error), self, "E")
+
+		if not libraryDataArr:
+			printl("no library data", self, "W")
+			self.session.open(MessageBox, _("\n%s") % _("No data in this section!"), MessageBox.TYPE_INFO)
+			self.leaveNow()
+
+			printl("", self, "C")
+			return
 
 		# this is the content for the list (must be tuple no dict)
 		self.libraryData = libraryDataArr[0]
@@ -1675,7 +1919,7 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 			printl("currentViewMode: " + str(self.currentViewMode), self, "D")
 			self.processSubViewElements(myType=self.currentViewMode)
 		else:
-			text = "You have no data in this section!"
+			text = _("No data in this section!")
 			self.session.open(MessageBox, _("\n%s") % text, MessageBox.TYPE_INFO)
 			self.leaveNow()
 
@@ -2104,8 +2348,9 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 		pageTotal = int(math.ceil((itemsTotal / itemsPerPage) + correctionVal))
 		pageCurrent = int(math.ceil((self["listview"].getIndex() / itemsPerPage) + 0.5))
 
-		self["total"].setText(_(str(itemsTotal)))
-		self["pagination"].setText(_(str(pageCurrent) + "/" + str(pageTotal)))
+		# numbers are not translatable: these asked gettext for "9" and "1/9"
+		self["total"].setText(str(itemsTotal))
+		self["pagination"].setText("%s/%s" % (pageCurrent, pageTotal))
 
 		printl("", self, "C")
 
@@ -2255,14 +2500,20 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 		printl("", self, "S")
 		self.forceUpdate = True
 
-		Singleton().getPlexInstance().doRequest(self.unseenUrl)
+		# tell the server in the background: the icon is patched locally
+		# anyway, so there is no reason to freeze the GUI for the answer
+		fireAndForget(lambda url=self.unseenUrl: Singleton().getPlexInstance().doRequest(url))
 
 		currentIndex = self["listview"].getIndex()
 		currentSelection = self["listview"].getCurrent()
 		myList = list(currentSelection)
 		myList[3] = self.unseenPic
 		myList[1]["viewCount"] = 0
-		self["listview"].modifyEntry(currentIndex, tuple(myList))
+		# in the unfiltered list too, or clearing a letter filter brings
+		# the old icon back
+		self.replaceListEntry(myList[1], tuple(myList))
+		# modifyEntry does not repaint the row everywhere, rebuild the list
+		self.updateList(myIndex=currentIndex)
 
 		self.seen = False
 
@@ -2277,14 +2528,20 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 		printl("", self, "S")
 		self.forceUpdate = True
 
-		Singleton().getPlexInstance().doRequest(self.seenUrl)
+		# tell the server in the background: the icon is patched locally
+		# anyway, so there is no reason to freeze the GUI for the answer
+		fireAndForget(lambda url=self.seenUrl: Singleton().getPlexInstance().doRequest(url))
 
 		currentIndex = self["listview"].getIndex()
 		currentSelection = self["listview"].getCurrent()
 		myList = list(currentSelection)
 		myList[3] = self.seenPic
 		myList[1]["viewCount"] = 1
-		self["listview"].modifyEntry(currentIndex, tuple(myList))
+		# in the unfiltered list too, or clearing a letter filter brings
+		# the old icon back
+		self.replaceListEntry(myList[1], tuple(myList))
+		# modifyEntry does not repaint the row everywhere, rebuild the list
+		self.updateList(myIndex=currentIndex)
 
 		self.seen = True
 
@@ -2300,7 +2557,8 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 		self.forceUpdate = True
 
 		if not self.isFolder:
-			Singleton().getPlexInstance().doRequest(self.refreshUrl)
+			# the server rescans asynchronously anyway, we do not wait for it
+			fireAndForget(lambda url=self.refreshUrl: Singleton().getPlexInstance().doRequest(url))
 			self.getViewListData()
 
 		printl("", self, "C")
@@ -2322,8 +2580,13 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 		printl("", self, "S")
 
 		if confirm:
-			Singleton().getPlexInstance().doRequest(self.deleteUrl)
-			self.getViewListData()
+			# the list may only be reloaded once the delete went through
+			def onDeleted(result, error):
+				if error is not None:
+					printl("delete failed: " + str(error), self, "E")
+				self.getViewListData()
+
+			runInThread(lambda url=self.deleteUrl: Singleton().getPlexInstance().doRequest(url), onDeleted)
 		else:
 			self.session.open(MessageBox, _("Deleting aborted!"), MessageBox.TYPE_INFO)
 
@@ -2491,6 +2754,8 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 				printl("starting download", self, "D")
 				authHeader = self.plexInstance.get_hTokenForServer(self.details["server"])
 				printl("header: " + str(authHeader), self, "D")
+				if authHeader is None:  # unknown server -> no token, but never crash
+					authHeader = {}
 				download_url = str(download_url) if PY2 else str(download_url).encode("UTF-8")
 				if not PY2 and 'X-Plex-Token' in authHeader:
 					authHeader = {b'X-Plex-Token': authHeader["X-Plex-Token"].encode("UTF-8")}
@@ -2520,6 +2785,8 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 				printl("starting download", self, "D")
 				authHeader = self.plexInstance.get_hTokenForServer(self.details["server"])
 				printl("header: " + str(authHeader), self, "D")
+				if authHeader is None:  # unknown server -> no token, but never crash
+					authHeader = {}
 				download_url = str(download_url) if PY2 else str(download_url).encode("UTF-8")
 				if not PY2 and 'X-Plex-Token' in authHeader:
 					authHeader = {b'X-Plex-Token': authHeader["X-Plex-Token"].encode("UTF-8")}
@@ -2905,6 +3172,18 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 			found = True
 			self["sound"].setPixmapNum(3)
 
+		elif audio == "EAC3":
+			found = True
+			self["sound"].setPixmapNum(4)
+
+		elif audio == "AAC":
+			found = True
+			self["sound"].setPixmapNum(5)
+
+		elif audio == "OPUS":
+			found = True
+			self["sound"].setPixmapNum(6)
+
 		elif audio == "UNKNOWN" or audio == "":
 			found = False
 
@@ -3024,7 +3303,7 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 
 		elif aspect == "2.35":  # 21:9
 			found = True
-			self["aspect"].setPixmapNum(1)
+			self["aspect"].setPixmapNum(2)
 
 		elif aspect == "UNKNOWN" or aspect == "":
 			found = False
@@ -3065,6 +3344,18 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 			found = True
 			self["codec"].setPixmapNum(3)
 
+		elif codec == "HEVC" or codec == "H265":
+			found = True
+			self["codec"].setPixmapNum(4)
+
+		elif codec == "AV1":
+			found = True
+			self["codec"].setPixmapNum(5)
+
+		elif codec == "VP9":
+			found = True
+			self["codec"].setPixmapNum(6)
+
 		elif codec == "UNKNOWN" or codec == "":
 			found = False
 
@@ -3085,13 +3376,10 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 	def handlePopularityPixmaps(self):
 		printl("", self, "S")
 
-		try:
-			popularity = float(self.details["rating"])
-		except Exception as e:
-			popularity = 0
-			printl("error in popularity " + str(e), self, "D")
-
-		self["rating_stars"].setValue(int(popularity) * 10)
+		# rating is 0-10; the ProgressBar range is 0-100. Multiply before the
+		# int() so e.g. 5.5 shows 2.75 stars instead of being truncated to 5.
+		popularity = getRatingValue(self.details)
+		self["rating_stars"].setValue(int(popularity * 10))
 		self["rating_stars"].show()
 
 		printl("", self, "C")
@@ -3147,9 +3435,20 @@ class DP_View(DPH_Screen, DPH_ScreenHelper, DPH_MultiColorFunctions, DPH_Filter)
 
 			# we also have to reset the variable because this one is passed to player
 			self.listViewList = self.beforeFilterListViewList
+			# a new list starts at the top: the receiver's listbox keeps the old
+			# index, cut down to the new length, which landed on an arbitrary row -
+			# the last one, once RED had left the cursor deep in the whole list
+			self["listview"].setIndex(0)
 		else:
-			self.listViewList = [x for x in self.beforeFilterListViewList if x[1]["title"][0] == self.onNumberKeyLastChar]
-			self["listview"].setList(self.listViewList)
+			# [:1], not [0]: an empty title would raise
+			matching = [x for x in self.beforeFilterListViewList if x[1]["title"][:1] == self.onNumberKeyLastChar]
+
+			# a letter no title starts with used to leave an empty list and "no
+			# data retrieved" on screen; keep the list that was there instead
+			if matching:
+				self.listViewList = matching
+				self["listview"].setList(self.listViewList)
+				self["listview"].setIndex(0)
 
 		self.refresh()
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="1" allowSync="1" identifier="com.plexapp.plugins.library" librarySectionID="1" librarySectionTitle="Movies">
+	<Video ratingKey="1003" key="/library/metadata/1003" type="movie" title="Delta Movie" summary="Movie with an embedded trailer extra." year="2023" duration="6000000" primaryExtraKey="/library/metadata/9001" addedAt="1690000000" updatedAt="1700000000">
+		<Media id="2201" duration="6000000" bitrate="8000" width="1920" height="1080" aspectRatio="1.78" audioChannels="6" audioCodec="ac3" videoCodec="h264" videoResolution="1080" container="mkv" videoFrameRate="24p">
+			<Part id="3201" key="/library/parts/3201/1700000000/delta.mkv" duration="6000000" file="/data/movies/Delta (2023)/delta.mkv" size="6000000000" container="mkv"/>
+		</Media>
+		<Extras size="1">
+			<Video ratingKey="9001" key="/library/metadata/9001" type="clip" title="Delta Movie Trailer" subtype="trailer" duration="150000" extraType="1" addedAt="1690000001">
+				<Media id="9101" duration="150000" bitrate="2000" width="1280" height="720" audioChannels="2" audioCodec="aac" videoCodec="h264" videoResolution="720" container="mp4">
+					<Part id="9201" key="/library/parts/9201/1700000000/delta-trailer.mp4" duration="150000" container="mp4"/>
+				</Media>
+			</Video>
+		</Extras>
+	</Video>
+</MediaContainer>

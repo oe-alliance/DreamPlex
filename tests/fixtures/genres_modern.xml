@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="3" allowSync="0" art="/:/resources/movie-fanart.jpg" content="secondary" identifier="com.plexapp.plugins.library" librarySectionID="1" librarySectionTitle="Movies" mediaTagPrefix="/system/bundle/media/flags/" mediaTagVersion="1700000000" thumb="/:/resources/movie.png" title1="Movies" title2="By Genre" viewGroup="secondary" viewMode="65592">
+	<Directory fastKey="/library/sections/1/all?genre=101" key="101" title="Action" type="genre"/>
+	<Directory fastKey="/library/sections/1/all?genre=102" key="102" title="Comedy" type="genre"/>
+	<Directory fastKey="/library/sections/1/all?genre=103" key="103" title="Drama" type="genre"/>
+</MediaContainer>

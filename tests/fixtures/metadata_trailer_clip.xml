@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="1" allowSync="1" identifier="com.plexapp.plugins.library">
+	<Video ratingKey="9002" key="/library/metadata/9002" type="clip" title="Epsilon Movie Trailer" subtype="trailer" duration="140000" extraType="1" addedAt="1690000001">
+		<Media id="9301" duration="140000" bitrate="2000" width="1280" height="720" audioChannels="2" audioCodec="aac" videoCodec="h264" videoResolution="720" container="mp4">
+			<Part id="9401" key="/library/parts/9401/1700000000/epsilon-trailer.mp4" duration="140000" container="mp4"/>
+		</Media>
+	</Video>
+</MediaContainer>

@@ -26,11 +26,14 @@ You should have received a copy of the GNU General Public License
 #===============================================================================
 import sys
 import os
+import binascii
 import datetime
 import shutil
 import math
+import time
 import uuid
 import glob
+import threading
 from six import PY2
 
 from enigma import addFont, loadPNG, loadJPG, getDesktop
@@ -38,6 +41,10 @@ from skin import loadSkin
 from Components.config import config
 from Components.AVSwitch import AVSwitch
 
+try:
+	from twisted.internet import reactor
+except ImportError:
+	reactor = None
 
 from .DPH_Singleton import Singleton
 
@@ -158,6 +165,70 @@ def printl2(string, parent=None, dmode="U", obfuscate=False, steps=4):
 
 		else:
 			print("[DreamPlex] " + "OLD CHARACTER CHANGE ME !!!!!" + "  " + str(out))
+
+#===============================================================================
+#
+#===============================================================================
+
+
+def runInThread(work, onDone):
+	"""
+	Run a blocking call (network I/O) in a worker thread and deliver the
+	result back on the enigma2 main loop.
+
+	DreamPlex talks to the PMS and to plex.tv synchronously. Done on the
+	main thread that freezes the whole enigma2 GUI while a request is in
+	flight - and a long enough freeze makes enigma2 die (the image's hang
+	detector kills it), which is exactly what an unreachable plex.tv used
+	to do. Keep the callers' logic untouched, just move the waiting off
+	the main loop.
+
+	@param work: callable executed in the worker thread
+	@param onDone: callable(result, error) executed on the main loop
+	"""
+	printl2("", "__common__::runInThread", "S")
+
+	if reactor is None:
+		# no reactor (offline tests): stay synchronous
+		try:
+			onDone(work(), None)
+		except Exception as e:
+			onDone(None, e)
+
+		printl2("", "__common__::runInThread", "C")
+		return
+
+	def worker():
+		try:
+			result, error = work(), None
+		except Exception as e:
+			result, error = None, e
+
+		# hop back onto the main loop before touching any GUI state
+		reactor.callFromThread(onDone, result, error)
+
+	thread = threading.Thread(target=worker)
+	thread.daemon = True
+	thread.start()
+
+	printl2("", "__common__::runInThread", "C")
+
+#===============================================================================
+#
+#===============================================================================
+
+
+def fireAndForget(work):
+	"""
+	Run a blocking call in a worker thread and ignore its result. Used for
+	reports we do not need an answer from (progress/scrobble, transcoder
+	keep-alive) - they must never stall the GUI.
+	"""
+	def onDone(result, error):
+		if error is not None:
+			printl2("background request failed: " + str(error), "__common__::fireAndForget", "W")
+
+	runInThread(work, onDone)
 
 #===============================================================================
 #
@@ -430,6 +501,116 @@ def getBoxResolution():
 #===============================================================================
 
 
+def boxSupportsHdr(root=""):
+	"""True when HDR video would reach the screen as HDR: the box can output
+	it, the user has not turned it off, and the TV takes it.
+
+	A box without HDR cannot show an HDR stream: a transcode that keeps its
+	BT.2020/HLG signalling comes out black (measured with Emby on a Zgemma
+	H8.2H by the DreamFin fork, 2026-10-05; whether Plex tone-maps it depends
+	on the server). A box that CAN do HDR is not necessarily DOING it: the
+	settings and TV checks were suggested here and written and measured by
+	DreamFin on an SF8008 with an HDR and an SDR monitor. Shared code with
+	that fork (f278be2). root is for the tests."""
+	if not _boxCanOutputHdr(root):
+		return False
+	if _userTurnedHdrOff(root):
+		return False
+	return _tvTakesHdr(root) is not False
+
+
+def _readProc(path, binary=False):
+	try:
+		with open(path, "rb" if binary else "r") as handle:
+			return handle.read()
+	except (IOError, OSError):
+		return None
+
+
+def _boxCanOutputHdr(root):
+	"""What OpenATV 7.0 and 8.0 read to offer the HDR settings
+	(Components/AVSwitch): Broadcom boxes have hlg_support_choices, Amlogic ones
+	the amhdmitx config, HiSilicon ones hdmi_hdrtype (with its choices). And a
+	box that offers no 2160p video mode does not count: the Zgemma H8.2H, a
+	1080p chip (hi3716mv430), lists "dolby hdr10 hlg" in hdmi_hdrtype_choices
+	all the same."""
+	modes = _readProc(root + "/proc/stb/video/videomode_choices")
+	if modes is not None and "2160p" not in modes:
+		return False
+	if os.path.exists(root + "/proc/stb/hdmi/hlg_support_choices"):
+		return True
+	if os.path.exists(root + "/sys/class/amhdmitx/amhdmitx0/config"):
+		return True
+	choices = _readProc(root + "/proc/stb/video/hdmi_hdrtype_choices")
+	if choices is not None:
+		return "hdr10" in choices.lower() or "hlg" in choices.lower()
+	return os.path.exists(root + "/proc/stb/video/hdmi_hdrtype")
+
+
+def _userTurnedHdrOff(root):
+	"""The video settings the box obeys: HiSilicon's HDR type set to "none"
+	(SDR in the menu), or Broadcom's HLG and HDR10 support both set to "no"."""
+	hdrType = _readProc(root + "/proc/stb/video/hdmi_hdrtype")
+	if hdrType is not None and hdrType.strip().lower() == "none":
+		return True
+	hlg = _readProc(root + "/proc/stb/hdmi/hlg_support")
+	hdr10 = _readProc(root + "/proc/stb/hdmi/hdr10_support")
+	return (hlg is not None and hdr10 is not None
+			and hlg.strip().lower() == "no" and hdr10.strip().lower() == "no")
+
+
+def _tvTakesHdr(root):
+	"""Whether the TV's EDID announces HDR: True, False, or None when it cannot
+	be told (no EDID, or a cut one). The paths are those eAVControl reads for
+	OpenATV's own EDID page; Amlogic hands it over as hex text."""
+	for path in ("/proc/stb/hdmi/raw_edid", "/sys/class/amhdmitx/amhdmitx0/rawedid"):
+		raw = _readProc(root + path, binary=True)
+		if raw:
+			return edidTakesHdr(raw)
+	return None
+
+
+_HEX_TEXT = bytearray(b"0123456789abcdefABCDEF \t\r\n")  # ints on py2 and py3 alike
+
+
+def edidTakesHdr(raw):
+	"""True when an EDID announces HDR video - a CTA-861 HDR Static Metadata
+	block with the PQ or HLG curve, or a Dolby Vision block -, False when it is
+	complete and does not, None when it cannot be told."""
+	edid = bytearray(raw)
+	text = bytes(edid).strip()
+	if text and all(c in _HEX_TEXT for c in bytearray(text)):
+		try:
+			edid = bytearray(binascii.unhexlify(b"".join(text.split())))
+		except (TypeError, ValueError, binascii.Error):
+			return None
+	if len(edid) < 128 or edid[:8] != bytearray(b"\x00\xff\xff\xff\xff\xff\xff\x00"):
+		return None
+	extensions = edid[126]
+	if len(edid) < 128 * (1 + extensions):
+		return None  # cut short: the blocks that would say are missing
+	for number in range(1, extensions + 1):
+		block = edid[128 * number:128 * (number + 1)]
+		if block[0] != 0x02:  # not a CTA-861 extension
+			continue
+		end = min(block[2], 127)  # the data blocks end where the timings start
+		index = 4
+		while index < end:
+			tag, length = block[index] >> 5, block[index] & 0x1f
+			payload = block[index + 1:index + 1 + length]
+			if tag == 7 and len(payload) >= 2:  # extended tag
+				if payload[0] == 6 and payload[1] & 0x0c:  # HDR static metadata: PQ or HLG
+					return True
+				if payload[0] == 1 and len(payload) >= 4 and payload[1:4] == bytearray(b"\x46\xd0\x00"):
+					return True  # Dolby Vision vendor block (OUI 00-D0-46)
+			index += 1 + length
+	return False
+
+#===============================================================================
+#
+#===============================================================================
+
+
 def loadSkinParams():
 	printl2("", "__common__::loadSkinParams", "S")
 
@@ -583,6 +764,70 @@ def getUUID():
 
 	printl2("", "__common__::getUUID", "C")
 	return str(g_uuid)
+
+#===============================================================================
+#
+#===============================================================================
+
+
+def newPlaybackId():
+	"""Fresh id for ONE playback, used as X-Plex-Session-Identifier.
+
+	getUUID() identifies the box for as long as the plugin runs; this one
+	has to change with every media started, because the server keys the
+	session it shows in its dashboard on it.
+	"""
+	return str(uuid.uuid4())
+
+#===============================================================================
+#
+#===============================================================================
+
+
+class PlaybackClock(object):
+	"""Wall-clock estimate of the play position.
+
+	enigma2 has no position to offer for a transcoded HLS stream -
+	getPlayPosition() answers (-1, garbage) on every single tick - so
+	somebody has to keep the time or the server can never be told where
+	playback is. Seconds are counted while running and the caller syncs
+	in the decoder position whenever that one IS valid, so plain files
+	stay sample-accurate and HLS gets an honest estimate.
+	"""
+
+	def __init__(self, timeSource=None):
+		self._time = timeSource or time.time
+		self._base = 0
+		self._mark = None  # wall time the clock started running, None = paused
+
+	def start(self, seconds=0):
+		self._base = max(0, int(seconds))
+		self._mark = self._time()
+
+	def pause(self):
+		if self._mark is not None:
+			self._base = self.tell()
+			self._mark = None
+
+	def resume(self):
+		if self._mark is None:
+			self._mark = self._time()
+
+	def syncTo(self, seconds):
+		"""Adopt a known-good position, keeping the running state."""
+		self._base = max(0, int(seconds))
+		if self._mark is not None:
+			self._mark = self._time()
+
+	def add(self, seconds):
+		"""Follow a relative jump (skip keys); clamped at zero."""
+		self.syncTo(self.tell() + int(seconds))
+
+	def tell(self):
+		if self._mark is None:
+			return int(self._base)
+
+		return int(self._base + (self._time() - self._mark))
 
 #===============================================================================
 #
@@ -832,17 +1077,92 @@ def durationToTime(duration):
 def convertSize(size):
 	printl2("", "__common__::convertSize", "S")
 
-	size_name = ("KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+	try:
+		size = int(size)
+	except (TypeError, ValueError):
+		size = 0
+
+	if size <= 0:
+		printl2("", "__common__::convertSize", "C")
+		return '0 B'
+
+	# the exponent is computed on bytes, so the table must start at bytes -
+	# otherwise every unit is shifted one step up (GB shown as TB)
+	size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
 	i = int(math.floor(math.log(size, 1024)))
+	i = min(i, len(size_name) - 1)
 	p = math.pow(1024, i)
 	s = round(size / p, 2)
 
-	if s > 0:
-		printl2("", "__common__::convertSize", "C")
-		return '%s %s' % (s, size_name[i])
+	printl2("", "__common__::convertSize", "C")
+	return '%s %s' % (s, size_name[i])
+
+#===========================================================================
+#
+#===========================================================================
+
+
+def buildMediaChoiceName(items):
+	"""Display label for one entry of the "Select media to play" dialog.
+
+	items is one entry of the parts list from getMediaOptionsToPlay():
+	(key, file, container, size, duration[, videoResolution, videoCodec, mediaIndex, videoRange])
+	videoRange is "" for SDR, else the HDR kind ("HLG", "HDR10", ...).
+
+	Always returns a native str: on Python 2 the enigma2 listbox renders a
+	unicode label (any non-ascii file name) as "<not a string>".
+	"""
+	printl2("", "__common__::buildMediaChoiceName", "S")
+
+	if items[1] is not None:
+		name = items[1].split('/')[-1]
 	else:
-		printl2("", "__common__::convertSize", "C")
-		return '0B'
+		size = convertSize(int(items[3]))
+		duration = time.strftime('%H:%M:%S', time.gmtime(int(items[4])))
+		# this is the case when there is no information of the real file name
+		name = items[0] + " (" + items[2] + " / " + size + " / " + duration + ")"
+
+	# prefix the VERSION properties (resolution/codec/size) so
+	# multi-version items are distinguishable
+	versionBits = []
+	if len(items) > 5 and items[5]:
+		versionBits.append("%s" % (items[5],))
+	if len(items) > 6 and items[6]:
+		versionBits.append("%s" % (items[6],))
+	if len(items) > 8 and items[8]:
+		versionBits.append("%s" % (items[8],))
+	if versionBits:
+		try:
+			if items[3]:
+				versionBits.append(convertSize(int(items[3])))
+		except Exception:
+			pass
+		name = "[" + " / ".join(versionBits) + "]  " + name
+
+	printl2("", "__common__::buildMediaChoiceName", "C")
+	return encodeThat(name)
+
+#===========================================================================
+#
+#===========================================================================
+
+
+def getRatingValue(details):
+	"""Return a 0-10 popularity score for a Plex item.
+
+	Modern Plex Media Server reports the community score as "audienceRating";
+	the legacy "rating" is only present when there is a separate critic score.
+	Prefer the critic rating, then the audience rating, then the user's own
+	rating, so the star widget is not left empty for items that do have a score.
+	"""
+	for key in ("rating", "audienceRating", "userRating"):
+		try:
+			value = float(details.get(key, 0) or 0)
+		except (ValueError, TypeError):
+			value = 0.0
+		if value:
+			return value
+	return 0.0
 
 #===========================================================================
 #
